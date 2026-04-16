@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スマシャキ 当日作業</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
+
+.today-bar { text-align: center; margin-bottom: 1rem; }
+.date-big { font-size: 22px; font-weight: 500; color: #1a1a1a; }
+.date-sub { font-size: 13px; color: #666; margin-top: 2px; }
+
+.event-banner { background: #FAEEDA; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+.event-banner-title { font-size: 12px; font-weight: 500; color: #854F0B; margin-bottom: 4px; }
+.event-banner-item { font-size: 17px; font-weight: 500; color: #633806; line-height: 1.7; }
+
+.card { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+.card-刈取 { background: #FAECE7; }
+.card-3穴  { background: #E6F1FB; }
+.card-6穴  { background: #EAF3DE; }
+.card-30穴 { background: #EEEDFE; }
+.card-top { display: flex; align-items: center; justify-content: space-between; }
+.card-task { font-size: 15px; font-weight: 500; }
+.card-刈取 .card-task { color: #993C1D; }
+.card-3穴  .card-task { color: #185FA5; }
+.card-6穴  .card-task { color: #3B6D11; }
+.card-30穴 .card-task { color: #534AB7; }
+.card-sow { font-size: 20px; font-weight: 500; color: #1a1a1a; margin-top: 4px; }
+.card-sub { font-size: 12px; color: #666; text-align: right; }
+.history { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-wrap: wrap; gap: 6px; }
+.hist-item { font-size: 12px; color: #666; }
+.hist-item span { font-weight: 500; color: #1a1a1a; }
+.hist-sep { font-size: 12px; color: #aaa; }
+
+.calc-box { background: #f5f5f2; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+.calc-title { font-size: 13px; font-weight: 500; color: #666; margin-bottom: 10px; }
+.calc-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.calc-tab { font-size: 13px; padding: 4px 14px; border: 0.5px solid #ccc; border-radius: 20px; background: #fff; color: #666; cursor: pointer; }
+.calc-tab.active { background: #EEEDFE; border-color: #AFA9EC; color: #534AB7; font-weight: 500; }
+.calc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.calc-row label { font-size: 12px; color: #666; min-width: 48px; }
+input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; border-radius: 8px; background: #fff; color: #1a1a1a; }
+.btn-calc { font-size: 13px; padding: 5px 16px; border: 0.5px solid #AFA9EC; border-radius: 8px; background: #EEEDFE; color: #534AB7; cursor: pointer; font-weight: 500; }
+.btn-calc:hover { background: #CECBF6; }
+.calc-result { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.calc-chip { background: #fff; border: 0.5px solid #ccc; border-radius: 8px; padding: 6px 12px; font-size: 13px; color: #1a1a1a; }
+.chip-label { font-size: 11px; color: #666; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+.chip-day { font-size: 11px; color: #aaa; }
+.chip-val { font-weight: 500; font-size: 14px; }
+
+.section-title { font-size: 13px; font-weight: 500; color: #666; margin: 1.5rem 0 0.5rem; }
+.sheet-note { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+.sheet-note a { color: #534AB7; }
+.sync-status { font-size: 12px; color: #aaa; margin-top: 6px; }
+.sync-status.ok { color: #3B6D11; }
+.sync-status.err { color: #E24B4A; }
+</style>
+</head>
+<body>
+
+<div class="today-bar">
+  <div class="date-big" id="disp-date"></div>
+  <div class="date-sub">の作業内容</div>
+</div>
+
+<div id="event-banner"></div>
+<div id="tasks"></div>
+
+<div class="calc-box">
+  <div class="calc-title">栽培日程を計算</div>
+  <div class="calc-tabs">
+    <button class="calc-tab active" id="tab-sow" onclick="switchTab('sow')">播種日 → 各日程</button>
+    <button class="calc-tab" id="tab-harvest" onclick="switchTab('harvest')">刈取日 → 播種日</button>
+  </div>
+  <div id="panel-sow">
+    <div class="calc-row">
+      <label>播種日</label>
+      <input type="date" id="sow-input" />
+      <button class="btn-calc" onclick="calcFromSow()">計算</button>
+    </div>
+    <div class="calc-result" id="sow-result"></div>
+  </div>
+  <div id="panel-harvest" style="display:none;">
+    <div class="calc-row">
+      <label>刈取日</label>
+      <input type="date" id="harvest-input" />
+      <button class="btn-calc" onclick="calcFromHarvest()">計算</button>
+    </div>
+    <div class="calc-result" id="harvest-result"></div>
+  </div>
+</div>
+
+<div class="section-title">イベント登録</div>
+<p class="sheet-note">
+  イベントは
+  <a href="https://docs.google.com/spreadsheets/d/1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4/edit" target="_blank">こちらのスプレッドシート</a>
+  で管理しています。A列に日付（例：2025-04-16）、B列に内容を入力してください。
+</p>
+<div class="sync-status" id="sync-status">読み込み中...</div>
+
+<script>
+const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+const SCHEDULE = [
+  { label: '30穴', days: 5  },
+  { label: '6穴',  days: 14 },
+  { label: '3穴',  days: 22 },
+  { label: '刈取', days: 32 },
+];
+
+const TASKS = [
+  { key: '刈取', days: 32, label: '刈取', cls: 'card-刈取',
+    history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }, { label: '3穴', daysFromSow: 22 }]
+  },
+  { key: '3穴',  days: 22, label: '3穴へ移植', cls: 'card-3穴',
+    history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }]
+  },
+  { key: '6穴',  days: 14, label: '6穴へ移植', cls: 'card-6穴',
+    history: [{ label: '30穴', daysFromSow: 5 }]
+  },
+  { key: '30穴', days: 5,  label: '30穴へ移植', cls: 'card-30穴', history: [] },
+];
+
+function fmt(date) {
+  const w = ['日','月','火','水','木','金','土'][date.getDay()];
+  return `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日（${w}）`;
+}
+function fmtShort(date) { return `${date.getMonth()+1}/${date.getDate()}`; }
+function fmtMD(date) {
+  const w = ['日','月','火','水','木','金','土'][date.getDay()];
+  return `${date.getMonth()+1}月${date.getDate()}日（${w}）`;
+}
+function toDateStr(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+function parseDate(str) { const [y,m,d] = str.split('-').map(Number); return new Date(y,m-1,d); }
+
+function chip(label, dayNum, date) {
+  const dayStr = dayNum === 0 ? '0日目（播種）' : `${dayNum}日目`;
+  return `<div class="calc-chip">
+    <div class="chip-label">${label} <span class="chip-day">${dayStr}</span></div>
+    <div class="chip-val">${fmtMD(date)}</div>
+  </div>`;
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-sow').classList.toggle('active', tab==='sow');
+  document.getElementById('tab-harvest').classList.toggle('active', tab==='harvest');
+  document.getElementById('panel-sow').style.display = tab==='sow' ? '' : 'none';
+  document.getElementById('panel-harvest').style.display = tab==='harvest' ? '' : 'none';
+}
+
+function calcFromSow() {
+  const val = document.getElementById('sow-input').value;
+  if (!val) return;
+  const sow = parseDate(val);
+  document.getElementById('sow-result').innerHTML =
+    [chip('播種日', 0, sow)].concat(SCHEDULE.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+
+function calcFromHarvest() {
+  const val = document.getElementById('harvest-input').value;
+  if (!val) return;
+  const harvest = parseDate(val);
+  const sow = addDays(harvest, -32);
+  document.getElementById('harvest-result').innerHTML =
+    [chip('播種日', 0, sow)].concat(SCHEDULE.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+
+const today = new Date();
+document.getElementById('disp-date').textContent = fmt(today);
+document.getElementById('sow-input').value = toDateStr(today);
+document.getElementById('harvest-input').value = toDateStr(today);
+
+function renderTasks() {
+  let html = '';
+  TASKS.forEach(t => {
+    const sow = addDays(today, -t.days);
+    let histHtml = '';
+    if (t.history.length > 0) {
+      histHtml = '<div class="history">';
+      t.history.forEach((h, i) => {
+        const hDate = addDays(sow, h.daysFromSow);
+        histHtml += `<span class="hist-item"><span>${fmtShort(hDate)}</span> ${h.label}</span>`;
+        if (i < t.history.length-1) histHtml += `<span class="hist-sep">›</span>`;
+      });
+      histHtml += '</div>';
+    }
+    html += `<div class="card ${t.cls}">
+      <div class="card-top">
+        <div>
+          <div class="card-task">今日の${t.label}</div>
+          <div class="card-sow">${fmtShort(sow)}播種</div>
+        </div>
+        <div class="card-sub">播種から${t.days}日目</div>
+      </div>
+      ${histHtml}
+    </div>`;
+  });
+  document.getElementById('tasks').innerHTML = html;
+}
+
+function renderBanner(events) {
+  const todayStr = toDateStr(today);
+  const todayEvents = events.filter(e => e.date === todayStr);
+  const el = document.getElementById('event-banner');
+  if (todayEvents.length === 0) { el.innerHTML = ''; return; }
+  const items = todayEvents.map(e => `<div class="event-banner-item">★ ${e.note}</div>`).join('');
+  el.innerHTML = `<div class="event-banner"><div class="event-banner-title">本日のイレギュラー</div>${items}</div>`;
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').slice(1);
+  return lines.map(line => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    cols.push(cur.trim());
+    return { date: cols[0] || '', note: cols[1] || '' };
+  }).filter(e => e.date && e.note);
+}
+
+async function loadEvents() {
+  const status = document.getElementById('sync-status');
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error('fetch failed');
+    const text = await res.text();
+    const events = parseCSV(text);
+    renderBanner(events);
+    status.textContent = `最終更新：${fmt(new Date())}`;
+    status.className = 'sync-status ok';
+  } catch(e) {
+    renderBanner([]);
+    status.textContent = 'スプレッドシートを読み込めませんでした。ネット接続を確認してください。';
+    status.className = 'sync-status err';
+  }
+}
+
+renderTasks();
+loadEvents();
+</script>
+</body>
+</html>

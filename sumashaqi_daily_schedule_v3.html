@@ -54,6 +54,8 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .chip-day { font-size: 11px; color: #aaa; }
 .chip-val { font-weight: 500; font-size: 14px; }
 
+.ekihi-line { font-size: 14px; font-weight: 500; color: #3B6D11; margin-top: 4px; }
+
 .section-title { font-size: 13px; font-weight: 500; color: #666; margin: 1.5rem 0 0.5rem; }
 .sheet-note { font-size: 12px; color: #aaa; margin-bottom: 8px; }
 .sheet-note a { color: #534AB7; }
@@ -67,6 +69,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div class="today-bar">
   <div class="date-big" id="disp-date"></div>
   <div class="date-sub">の作業内容</div>
+  <div class="ekihi-line" id="ekihi-line" style="display:none"></div>
 </div>
 
 <div id="event-banner"></div>
@@ -250,7 +253,32 @@ async function loadEvents() {
   }
 }
 
+// 液肥管理
+const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
+const EKIHI_EVENTS = [
+  { label: '入替', offset: 0 },
+  { label: '追肥', offset: 4 },
+  { label: '追肥', offset: 9 },
+];
+
+function renderEkihi() {
+  const todayMs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const daysSinceBase = Math.round((todayMs - EKIHI_BASE.getTime()) / 86400000);
+  const cycleNum = Math.floor(daysSinceBase / 14);
+
+  const todayEvent = EKIHI_EVENTS.find(e => (cycleNum * 14 + e.offset) === daysSinceBase);
+
+  const el = document.getElementById('ekihi-line');
+  if (todayEvent) {
+    el.textContent = `液肥管理：${todayEvent.label}`;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 renderTasks();
+renderEkihi();
 loadEvents();
 </script>
 </body>

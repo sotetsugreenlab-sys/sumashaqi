@@ -294,19 +294,30 @@ document.getElementById('harvest-input').value = toDateStr(realToday);
 // イベント読み込み
 let cachedEvents = null;
 function parseCSV(text) {
-  const lines = text.trim().split('\n').slice(1);
-  return lines.map(line => {
-    const cols = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') { inQ = !inQ; }
-      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-      else { cur += c; }
+  // セル内改行を含むCSVを正しくパース
+  const rows = [];
+  let cur = '', inQ = false, cols = [];
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; } // エスケープ済み引用符
+      else { inQ = !inQ; }
+    } else if (c === ',' && !inQ) {
+      cols.push(cur); cur = '';
+    } else if ((c === '\n' || (c === '\r' && text[i+1] === '\n')) && !inQ) {
+      if (c === '\r') i++;
+      cols.push(cur); cur = '';
+      rows.push(cols); cols = [];
+    } else {
+      cur += c;
     }
-    cols.push(cur.trim());
-    return { date: cols[0] || '', note: cols[1] || '' };
-  }).filter(e => e.date && e.note);
+  }
+  if (cur || cols.length) { cols.push(cur); rows.push(cols); }
+
+  return rows.slice(1).map(cols => ({
+    date: (cols[0] || '').trim(),
+    note: (cols[1] || '').trim().replace(/\n/g, ' '),
+  })).filter(e => e.date && e.note);
 }
 async function loadEvents() {
   const status = document.getElementById('sync-status');

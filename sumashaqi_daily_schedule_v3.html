@@ -13,8 +13,13 @@
 body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 
 .today-bar { text-align: center; margin-bottom: 1rem; }
+.nav-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.nav-btn { font-size: 20px; color: #aaa; background: none; border: none; cursor: pointer; padding: 0 4px; line-height: 1; }
+.nav-btn:active { color: #1a1a1a; }
 .date-big { font-size: 22px; font-weight: 500; color: #1a1a1a; }
 .date-sub { font-size: 13px; color: #666; margin-top: 2px; }
+.back-today { display: inline-block; margin-top: 6px; font-size: 12px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 20px; padding: 3px 12px; cursor: pointer; }
+.ekihi-line { font-size: 14px; font-weight: 500; color: #3B6D11; margin-top: 4px; }
 
 .event-banner { background: #FAEEDA; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
 .event-banner-title { font-size: 12px; font-weight: 500; color: #854F0B; margin-bottom: 4px; }
@@ -54,8 +59,6 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .chip-day { font-size: 11px; color: #aaa; }
 .chip-val { font-weight: 500; font-size: 14px; }
 
-.ekihi-line { font-size: 14px; font-weight: 500; color: #3B6D11; margin-top: 4px; }
-
 .section-title { font-size: 13px; font-weight: 500; color: #666; margin: 1.5rem 0 0.5rem; }
 .sheet-note { font-size: 12px; color: #aaa; margin-bottom: 8px; }
 .sheet-note a { color: #534AB7; }
@@ -67,8 +70,13 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <body>
 
 <div class="today-bar">
-  <div class="date-big" id="disp-date"></div>
+  <div class="nav-row">
+    <button class="nav-btn" onclick="navigate(-1)">＜</button>
+    <div class="date-big" id="disp-date"></div>
+    <button class="nav-btn" onclick="navigate(1)">＞</button>
+  </div>
   <div class="date-sub">の作業内容</div>
+  <div id="back-today-wrap"></div>
   <div class="ekihi-line" id="ekihi-line" style="display:none"></div>
 </div>
 
@@ -131,6 +139,15 @@ const TASKS = [
   { key: '30穴', days: 5,  label: '30穴へ移植', cls: 'card-30穴', history: [] },
 ];
 
+// 液肥管理
+const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
+const EKIHI_EVENTS = [
+  { label: '入替', offset: 0 },
+  { label: '追肥', offset: 4 },
+  { label: '追肥', offset: 9 },
+];
+
+// 日付ユーティリティ
 function fmt(date) {
   const w = ['日','月','火','水','木','金','土'][date.getDay()];
   return `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日（${w}）`;
@@ -145,48 +162,36 @@ function toDateStr(date) {
 }
 function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate()+n); return d; }
 function parseDate(str) { const [y,m,d] = str.split('-').map(Number); return new Date(y,m-1,d); }
+function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
 
-function chip(label, dayNum, date) {
-  const dayStr = dayNum === 0 ? '0日目（播種）' : `${dayNum}日目`;
-  return `<div class="calc-chip">
-    <div class="chip-label">${label} <span class="chip-day">${dayStr}</span></div>
-    <div class="chip-val">${fmtMD(date)}</div>
-  </div>`;
+// 表示日（ナビゲーションで変わる）
+const realToday = new Date();
+let viewDate = new Date(realToday);
+
+function navigate(delta) {
+  viewDate = addDays(viewDate, delta);
+  renderAll();
 }
 
-function switchTab(tab) {
-  document.getElementById('tab-sow').classList.toggle('active', tab==='sow');
-  document.getElementById('tab-harvest').classList.toggle('active', tab==='harvest');
-  document.getElementById('panel-sow').style.display = tab==='sow' ? '' : 'none';
-  document.getElementById('panel-harvest').style.display = tab==='harvest' ? '' : 'none';
+function goToday() {
+  viewDate = new Date(realToday);
+  renderAll();
 }
 
-function calcFromSow() {
-  const val = document.getElementById('sow-input').value;
-  if (!val) return;
-  const sow = parseDate(val);
-  document.getElementById('sow-result').innerHTML =
-    [chip('播種日', 0, sow)].concat(SCHEDULE.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+function renderHeader() {
+  document.getElementById('disp-date').textContent = fmt(viewDate);
+  const wrap = document.getElementById('back-today-wrap');
+  wrap.innerHTML = isSameDay(viewDate, realToday)
+    ? ''
+    : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
 }
-
-function calcFromHarvest() {
-  const val = document.getElementById('harvest-input').value;
-  if (!val) return;
-  const harvest = parseDate(val);
-  const sow = addDays(harvest, -32);
-  document.getElementById('harvest-result').innerHTML =
-    [chip('播種日', 0, sow)].concat(SCHEDULE.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
-}
-
-const today = new Date();
-document.getElementById('disp-date').textContent = fmt(today);
-document.getElementById('sow-input').value = toDateStr(today);
-document.getElementById('harvest-input').value = toDateStr(today);
 
 function renderTasks() {
+  const isToday = isSameDay(viewDate, realToday);
+  const label = isToday ? '今日の' : 'この日の';
   let html = '';
   TASKS.forEach(t => {
-    const sow = addDays(today, -t.days);
+    const sow = addDays(viewDate, -t.days);
     let histHtml = '';
     if (t.history.length > 0) {
       histHtml = '<div class="history">';
@@ -200,7 +205,7 @@ function renderTasks() {
     html += `<div class="card ${t.cls}">
       <div class="card-top">
         <div>
-          <div class="card-task">今日の${t.label}</div>
+          <div class="card-task">${label}${t.label}</div>
           <div class="card-sow">${fmtShort(sow)}播種</div>
         </div>
         <div class="card-sub">播種から${t.days}日目</div>
@@ -211,15 +216,70 @@ function renderTasks() {
   document.getElementById('tasks').innerHTML = html;
 }
 
-function renderBanner(events) {
-  const todayStr = toDateStr(today);
-  const todayEvents = events.filter(e => e.date === todayStr);
-  const el = document.getElementById('event-banner');
-  if (todayEvents.length === 0) { el.innerHTML = ''; return; }
-  const items = todayEvents.map(e => `<div class="event-banner-item">★ ${e.note}</div>`).join('');
-  el.innerHTML = `<div class="event-banner"><div class="event-banner-title">本日のイレギュラー</div>${items}</div>`;
+function renderEkihi() {
+  const ms = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate()).getTime();
+  const daysSinceBase = Math.round((ms - EKIHI_BASE.getTime()) / 86400000);
+  const cycleNum = Math.floor(daysSinceBase / 14);
+  const hit = EKIHI_EVENTS.find(e => (cycleNum * 14 + e.offset) === daysSinceBase);
+  const el = document.getElementById('ekihi-line');
+  if (hit) {
+    el.textContent = `液肥管理：${hit.label}`;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
+function renderBanner(events) {
+  const dateStr = toDateStr(viewDate);
+  const matched = events.filter(e => e.date === dateStr);
+  const el = document.getElementById('event-banner');
+  if (matched.length === 0) { el.innerHTML = ''; return; }
+  const items = matched.map(e => `<div class="event-banner-item">★ ${e.note}</div>`).join('');
+  el.innerHTML = `<div class="event-banner"><div class="event-banner-title">イレギュラー</div>${items}</div>`;
+}
+
+function renderAll() {
+  renderHeader();
+  renderEkihi();
+  renderTasks();
+  if (cachedEvents) renderBanner(cachedEvents);
+}
+
+// 計算機
+function chip(label, dayNum, date) {
+  const dayStr = dayNum === 0 ? '0日目（播種）' : `${dayNum}日目`;
+  return `<div class="calc-chip">
+    <div class="chip-label">${label} <span class="chip-day">${dayStr}</span></div>
+    <div class="chip-val">${fmtMD(date)}</div>
+  </div>`;
+}
+function switchTab(tab) {
+  document.getElementById('tab-sow').classList.toggle('active', tab==='sow');
+  document.getElementById('tab-harvest').classList.toggle('active', tab==='harvest');
+  document.getElementById('panel-sow').style.display = tab==='sow' ? '' : 'none';
+  document.getElementById('panel-harvest').style.display = tab==='harvest' ? '' : 'none';
+}
+function calcFromSow() {
+  const val = document.getElementById('sow-input').value;
+  if (!val) return;
+  const sow = parseDate(val);
+  document.getElementById('sow-result').innerHTML =
+    [chip('播種日', 0, sow)].concat(SCHEDULE.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+function calcFromHarvest() {
+  const val = document.getElementById('harvest-input').value;
+  if (!val) return;
+  const harvest = parseDate(val);
+  const sow = addDays(harvest, -32);
+  document.getElementById('harvest-result').innerHTML =
+    [chip('播種日', 0, sow)].concat(SCHEDULE.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+document.getElementById('sow-input').value = toDateStr(realToday);
+document.getElementById('harvest-input').value = toDateStr(realToday);
+
+// イベント読み込み
+let cachedEvents = null;
 function parseCSV(text) {
   const lines = text.trim().split('\n').slice(1);
   return lines.map(line => {
@@ -235,50 +295,25 @@ function parseCSV(text) {
     return { date: cols[0] || '', note: cols[1] || '' };
   }).filter(e => e.date && e.note);
 }
-
 async function loadEvents() {
   const status = document.getElementById('sync-status');
   try {
     const res = await fetch(CSV_URL);
     if (!res.ok) throw new Error('fetch failed');
     const text = await res.text();
-    const events = parseCSV(text);
-    renderBanner(events);
+    cachedEvents = parseCSV(text);
+    renderBanner(cachedEvents);
     status.textContent = `最終更新：${fmt(new Date())}`;
     status.className = 'sync-status ok';
   } catch(e) {
+    cachedEvents = [];
     renderBanner([]);
     status.textContent = 'スプレッドシートを読み込めませんでした。ネット接続を確認してください。';
     status.className = 'sync-status err';
   }
 }
 
-// 液肥管理
-const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
-const EKIHI_EVENTS = [
-  { label: '入替', offset: 0 },
-  { label: '追肥', offset: 4 },
-  { label: '追肥', offset: 9 },
-];
-
-function renderEkihi() {
-  const todayMs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const daysSinceBase = Math.round((todayMs - EKIHI_BASE.getTime()) / 86400000);
-  const cycleNum = Math.floor(daysSinceBase / 14);
-
-  const todayEvent = EKIHI_EVENTS.find(e => (cycleNum * 14 + e.offset) === daysSinceBase);
-
-  const el = document.getElementById('ekihi-line');
-  if (todayEvent) {
-    el.textContent = `液肥管理：${todayEvent.label}`;
-    el.style.display = '';
-  } else {
-    el.style.display = 'none';
-  }
-}
-
-renderTasks();
-renderEkihi();
+renderAll();
 loadEvents();
 </script>
 </body>

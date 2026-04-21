@@ -122,46 +122,9 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-// 旧スケジュール（〜2026-04-21）
-const SCHEDULE_OLD = [
-  { label: '30穴', days: 5  },
-  { label: '6穴',  days: 14 },
-  { label: '3穴',  days: 22 },
-  { label: '刈取', days: 32 },
-];
-const TASKS_OLD = [
-  { key: '刈取', days: 32, label: '刈取', cls: 'card-刈取',
-    history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }, { label: '3穴', daysFromSow: 22 }]
-  },
-  { key: '3穴',  days: 22, label: '3穴へ移植', cls: 'card-3穴',
-    history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }]
-  },
-  { key: '6穴',  days: 14, label: '6穴へ移植', cls: 'card-6穴',
-    history: [{ label: '30穴', daysFromSow: 5 }]
-  },
-  { key: '30穴', days: 5,  label: '30穴へ移植', cls: 'card-30穴', history: [] },
-];
-
-// 新スケジュール（2026-04-22〜）3穴なし・刈取33日目
-const SCHEDULE_NEW = [
-  { label: '30穴', days: 5  },
-  { label: '6穴',  days: 14 },
-  { label: '刈取', days: 33 },
-];
-const TASKS_NEW = [
-  { key: '刈取', days: 33, label: '刈取', cls: 'card-刈取',
-    history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }]
-  },
-  { key: '6穴',  days: 14, label: '6穴へ移植', cls: 'card-6穴',
-    history: [{ label: '30穴', daysFromSow: 5 }]
-  },
-  { key: '30穴', days: 5,  label: '30穴へ移植', cls: 'card-30穴', history: [] },
-];
-
-const SCHEDULE_CHANGE_DATE = new Date(2026, 3, 22); // 2026-04-22
-
-function getSchedule() { return viewDate >= SCHEDULE_CHANGE_DATE ? SCHEDULE_NEW : SCHEDULE_OLD; }
-function getTasks()    { return viewDate >= SCHEDULE_CHANGE_DATE ? TASKS_NEW    : TASKS_OLD;    }
+// 播種日が3/31以降 → 新スケジュール（3穴なし・刈取33日目）
+// 播種日が3/30以前 → 旧スケジュール（3穴あり・刈取32日目）
+const SOW_CUTOFF = new Date(2026, 2, 31); // 2026-03-31
 
 // 液肥管理
 const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
@@ -212,15 +175,45 @@ function renderHeader() {
 
 function renderTasks() {
   const isToday = isSameDay(viewDate, realToday);
-  const label = isToday ? '今日の' : 'この日の';
+  const dayLabel = isToday ? '今日の' : 'この日の';
+
+  // 表示するカードを播種日ベースで決定
+  const cards = [];
+
+  // 刈取（旧）: 32日目、播種日 < SOW_CUTOFF
+  const sowOldHarvest = addDays(viewDate, -32);
+  if (sowOldHarvest < SOW_CUTOFF) {
+    cards.push({ label: '刈取', cls: 'card-刈取', days: 32, sow: sowOldHarvest,
+      history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }, { label: '3穴', daysFromSow: 22 }] });
+  }
+
+  // 刈取（新）: 33日目、播種日 >= SOW_CUTOFF
+  const sowNewHarvest = addDays(viewDate, -33);
+  if (sowNewHarvest >= SOW_CUTOFF) {
+    cards.push({ label: '刈取', cls: 'card-刈取', days: 33, sow: sowNewHarvest,
+      history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }] });
+  }
+
+  // 3穴: 22日目、播種日 < SOW_CUTOFF のみ
+  const sow3ana = addDays(viewDate, -22);
+  if (sow3ana < SOW_CUTOFF) {
+    cards.push({ label: '3穴へ移植', cls: 'card-3穴', days: 22, sow: sow3ana,
+      history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }] });
+  }
+
+  // 6穴・30穴: 常に表示
+  cards.push({ label: '6穴へ移植', cls: 'card-6穴', days: 14, sow: addDays(viewDate, -14),
+    history: [{ label: '30穴', daysFromSow: 5 }] });
+  cards.push({ label: '30穴へ移植', cls: 'card-30穴', days: 5, sow: addDays(viewDate, -5),
+    history: [] });
+
   let html = '';
-  getTasks().forEach(t => {
-    const sow = addDays(viewDate, -t.days);
+  cards.forEach(t => {
     let histHtml = '';
     if (t.history.length > 0) {
       histHtml = '<div class="history">';
       t.history.forEach((h, i) => {
-        const hDate = addDays(sow, h.daysFromSow);
+        const hDate = addDays(t.sow, h.daysFromSow);
         histHtml += `<span class="hist-item"><span>${fmtShort(hDate)}</span> ${h.label}</span>`;
         if (i < t.history.length-1) histHtml += `<span class="hist-sep">›</span>`;
       });
@@ -229,8 +222,8 @@ function renderTasks() {
     html += `<div class="card ${t.cls}">
       <div class="card-top">
         <div>
-          <div class="card-task">${label}${t.label}</div>
-          <div class="card-sow">${fmtShort(sow)}播種</div>
+          <div class="card-task">${dayLabel}${t.label}</div>
+          <div class="card-sow">${fmtShort(t.sow)}播種</div>
         </div>
         <div class="card-sub">播種から${t.days}日目</div>
       </div>
@@ -298,7 +291,10 @@ function calcFromSow() {
   const val = document.getElementById('sow-input').value;
   if (!val) return;
   const sow = parseDate(val);
-  const sch = sow >= SCHEDULE_CHANGE_DATE ? SCHEDULE_NEW : SCHEDULE_OLD;
+  const isNew = sow >= SOW_CUTOFF;
+  const sch = isNew
+    ? [{ label: '30穴', days: 5 }, { label: '6穴', days: 14 }, { label: '刈取', days: 33 }]
+    : [{ label: '30穴', days: 5 }, { label: '6穴', days: 14 }, { label: '3穴', days: 22 }, { label: '刈取', days: 32 }];
   document.getElementById('sow-result').innerHTML =
     [chip('播種日', 0, sow)].concat(sch.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }
@@ -306,12 +302,12 @@ function calcFromHarvest() {
   const val = document.getElementById('harvest-input').value;
   if (!val) return;
   const harvest = parseDate(val);
-  // 刈取日から播種日を逆算（新旧どちらか判定するため仮計算）
-  const sowNew = addDays(harvest, -33);
-  const sowOld = addDays(harvest, -32);
-  const isNew = harvest >= SCHEDULE_CHANGE_DATE;
-  const sow = isNew ? sowNew : sowOld;
-  const sch = isNew ? SCHEDULE_NEW : SCHEDULE_OLD;
+  const sowIfNew = addDays(harvest, -33);
+  const isNew = sowIfNew >= SOW_CUTOFF;
+  const sow = isNew ? sowIfNew : addDays(harvest, -32);
+  const sch = isNew
+    ? [{ label: '30穴', days: 5 }, { label: '6穴', days: 14 }, { label: '刈取', days: 33 }]
+    : [{ label: '30穴', days: 5 }, { label: '6穴', days: 14 }, { label: '3穴', days: 22 }, { label: '刈取', days: 32 }];
   document.getElementById('harvest-result').innerHTML =
     [chip('播種日', 0, sow)].concat(sch.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }

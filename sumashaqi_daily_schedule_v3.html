@@ -101,7 +101,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div id="tasks"></div>
 
 <div class="calc-box">
-  <div class="calc-title">栽培日程を計算</div>
+  <div class="calc-title">栽培日程を計算（33日目）</div>
   <div class="calc-tabs">
     <button class="calc-tab active" id="tab-sow" onclick="switchTab('sow')">播種日 → 各日程</button>
     <button class="calc-tab" id="tab-harvest" onclick="switchTab('harvest')">刈取日 → 播種日</button>
@@ -252,8 +252,8 @@ function renderTasks() {
 
   if (isMixed) {
     html += `<div class="col-header">
-      <div class="col-label col-label-old">32日コース</div>
-      <div class="col-label col-label-new">33日コース</div>
+      <div class="col-label col-label-old">32日3穴あり</div>
+      <div class="col-label col-label-new">33日6穴栽培</div>
     </div>`;
 
     // 行1: 刈取

@@ -122,14 +122,14 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-const SCHEDULE = [
+// 旧スケジュール（〜2026-04-21）
+const SCHEDULE_OLD = [
   { label: '30穴', days: 5  },
   { label: '6穴',  days: 14 },
   { label: '3穴',  days: 22 },
   { label: '刈取', days: 32 },
 ];
-
-const TASKS = [
+const TASKS_OLD = [
   { key: '刈取', days: 32, label: '刈取', cls: 'card-刈取',
     history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }, { label: '3穴', daysFromSow: 22 }]
   },
@@ -141,6 +141,27 @@ const TASKS = [
   },
   { key: '30穴', days: 5,  label: '30穴へ移植', cls: 'card-30穴', history: [] },
 ];
+
+// 新スケジュール（2026-04-22〜）3穴なし・刈取33日目
+const SCHEDULE_NEW = [
+  { label: '30穴', days: 5  },
+  { label: '6穴',  days: 14 },
+  { label: '刈取', days: 33 },
+];
+const TASKS_NEW = [
+  { key: '刈取', days: 33, label: '刈取', cls: 'card-刈取',
+    history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }]
+  },
+  { key: '6穴',  days: 14, label: '6穴へ移植', cls: 'card-6穴',
+    history: [{ label: '30穴', daysFromSow: 5 }]
+  },
+  { key: '30穴', days: 5,  label: '30穴へ移植', cls: 'card-30穴', history: [] },
+];
+
+const SCHEDULE_CHANGE_DATE = new Date(2026, 3, 22); // 2026-04-22
+
+function getSchedule() { return viewDate >= SCHEDULE_CHANGE_DATE ? SCHEDULE_NEW : SCHEDULE_OLD; }
+function getTasks()    { return viewDate >= SCHEDULE_CHANGE_DATE ? TASKS_NEW    : TASKS_OLD;    }
 
 // 液肥管理
 const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
@@ -193,7 +214,7 @@ function renderTasks() {
   const isToday = isSameDay(viewDate, realToday);
   const label = isToday ? '今日の' : 'この日の';
   let html = '';
-  TASKS.forEach(t => {
+  getTasks().forEach(t => {
     const sow = addDays(viewDate, -t.days);
     let histHtml = '';
     if (t.history.length > 0) {
@@ -277,16 +298,22 @@ function calcFromSow() {
   const val = document.getElementById('sow-input').value;
   if (!val) return;
   const sow = parseDate(val);
+  const sch = sow >= SCHEDULE_CHANGE_DATE ? SCHEDULE_NEW : SCHEDULE_OLD;
   document.getElementById('sow-result').innerHTML =
-    [chip('播種日', 0, sow)].concat(SCHEDULE.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+    [chip('播種日', 0, sow)].concat(sch.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }
 function calcFromHarvest() {
   const val = document.getElementById('harvest-input').value;
   if (!val) return;
   const harvest = parseDate(val);
-  const sow = addDays(harvest, -32);
+  // 刈取日から播種日を逆算（新旧どちらか判定するため仮計算）
+  const sowNew = addDays(harvest, -33);
+  const sowOld = addDays(harvest, -32);
+  const isNew = harvest >= SCHEDULE_CHANGE_DATE;
+  const sow = isNew ? sowNew : sowOld;
+  const sch = isNew ? SCHEDULE_NEW : SCHEDULE_OLD;
   document.getElementById('harvest-result').innerHTML =
-    [chip('播種日', 0, sow)].concat(SCHEDULE.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+    [chip('播種日', 0, sow)].concat(sch.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }
 document.getElementById('sow-input').value = toDateStr(realToday);
 document.getElementById('harvest-input').value = toDateStr(realToday);

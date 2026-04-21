@@ -40,6 +40,9 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .card-30穴 .card-task { color: #534AB7; }
 .card-sow { font-size: 20px; font-weight: 500; color: #1a1a1a; margin-top: 4px; }
 .card-sub { font-size: 12px; color: #666; text-align: right; }
+.card-badge { display: inline-block; font-size: 11px; font-weight: 500; border-radius: 4px; padding: 1px 7px; margin-top: 5px; }
+.card-badge-old { background: #E6F1FB; color: #185FA5; }
+.card-badge-new { background: #EAF3DE; color: #3B6D11; }
 .history { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-wrap: wrap; gap: 6px; }
 .hist-item { font-size: 12px; color: #666; }
 .hist-item span { font-weight: 500; color: #1a1a1a; }
@@ -183,29 +186,34 @@ function renderTasks() {
   // 刈取（旧）: 32日目、播種日 < SOW_CUTOFF
   const sowOldHarvest = addDays(viewDate, -32);
   if (sowOldHarvest < SOW_CUTOFF) {
-    cards.push({ label: '刈取', cls: 'card-刈取', days: 32, sow: sowOldHarvest,
+    cards.push({ label: '刈取', cls: 'card-刈取', days: 32, sow: sowOldHarvest, isNew: false,
       history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }, { label: '3穴', daysFromSow: 22 }] });
   }
 
   // 刈取（新）: 33日目、播種日 >= SOW_CUTOFF
   const sowNewHarvest = addDays(viewDate, -33);
   if (sowNewHarvest >= SOW_CUTOFF) {
-    cards.push({ label: '刈取', cls: 'card-刈取', days: 33, sow: sowNewHarvest,
+    cards.push({ label: '刈取', cls: 'card-刈取', days: 33, sow: sowNewHarvest, isNew: true,
       history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }] });
   }
 
   // 3穴: 22日目、播種日 < SOW_CUTOFF のみ
   const sow3ana = addDays(viewDate, -22);
   if (sow3ana < SOW_CUTOFF) {
-    cards.push({ label: '3穴へ移植', cls: 'card-3穴', days: 22, sow: sow3ana,
+    cards.push({ label: '3穴へ移植', cls: 'card-3穴', days: 22, sow: sow3ana, isNew: false,
       history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }] });
   }
 
-  // 6穴・30穴: 常に表示
-  cards.push({ label: '6穴へ移植', cls: 'card-6穴', days: 14, sow: addDays(viewDate, -14),
+  // 6穴・30穴: 播種日で新旧判定
+  const sow6 = addDays(viewDate, -14);
+  cards.push({ label: '6穴へ移植', cls: 'card-6穴', days: 14, sow: sow6, isNew: sow6 >= SOW_CUTOFF,
     history: [{ label: '30穴', daysFromSow: 5 }] });
-  cards.push({ label: '30穴へ移植', cls: 'card-30穴', days: 5, sow: addDays(viewDate, -5),
+  const sow30 = addDays(viewDate, -5);
+  cards.push({ label: '30穴へ移植', cls: 'card-30穴', days: 5, sow: sow30, isNew: sow30 >= SOW_CUTOFF,
     history: [] });
+
+  // 混在チェック：旧新両方あるか
+  const hasMixed = cards.some(c => c.isNew) && cards.some(c => !c.isNew);
 
   let html = '';
   cards.forEach(t => {
@@ -219,6 +227,9 @@ function renderTasks() {
       });
       histHtml += '</div>';
     }
+    const badgeHtml = hasMixed
+      ? `<div><span class="card-badge ${t.isNew ? 'card-badge-new' : 'card-badge-old'}">${t.isNew ? '3穴なし・33日刈取' : '3穴あり・32日刈取'}</span></div>`
+      : '';
     html += `<div class="card ${t.cls}">
       <div class="card-top">
         <div>
@@ -227,7 +238,7 @@ function renderTasks() {
         </div>
         <div class="card-sub">播種から${t.days}日目</div>
       </div>
-      ${histHtml}
+      ${badgeHtml}${histHtml}
     </div>`;
   });
   document.getElementById('tasks').innerHTML = html;

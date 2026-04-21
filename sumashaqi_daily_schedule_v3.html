@@ -40,16 +40,19 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .card-30穴 .card-task { color: #534AB7; }
 .card-sow { font-size: 20px; font-weight: 500; color: #1a1a1a; margin-top: 4px; }
 .card-sub { font-size: 12px; color: #666; text-align: right; }
-.col-wrap { display: flex; gap: 8px; }
-.col-box { flex: 1; min-width: 0; }
-.col-title { font-size: 11px; font-weight: 600; text-align: center; padding: 4px 2px; border-radius: 6px; margin-bottom: 6px; }
-.col-title-old { background: #E6F1FB; color: #185FA5; }
-.col-title-new { background: #EAF3DE; color: #3B6D11; }
-.card.compact { padding: 0.6rem 0.7rem; margin-bottom: 6px; }
+.col-header { display: flex; gap: 8px; margin-bottom: 6px; }
+.col-label { flex: 1; font-size: 11px; font-weight: 600; text-align: center; padding: 4px 2px; border-radius: 6px; }
+.col-label-old { background: #E6F1FB; color: #185FA5; }
+.col-label-new { background: #EAF3DE; color: #3B6D11; }
+.stage-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.stage-cell { flex: 1; min-width: 0; }
+.card.compact { padding: 0.6rem 0.7rem; }
 .card.compact .card-task { font-size: 12px; }
 .card.compact .card-sow { font-size: 15px; }
 .card.compact .card-sub { font-size: 10px; }
 .card.compact .hist-item, .card.compact .hist-sep { font-size: 10px; }
+.card-switched { background: #EAF3DE; border-radius: 12px; padding: 0.6rem 0.7rem; color: #3B6D11; font-size: 11px; font-weight: 500; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 64px; }
+.card-placeholder { background: #f9f9f7; border-radius: 12px; padding: 0.6rem 0.7rem; color: #bbb; font-size: 11px; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 64px; border: 1px dashed #e0e0e0; }
 .history { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-wrap: wrap; gap: 6px; }
 .hist-item { font-size: 12px; color: #666; }
 .hist-item span { font-weight: 500; color: #1a1a1a; }
@@ -207,60 +210,84 @@ function makeCard(t, dayLabel, compact) {
   </div>`;
 }
 
+function switchedCell() {
+  return `<div class="stage-cell"><div class="card-switched">33日目栽培<br>に切替済</div></div>`;
+}
+function placeholderCell(text) {
+  return `<div class="stage-cell"><div class="card-placeholder">${text}</div></div>`;
+}
+function cardCell(t, dayLabel) {
+  return `<div class="stage-cell">${makeCard(t, dayLabel, true)}</div>`;
+}
+
 function renderTasks() {
   const isToday = isSameDay(viewDate, realToday);
   const dayLabel = isToday ? '今日の' : 'この日の';
 
-  // 旧スケジュールカード（播種日 < SOW_CUTOFF）
-  const oldCards = [];
+  const sow30 = addDays(viewDate, -5);
+  const sow6  = addDays(viewDate, -14);
+  const sow3  = addDays(viewDate, -22);
   const sowOH = addDays(viewDate, -32);
-  if (sowOH < SOW_CUTOFF)
-    oldCards.push({ label: '刈取', cls: 'card-刈取', days: 32, sow: sowOH,
-      history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }, { label: '3穴', daysFromSow: 22 }] });
-  const sow3 = addDays(viewDate, -22);
-  if (sow3 < SOW_CUTOFF)
-    oldCards.push({ label: '3穴へ移植', cls: 'card-3穴', days: 22, sow: sow3,
-      history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }] });
-  const sow6o = addDays(viewDate, -14);
-  if (sow6o < SOW_CUTOFF)
-    oldCards.push({ label: '6穴へ移植', cls: 'card-6穴', days: 14, sow: sow6o,
-      history: [{ label: '30穴', daysFromSow: 5 }] });
-  const sow30o = addDays(viewDate, -5);
-  if (sow30o < SOW_CUTOFF)
-    oldCards.push({ label: '30穴へ移植', cls: 'card-30穴', days: 5, sow: sow30o, history: [] });
-
-  // 新スケジュールカード（播種日 >= SOW_CUTOFF）
-  const newCards = [];
   const sowNH = addDays(viewDate, -33);
-  if (sowNH >= SOW_CUTOFF)
-    newCards.push({ label: '刈取', cls: 'card-刈取', days: 33, sow: sowNH,
-      history: [{ label: '30穴', daysFromSow: 5 }, { label: '6穴', daysFromSow: 14 }] });
-  const sow6n = addDays(viewDate, -14);
-  if (sow6n >= SOW_CUTOFF)
-    newCards.push({ label: '6穴へ移植', cls: 'card-6穴', days: 14, sow: sow6n,
-      history: [{ label: '30穴', daysFromSow: 5 }] });
-  const sow30n = addDays(viewDate, -5);
-  if (sow30n >= SOW_CUTOFF)
-    newCards.push({ label: '30穴へ移植', cls: 'card-30穴', days: 5, sow: sow30n, history: [] });
 
-  const isMixed = oldCards.length > 0 && newCards.length > 0;
+  // 混在期間かどうか判定
+  const anyOld = sowOH < SOW_CUTOFF || sow3 < SOW_CUTOFF || sow6 < SOW_CUTOFF || sow30 < SOW_CUTOFF;
+  const anyNew = sowNH >= SOW_CUTOFF || sow6 >= SOW_CUTOFF || sow30 >= SOW_CUTOFF;
+  const isMixed = anyOld && anyNew;
+
   let html = '';
 
   if (isMixed) {
-    const oldHtml = oldCards.map(t => makeCard(t, dayLabel, true)).join('');
-    const newHtml = newCards.map(t => makeCard(t, dayLabel, true)).join('');
-    html = `<div class="col-wrap">
-      <div class="col-box">
-        <div class="col-title col-title-old">3穴あり・32日刈取</div>
-        ${oldHtml}
-      </div>
-      <div class="col-box">
-        <div class="col-title col-title-new">3穴なし・33日刈取</div>
-        ${newHtml}
-      </div>
+    // ヘッダー
+    html += `<div class="col-header">
+      <div class="col-label col-label-old">3穴あり・32日刈取</div>
+      <div class="col-label col-label-new">3穴なし・33日刈取</div>
     </div>`;
+
+    // 行1: 刈取
+    const leftHarvest = sowOH < SOW_CUTOFF
+      ? cardCell({ label:'刈取', cls:'card-刈取', days:32, sow:sowOH, history:[{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:14},{label:'3穴',daysFromSow:22}] }, dayLabel)
+      : switchedCell();
+    const rightHarvest = sowNH >= SOW_CUTOFF
+      ? cardCell({ label:'刈取', cls:'card-刈取', days:33, sow:sowNH, history:[{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:14}] }, dayLabel)
+      : placeholderCell('まだなし');
+    html += `<div class="stage-row">${leftHarvest}${rightHarvest}</div>`;
+
+    // 行2: 3穴（左のみ）
+    const left3 = sow3 < SOW_CUTOFF
+      ? cardCell({ label:'3穴へ移植', cls:'card-3穴', days:22, sow:sow3, history:[{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:14}] }, dayLabel)
+      : switchedCell();
+    html += `<div class="stage-row">${left3}${placeholderCell('3穴なし')}</div>`;
+
+    // 行3: 6穴
+    const left6 = sow6 < SOW_CUTOFF
+      ? cardCell({ label:'6穴へ移植', cls:'card-6穴', days:14, sow:sow6, history:[{label:'30穴',daysFromSow:5}] }, dayLabel)
+      : switchedCell();
+    const right6 = sow6 >= SOW_CUTOFF
+      ? cardCell({ label:'6穴へ移植', cls:'card-6穴', days:14, sow:sow6, history:[{label:'30穴',daysFromSow:5}] }, dayLabel)
+      : placeholderCell('まだなし');
+    html += `<div class="stage-row">${left6}${right6}</div>`;
+
+    // 行4: 30穴
+    const left30 = sow30 < SOW_CUTOFF
+      ? cardCell({ label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30, history:[] }, dayLabel)
+      : switchedCell();
+    const right30 = sow30 >= SOW_CUTOFF
+      ? cardCell({ label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30, history:[] }, dayLabel)
+      : placeholderCell('まだなし');
+    html += `<div class="stage-row">${left30}${right30}</div>`;
+
   } else {
-    const cards = oldCards.concat(newCards);
+    // 単列表示
+    const cards = [];
+    if (sowOH < SOW_CUTOFF)
+      cards.push({ label:'刈取', cls:'card-刈取', days:32, sow:sowOH, history:[{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:14},{label:'3穴',daysFromSow:22}] });
+    if (sowNH >= SOW_CUTOFF)
+      cards.push({ label:'刈取', cls:'card-刈取', days:33, sow:sowNH, history:[{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:14}] });
+    if (sow3 < SOW_CUTOFF)
+      cards.push({ label:'3穴へ移植', cls:'card-3穴', days:22, sow:sow3, history:[{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:14}] });
+    cards.push({ label:'6穴へ移植', cls:'card-6穴', days:14, sow:sow6, history:[{label:'30穴',daysFromSow:5}] });
+    cards.push({ label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30, history:[] });
     html = cards.map(t => makeCard(t, dayLabel, false)).join('');
   }
 

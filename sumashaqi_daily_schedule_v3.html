@@ -122,9 +122,9 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-// 播種日が3/31以降 → 新スケジュール（3穴なし・刈取33日目）
-// 播種日が3/30以前 → 旧スケジュール（3穴あり・刈取32日目）
-const SOW_CUTOFF = new Date(2026, 2, 31); // 2026-03-31
+// 播種日が4/9以降 → 新スケジュール（3穴なし・刈取33日目）
+// 播種日が4/8以前 → 旧スケジュール（3穴あり・刈取32日目）
+const SOW_CUTOFF = new Date(2026, 3, 9); // 2026-04-09
 
 // 液肥管理
 const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）

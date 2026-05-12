@@ -136,13 +136,16 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-// 33日コース: 播種(0日)→30穴(5日)→6穴(15日)→刈取(33日)
-// 34日コース: 播種(0日)→30穴(5日)→6穴(15日)→刈取(34日)
-const SCH = [
-  { label: '30穴', days: 5  },
-  { label: '6穴',  days: 15 },
-  { label: '刈取', days: 33 },
-];
+// 33日コース: 播種(0日)→30穴(5日)→6穴→刈取(33日)
+// 34日コース: 播種(0日)→30穴(5日)→6穴→刈取(34日)
+// 6穴: 2026-05-13以降に30穴移植したものは10日後（播種15日目）
+//       それ以前は9日後（播種14日目）
+const RULE_CHANGE_30_STR = '2026-05-13'; // この日以降の30穴移植から+10日ルール
+
+function days6(sow) {
+  // 播種日に対して6穴は何日目か（旧:14日 / 新:15日）
+  return toDateStr(addDays(sow, 5)) < RULE_CHANGE_30_STR ? 14 : 15;
+}
 
 // 液肥管理
 const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
@@ -232,10 +235,25 @@ function renderTasks() {
   const dayLabel = isToday ? '今日の' : 'この日の';
 
   const sow30  = addDays(viewDate, -5);
-  const sow6   = addDays(viewDate, -15);
   const sowH33 = addDays(viewDate, -33);
   const sowH34 = addDays(viewDate, -34);
-  const hist33 = [{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:15}];
+
+  // 6穴カードの播種日をルール変更を考慮して求める
+  // 旧ルール候補: sow = viewDate-14、30穴 = viewDate-9 が5/13より前なら適用
+  // 新ルール候補: sow = viewDate-15、30穴 = viewDate-10 が5/13以降なら適用
+  // 5/22のみどちらも該当せず → 6穴なし
+  const sow6old = addDays(viewDate, -14);
+  const sow6new = addDays(viewDate, -15);
+  const use6old = toDateStr(addDays(sow6old, 5)) < RULE_CHANGE_30_STR;
+  const use6new = toDateStr(addDays(sow6new, 5)) >= RULE_CHANGE_30_STR;
+  const sow6     = use6old ? sow6old : (use6new ? sow6new : null);
+  const days6val = use6old ? 14 : 15;
+
+  // 刈取カードの履歴：各播種日のルールに合わせた6穴日数
+  const d6H33 = days6(sowH33);
+  const d6H34 = days6(sowH34);
+  const hist33 = [{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:d6H33}];
+  const hist34 = [{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:d6H34}];
   const hist6  = [{label:'30穴',daysFromSow:5}];
 
   let html = `<div class="col-header">
@@ -246,14 +264,16 @@ function renderTasks() {
   // 刈取（コースごとに異なる播種日）
   html += `<div class="stage-row">
     ${cardCell({label:'刈取', cls:'card-刈取', days:33, sow:sowH33, history:hist33}, dayLabel)}
-    ${cardCell({label:'刈取', cls:'card-刈取', days:34, sow:sowH34, history:hist33}, dayLabel)}
+    ${cardCell({label:'刈取', cls:'card-刈取', days:34, sow:sowH34, history:hist34}, dayLabel)}
   </div>`;
 
-  // 6穴（両コース同じ播種日）
-  html += `<div class="stage-row">
-    ${cardCell({label:'6穴へ移植', cls:'card-6穴', days:15, sow:sow6, history:hist6}, dayLabel)}
-    ${cardCell({label:'6穴へ移植', cls:'card-6穴', days:15, sow:sow6, history:hist6}, dayLabel)}
-  </div>`;
+  // 6穴（5/22は移行ギャップのためなし）
+  if (sow6) {
+    html += `<div class="stage-row">
+      ${cardCell({label:'6穴へ移植', cls:'card-6穴', days:days6val, sow:sow6, history:hist6}, dayLabel)}
+      ${cardCell({label:'6穴へ移植', cls:'card-6穴', days:days6val, sow:sow6, history:hist6}, dayLabel)}
+    </div>`;
+  }
 
   // 30穴（両コース同じ播種日）
   html += `<div class="stage-row">
@@ -318,19 +338,27 @@ function switchTab(tab) {
   document.getElementById('panel-sow').style.display = tab==='sow' ? '' : 'none';
   document.getElementById('panel-harvest').style.display = tab==='harvest' ? '' : 'none';
 }
+function schForSow(sow) {
+  const d6 = days6(sow);
+  return [
+    { label: '30穴', days: 5  },
+    { label: '6穴',  days: d6 },
+    { label: '刈取', days: 33 },
+  ];
+}
 function calcFromSow() {
   const val = document.getElementById('sow-input').value;
   if (!val) return;
   const sow = parseDate(val);
   document.getElementById('sow-result').innerHTML =
-    [chip('播種日', 0, sow)].concat(SCH.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+    [chip('播種日', 0, sow)].concat(schForSow(sow).map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }
 function calcFromHarvest() {
   const val = document.getElementById('harvest-input').value;
   if (!val) return;
   const sow = addDays(parseDate(val), -33);
   document.getElementById('harvest-result').innerHTML =
-    [chip('播種日', 0, sow)].concat(SCH.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+    [chip('播種日', 0, sow)].concat(schForSow(sow).map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }
 document.getElementById('sow-input').value = toDateStr(realToday);
 document.getElementById('harvest-input').value = toDateStr(realToday);

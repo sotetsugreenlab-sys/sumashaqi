@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGL スタッフアプリ</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; }
+
+.logo { font-size: 13px; color: #aaa; margin-bottom: 6px; letter-spacing: 0.05em; }
+.title { font-size: 24px; font-weight: 600; color: #1a1a1a; margin-bottom: 2rem; }
+
+.menu { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px; }
+
+.menu-card {
+  display: block;
+  text-decoration: none;
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.4rem 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  transition: box-shadow 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.menu-card:active { transform: scale(0.98); box-shadow: 0 0px 2px rgba(0,0,0,0.07); }
+
+.menu-icon { font-size: 32px; flex-shrink: 0; }
+.menu-text {}
+.menu-name { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+.menu-desc { font-size: 12px; color: #999; margin-top: 3px; }
+
+.card-sumashaqi { border-left: 4px solid #534AB7; }
+.card-herb       { border-left: 4px solid #3B6D11; }
+</style>
+</head>
+<body>
+
+<div class="logo">SGL スタッフ</div>
+<div class="title">何を確認する？</div>
+
+<div class="menu">
+  <a class="menu-card card-sumashaqi" href="sumashaqi_daily_schedule_v3.html">
+    <div class="menu-icon">🌱</div>
+    <div class="menu-text">
+      <div class="menu-name">スマシャキ</div>
+      <div class="menu-desc">当日の栽培作業・液肥管理</div>
+    </div>
+  </a>
+
+  <a class="menu-card card-herb" href="herb.html">
+    <div class="menu-icon">🌿</div>
+    <div class="menu-text">
+      <div class="menu-name">ハーブ</div>
+      <div class="menu-desc">準備中</div>
+    </div>
+  </a>
+</div>
+
+</body>
+</html>

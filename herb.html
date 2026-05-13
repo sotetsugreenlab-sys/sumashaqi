@@ -28,6 +28,7 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .herb-arrow { font-size: 16px; color: #ccc; }
 .herb-seeds { font-size: 12px; font-weight: 400; color: #999; margin-left: 6px; }
 .no-task-inline { font-size: 13px; color: #bbb; padding: 10px 4px; }
+.sow-today { font-size: 13px; font-weight: 500; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; display: inline-block; }
 
 .card { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 8px; }
 .card-harvest { background: #FAECE7; }
@@ -174,11 +175,13 @@ function renderTasks() {
       const sow = addDays(viewDate, -stage.days);
       if (isValidSow(herb, sow)) herbHtml += makeCard(herb.stages, stage, i, sow, dayLabel);
     });
+    const sowToday = isValidSow(herb, viewDate) ? '<div class="sow-today">🌱 今日播種</div>' : '';
     html += `<div class="herb-section">
       <a class="herb-header" href="${herb.href}" style="color:${herb.color}">
         <span>${herb.name}${herb.seeds != null ? `<span class="herb-seeds">${herb.seeds}粒</span>` : ''}</span><span class="herb-arrow">›</span>
       </a>
-      ${herbHtml || '<div class="no-task-inline">本日の作業なし</div>'}
+      ${sowToday}
+      ${herbHtml || (sowToday ? '' : '<div class="no-task-inline">本日の作業なし</div>')}
     </div>`;
   });
   document.getElementById('tasks').innerHTML = html;

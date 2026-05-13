@@ -173,7 +173,8 @@ function renderTasks() {
 }
 
 function renderSowBanner() {
-  document.getElementById('sow-banner').innerHTML = isSowDay(viewDate)
+  const isSow = SOW_DATES.includes(toDateStr(viewDate)) || isSowDay(viewDate);
+  document.getElementById('sow-banner').innerHTML = isSow
     ? '<div class="sow-banner">🌱 今日は播種日</div>' : '';
 }
 

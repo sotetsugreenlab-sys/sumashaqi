@@ -10,69 +10,168 @@
 <meta name="apple-mobile-web-app-title" content="ハーブ">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; }
+body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 
-.back { align-self: flex-start; font-size: 13px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 20px; padding: 5px 14px; cursor: pointer; text-decoration: none; margin-bottom: 2rem; }
+.header { text-align: center; margin-bottom: 1rem; }
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 10px; }
+.nav-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.nav-btn { font-size: 20px; color: #aaa; background: none; border: none; cursor: pointer; padding: 0 4px; line-height: 1; }
+.nav-btn:active { color: #1a1a1a; }
+.date-big { font-size: 22px; font-weight: 500; color: #1a1a1a; }
+.date-sub { font-size: 13px; color: #666; margin-top: 2px; }
+.back-today { display: inline-block; margin-top: 6px; font-size: 12px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 20px; padding: 3px 12px; cursor: pointer; }
 
-.logo { font-size: 13px; color: #aaa; margin-bottom: 6px; letter-spacing: 0.05em; }
-.title { font-size: 24px; font-weight: 600; color: #1a1a1a; margin-bottom: 2rem; }
+.sow-banner { background: #EAF3DE; border-radius: 12px; padding: 0.75rem 1.25rem; margin-bottom: 10px; font-size: 15px; font-weight: 500; color: #3B6D11; }
 
-.menu { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px; }
+.herb-section { margin-bottom: 20px; }
+.herb-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; padding: 6px 2px 8px; text-decoration: none; border-bottom: 1.5px solid #f0f0ed; margin-bottom: 8px; }
+.herb-arrow { font-size: 16px; color: #ccc; }
+.no-task-inline { font-size: 13px; color: #bbb; padding: 10px 4px; }
 
-.menu-card {
-  display: flex;
-  text-decoration: none;
-  background: #fff;
-  border-radius: 16px;
-  padding: 1.4rem 1.5rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  transition: box-shadow 0.15s, transform 0.1s;
-  align-items: center;
-  gap: 1rem;
-}
-.menu-card:active { transform: scale(0.98); box-shadow: 0 0px 2px rgba(0,0,0,0.07); }
-
-.menu-icon { font-size: 32px; flex-shrink: 0; }
-.menu-name { font-size: 18px; font-weight: 600; color: #1a1a1a; }
-.menu-desc { font-size: 12px; color: #999; margin-top: 3px; }
-
-.card-basil   { border-left: 4px solid #3B6D11; }
-.card-rucola  { border-left: 4px solid #6D8B11; }
-.card-pakuchi { border-left: 4px solid #11836D; }
+.card { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 8px; }
+.card-harvest { background: #FAECE7; }
+.card-green   { background: #EAF3DE; }
+.card-yellow  { background: #F3F5DE; }
+.card-led     { background: #E6F1FB; }
+.card-30      { background: #EEEDFE; }
+.card-top { display: flex; align-items: center; justify-content: space-between; }
+.card-task { font-size: 15px; font-weight: 500; }
+.card-harvest .card-task { color: #993C1D; }
+.card-green   .card-task { color: #3B6D11; }
+.card-yellow  .card-task { color: #6D8B11; }
+.card-led     .card-task { color: #185FA5; }
+.card-30      .card-task { color: #534AB7; }
+.card-sow { font-size: 20px; font-weight: 500; color: #1a1a1a; margin-top: 4px; }
+.card-sub { font-size: 12px; color: #666; text-align: right; }
+.history { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-wrap: wrap; gap: 6px; }
+.hist-item { font-size: 12px; color: #666; }
+.hist-item span { font-weight: 500; color: #1a1a1a; }
+.hist-sep { font-size: 12px; color: #aaa; }
 </style>
 </head>
 <body>
 
-<a class="back" href="index.html">← トップ</a>
-
-<div class="logo">ハーブ</div>
-<div class="title">どれを確認する？</div>
-
-<div class="menu">
-  <a class="menu-card card-basil" href="basil.html">
-    <div class="menu-icon">🌿</div>
-    <div class="menu-text">
-      <div class="menu-name">バジル</div>
-      <div class="menu-desc">準備中</div>
-    </div>
-  </a>
-
-  <a class="menu-card card-rucola" href="rucola.html">
-    <div class="menu-icon">🥬</div>
-    <div class="menu-text">
-      <div class="menu-name">ルッコラ</div>
-      <div class="menu-desc">準備中</div>
-    </div>
-  </a>
-
-  <a class="menu-card card-pakuchi" href="pakuchi.html">
-    <div class="menu-icon">🌱</div>
-    <div class="menu-text">
-      <div class="menu-name">パクチー</div>
-      <div class="menu-desc">準備中</div>
-    </div>
-  </a>
+<div class="header">
+  <a class="back-link" href="index.html">← トップ</a>
+  <div class="nav-row">
+    <button class="nav-btn" onclick="navigate(-1)">＜</button>
+    <div class="date-big" id="disp-date"></div>
+    <button class="nav-btn" onclick="navigate(1)">＞</button>
+  </div>
+  <div class="date-sub">の作業内容</div>
+  <div id="back-today-wrap"></div>
 </div>
 
+<div id="sow-banner"></div>
+<div id="tasks"></div>
+
+<script>
+const HERBS = [
+  {
+    name: 'バジル', href: 'basil.html', color: '#3B6D11',
+    sowDates: ['2026-04-08','2026-04-14','2026-04-23','2026-05-02'],
+    stages: [
+      { label: '収穫',       days: 35, cls: 'card-harvest' },
+      { label: '6穴へ移植',  days: 20, cls: 'card-green'   },
+      { label: '30穴へ移植', days: 10, cls: 'card-30'      },
+    ]
+  },
+  {
+    name: 'ルッコラ', href: 'rucola.html', color: '#6D8B11',
+    sowDates: ['2026-04-14','2026-04-23','2026-05-02'],
+    stages: [
+      { label: '収穫',       days: 30, cls: 'card-harvest' },
+      { label: '8穴へ移植',  days: 20, cls: 'card-yellow'  },
+      { label: '30穴へ移植', days: 10, cls: 'card-30'      },
+    ]
+  },
+  {
+    name: 'パクチー', href: 'pakuchi.html', color: '#11836D',
+    sowDates: ['2026-04-23','2026-05-02'],
+    stages: [
+      { label: '収穫',             days: 32, cls: 'card-harvest' },
+      { label: 'LED高い場所へ移動', days: 20, cls: 'card-led'    },
+      { label: '30穴へ移植',       days: 10, cls: 'card-30'      },
+    ]
+  },
+];
+
+function fmt(d) {
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+}
+function fmtShort(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
+function isSowDay(d) { return d.getDay() === 1 || d.getDay() === 5; }
+function isValidSow(herb, date) {
+  const ds = toDateStr(date);
+  const cutoff = herb.sowDates[herb.sowDates.length - 1];
+  return herb.sowDates.includes(ds) || (ds > cutoff && isSowDay(date));
+}
+
+const realToday = new Date();
+let viewDate = new Date(realToday);
+
+function navigate(delta) { viewDate = addDays(viewDate, delta); renderAll(); }
+function goToday() { viewDate = new Date(realToday); renderAll(); }
+
+function renderHeader() {
+  document.getElementById('disp-date').textContent = fmt(viewDate);
+  document.getElementById('back-today-wrap').innerHTML = isSameDay(viewDate, realToday)
+    ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
+}
+
+function makeCard(stages, stage, stageIdx, sow, dayLabel) {
+  const histStages = stages.slice(stageIdx + 1).reverse();
+  let histHtml = '';
+  if (histStages.length > 0) {
+    histHtml = '<div class="history">' +
+      histStages.map((h, i) =>
+        `<span class="hist-item"><span>${fmtShort(addDays(sow, h.days))}</span> ${h.label}</span>` +
+        (i < histStages.length - 1 ? '<span class="hist-sep">›</span>' : '')
+      ).join('') + '</div>';
+  }
+  return `<div class="card ${stage.cls}">
+    <div class="card-top">
+      <div>
+        <div class="card-task">${dayLabel}${stage.label}</div>
+        <div class="card-sow">${fmtShort(sow)}播種</div>
+      </div>
+      <div class="card-sub">播種から${stage.days}日目</div>
+    </div>
+    ${histHtml}
+  </div>`;
+}
+
+function renderTasks() {
+  const isToday = isSameDay(viewDate, realToday);
+  const dayLabel = isToday ? '今日の' : 'この日の';
+  let html = '';
+  HERBS.forEach(herb => {
+    let herbHtml = '';
+    herb.stages.forEach((stage, i) => {
+      const sow = addDays(viewDate, -stage.days);
+      if (isValidSow(herb, sow)) herbHtml += makeCard(herb.stages, stage, i, sow, dayLabel);
+    });
+    html += `<div class="herb-section">
+      <a class="herb-header" href="${herb.href}" style="color:${herb.color}">
+        ${herb.name}<span class="herb-arrow">›</span>
+      </a>
+      ${herbHtml || '<div class="no-task-inline">本日の作業なし</div>'}
+    </div>`;
+  });
+  document.getElementById('tasks').innerHTML = html;
+}
+
+function renderSowBanner() {
+  document.getElementById('sow-banner').innerHTML = isSowDay(viewDate)
+    ? '<div class="sow-banner">🌱 今日は播種日（月・金）</div>' : '';
+}
+
+function renderAll() { renderHeader(); renderSowBanner(); renderTasks(); }
+renderAll();
+</script>
 </body>
 </html>

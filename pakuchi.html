@@ -40,6 +40,21 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .hist-item span { font-weight: 500; color: #1a1a1a; }
 .hist-sep { font-size: 12px; color: #aaa; }
 .no-task { text-align: center; color: #aaa; font-size: 14px; padding: 3rem 0; }
+
+.calc-box { background: #f5f5f2; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+.calc-title { font-size: 13px; font-weight: 500; color: #666; margin-bottom: 10px; }
+.calc-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.calc-tab { font-size: 13px; padding: 4px 14px; border: 0.5px solid #ccc; border-radius: 20px; background: #fff; color: #666; cursor: pointer; }
+.calc-tab.active { background: #EEEDFE; border-color: #AFA9EC; color: #534AB7; font-weight: 500; }
+.calc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.calc-row label { font-size: 12px; color: #666; min-width: 48px; }
+input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; border-radius: 8px; background: #fff; color: #1a1a1a; }
+.btn-calc { font-size: 13px; padding: 5px 16px; border: 0.5px solid #AFA9EC; border-radius: 8px; background: #EEEDFE; color: #534AB7; cursor: pointer; font-weight: 500; }
+.calc-result { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.calc-chip { background: #fff; border: 0.5px solid #ccc; border-radius: 8px; padding: 6px 12px; }
+.chip-label { font-size: 11px; color: #666; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+.chip-day { font-size: 11px; color: #aaa; }
+.chip-val { font-weight: 500; font-size: 14px; color: #1a1a1a; }
 </style>
 </head>
 <body>
@@ -59,23 +74,58 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 <div id="sow-banner"></div>
 <div id="tasks"></div>
 
+<div class="calc-box">
+  <div class="calc-title">栽培日程を計算（パクチー）</div>
+  <div class="calc-tabs">
+    <button class="calc-tab active" id="tab-sow" onclick="switchTab('sow')">播種日 → 各日程</button>
+    <button class="calc-tab" id="tab-harvest" onclick="switchTab('harvest')">収穫日 → 播種日</button>
+  </div>
+  <div id="panel-sow">
+    <div class="calc-row">
+      <label>播種日</label>
+      <input type="date" id="sow-input" />
+      <button class="btn-calc" onclick="calcFromSow()">計算</button>
+    </div>
+    <div class="calc-result" id="sow-result"></div>
+  </div>
+  <div id="panel-harvest" style="display:none;">
+    <div class="calc-row">
+      <label>収穫日</label>
+      <input type="date" id="harvest-input" />
+      <button class="btn-calc" onclick="calcFromHarvest()">計算</button>
+    </div>
+    <div class="calc-result" id="harvest-result"></div>
+  </div>
+</div>
+
 <script>
-// パクチー: 播種(0日)→30穴(10日)→LED高い場所へ移動・30穴のまま(20日)→収穫(32日)　播種は毎週月・金
+// パクチー: 播種(0日)→30穴(10日)→LED高い場所へ移動・30穴のまま(20日)→収穫(32日)　播種は毎週月・金（実験バッチは固定日）
 const STAGES = [
   { label: '収穫',             days: 32, cls: 'card-harvest' },
   { label: 'LED高い場所へ移動', days: 20, cls: 'card-led'    },
-  { label: '30穴へ移植',       days: 10, cls: 'card-30'     },
+  { label: '30穴へ移植',       days: 10, cls: 'card-30'      },
 ];
+const SOW_DATES = ['2026-04-23','2026-05-02'];
+const SOW_CUTOFF = SOW_DATES[SOW_DATES.length - 1];
 
 function fmt(d) {
   const w = ['日','月','火','水','木','金','土'][d.getDay()];
   return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`;
 }
 function fmtShort(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function fmtMD(d) {
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+}
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
 function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function parseDate(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
 function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
 function isSowDay(d) { return d.getDay() === 1 || d.getDay() === 5; }
+function isValidSow(d) {
+  const ds = toDateStr(d);
+  return SOW_DATES.includes(ds) || (ds > SOW_CUTOFF && isSowDay(d));
+}
 
 const realToday = new Date();
 let viewDate = new Date(realToday);
@@ -117,7 +167,7 @@ function renderTasks() {
   let html = '';
   STAGES.forEach((stage, i) => {
     const sow = addDays(viewDate, -stage.days);
-    if (isSowDay(sow)) html += makeCard(stage, i, sow, dayLabel);
+    if (isValidSow(sow)) html += makeCard(stage, i, sow, dayLabel);
   });
   document.getElementById('tasks').innerHTML = html || '<div class="no-task">本日の作業はありません</div>';
 }
@@ -128,6 +178,36 @@ function renderSowBanner() {
 }
 
 function renderAll() { renderHeader(); renderSowBanner(); renderTasks(); }
+
+// 計算機
+function chip(label, days, date) {
+  const dayStr = days === 0 ? '播種日' : `播種から${days}日目`;
+  return `<div class="calc-chip"><div class="chip-label">${label} <span class="chip-day">${dayStr}</span></div><div class="chip-val">${fmtMD(date)}</div></div>`;
+}
+function switchTab(tab) {
+  document.getElementById('tab-sow').classList.toggle('active', tab==='sow');
+  document.getElementById('tab-harvest').classList.toggle('active', tab==='harvest');
+  document.getElementById('panel-sow').style.display = tab==='sow' ? '' : 'none';
+  document.getElementById('panel-harvest').style.display = tab==='harvest' ? '' : 'none';
+}
+const CALC_STAGES = [...STAGES].reverse();
+function calcFromSow() {
+  const val = document.getElementById('sow-input').value;
+  if (!val) return;
+  const sow = parseDate(val);
+  document.getElementById('sow-result').innerHTML =
+    [chip('播種', 0, sow)].concat(CALC_STAGES.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+function calcFromHarvest() {
+  const val = document.getElementById('harvest-input').value;
+  if (!val) return;
+  const sow = addDays(parseDate(val), -32);
+  document.getElementById('harvest-result').innerHTML =
+    [chip('播種', 0, sow)].concat(CALC_STAGES.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+document.getElementById('sow-input').value = toDateStr(realToday);
+document.getElementById('harvest-input').value = toDateStr(realToday);
+
 renderAll();
 </script>
 </body>

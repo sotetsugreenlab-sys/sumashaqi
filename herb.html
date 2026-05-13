@@ -94,6 +94,24 @@ const HERBS = [
       { label: '30穴へ移植',       days: 10, cls: 'card-30'      },
     ]
   },
+  {
+    name: 'イタリアンパセリ', href: 'parsley.html', color: '#7B4FA8',
+    sowDates: [], sowCutoff: '2026-05-12',
+    stages: [
+      { label: '収穫',          days: 40, cls: 'card-harvest' },
+      { label: 'LED高い段へ移動', days: 31, cls: 'card-led'    },
+      { label: '30穴へ移植',    days: 17, cls: 'card-30'      },
+    ]
+  },
+  {
+    name: 'ディル', href: 'dill.html', color: '#B5860D',
+    sowDates: [], sowCutoff: '2026-05-12',
+    stages: [
+      { label: '収穫',          days: 39, cls: 'card-harvest' },
+      { label: 'LED高い段へ移動', days: 25, cls: 'card-led'    },
+      { label: '30穴へ移植',    days: 15, cls: 'card-30'      },
+    ]
+  },
 ];
 
 function fmt(d) {
@@ -107,8 +125,8 @@ function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
 function isSowDay(d) { return d.getDay() === 1 || d.getDay() === 5; }
 function isValidSow(herb, date) {
   const ds = toDateStr(date);
-  const cutoff = herb.sowDates[herb.sowDates.length - 1];
-  return herb.sowDates.includes(ds) || (ds > cutoff && isSowDay(date));
+  const cutoff = herb.sowCutoff ?? herb.sowDates[herb.sowDates.length - 1];
+  return herb.sowDates.includes(ds) || (cutoff !== undefined && ds > cutoff && isSowDay(date));
 }
 
 const realToday = new Date();

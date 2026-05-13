@@ -13,6 +13,7 @@
 body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 
 .today-bar { text-align: center; margin-bottom: 1rem; }
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 10px; }
 .nav-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .nav-btn { font-size: 20px; color: #aaa; background: none; border: none; cursor: pointer; padding: 0 4px; line-height: 1; }
 .nav-btn:active { color: #1a1a1a; }
@@ -86,6 +87,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <body>
 
 <div class="today-bar">
+  <a class="back-link" href="index.html">← トップ</a>
   <div class="nav-row">
     <button class="nav-btn" onclick="navigate(-1)">＜</button>
     <div class="date-big" id="disp-date"></div>

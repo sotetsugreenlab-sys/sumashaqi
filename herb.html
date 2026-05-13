@@ -26,6 +26,7 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .herb-section { margin-bottom: 20px; }
 .herb-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; padding: 6px 2px 8px; text-decoration: none; border-bottom: 1.5px solid #f0f0ed; margin-bottom: 8px; }
 .herb-arrow { font-size: 16px; color: #ccc; }
+.herb-seeds { font-size: 12px; font-weight: 400; color: #999; margin-left: 6px; }
 .no-task-inline { font-size: 13px; color: #bbb; padding: 10px 4px; }
 
 .card { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 8px; }
@@ -68,7 +69,7 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 <script>
 const HERBS = [
   {
-    name: 'バジル', href: 'basil.html', color: '#3B6D11',
+    name: 'バジル', href: 'basil.html', color: '#3B6D11', seeds: 10,
     sowDates: ['2026-04-08','2026-04-14','2026-04-23','2026-05-02'],
     stages: [
       { label: '収穫',       days: 35, cls: 'card-harvest' },
@@ -77,7 +78,7 @@ const HERBS = [
     ]
   },
   {
-    name: 'ルッコラ', href: 'rucola.html', color: '#6D8B11',
+    name: 'ルッコラ', href: 'rucola.html', color: '#6D8B11', seeds: 8,
     sowDates: ['2026-04-14','2026-04-23','2026-05-02'],
     stages: [
       { label: '収穫',       days: 30, cls: 'card-harvest' },
@@ -86,7 +87,7 @@ const HERBS = [
     ]
   },
   {
-    name: 'パクチー', href: 'pakuchi.html', color: '#11836D',
+    name: 'パクチー', href: 'pakuchi.html', color: '#11836D', seeds: 5,
     sowDates: ['2026-04-23','2026-05-02'],
     stages: [
       { label: '収穫',             days: 32, cls: 'card-harvest' },
@@ -95,7 +96,7 @@ const HERBS = [
     ]
   },
   {
-    name: 'イタリアンパセリ', href: 'parsley.html', color: '#7B4FA8',
+    name: 'イタリアンパセリ', href: 'parsley.html', color: '#7B4FA8', seeds: 5,
     sowDates: ['2026-05-13'], sowCutoff: '2026-05-12',
     stages: [
       { label: '収穫',          days: 40, cls: 'card-harvest' },
@@ -104,7 +105,7 @@ const HERBS = [
     ]
   },
   {
-    name: 'ディル', href: 'dill.html', color: '#B5860D',
+    name: 'ディル', href: 'dill.html', color: '#B5860D', seeds: 3,
     sowDates: ['2026-05-13'], sowCutoff: '2026-05-12',
     stages: [
       { label: '収穫',          days: 39, cls: 'card-harvest' },
@@ -175,7 +176,7 @@ function renderTasks() {
     });
     html += `<div class="herb-section">
       <a class="herb-header" href="${herb.href}" style="color:${herb.color}">
-        ${herb.name}<span class="herb-arrow">›</span>
+        <span>${herb.name}${herb.seeds != null ? `<span class="herb-seeds">${herb.seeds}粒</span>` : ''}</span><span class="herb-arrow">›</span>
       </a>
       ${herbHtml || '<div class="no-task-inline">本日の作業なし</div>'}
     </div>`;

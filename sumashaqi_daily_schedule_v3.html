@@ -76,6 +76,16 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .chip-day { font-size: 11px; color: #aaa; }
 .chip-val { font-weight: 500; font-size: 14px; }
 
+.bag-bar { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; }
+.bag-label { font-size: 13px; color: #666; }
+.bag-count { font-size: 22px; font-weight: 700; color: #993C1D; line-height: 1; }
+.bag-count.low { color: #E24B4A; }
+.bag-unit { font-size: 13px; color: #666; }
+.bag-adj { font-size: 16px; background: #f5f5f2; border: 0.5px solid #ddd; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; color: #666; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.bag-adj:active { background: #e8e8e5; }
+.btn-harvest-done { margin-top: 5px; width: 100%; font-size: 11px; font-weight: 500; padding: 4px 0; background: #FAECE7; border: 1px solid #E8A090; border-radius: 8px; color: #993C1D; cursor: pointer; }
+.btn-harvest-done:active { background: #F5D5CC; }
+
 .section-title { font-size: 13px; font-weight: 500; color: #666; margin: 1.5rem 0 0.5rem; }
 .sheet-note { font-size: 12px; color: #aaa; margin-bottom: 8px; }
 .sheet-note a { color: #534AB7; }
@@ -96,6 +106,13 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
   <div class="date-sub">の作業内容</div>
   <div id="back-today-wrap"></div>
   <div class="ekihi-line" id="ekihi-line" style="display:none"></div>
+  <div class="bag-bar">
+    <span class="bag-label">袋在庫</span>
+    <button class="bag-adj" onclick="adjustBag(-1)">－</button>
+    <span class="bag-count" id="bag-count-display">--</span>
+    <button class="bag-adj" onclick="adjustBag(1)">＋</button>
+    <span class="bag-unit">組</span>
+  </div>
 </div>
 
 <div id="delivery-banner"></div>
@@ -166,6 +183,26 @@ function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate()+n); 
 function parseDate(str) { const [y,m,d] = str.split('-').map(Number); return new Date(y,m-1,d); }
 function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
 
+// 袋在庫
+if (localStorage.getItem('bagCount') === null) localStorage.setItem('bagCount', '11');
+let bagCount = parseInt(localStorage.getItem('bagCount'));
+function renderBagCount() {
+  const el = document.getElementById('bag-count-display');
+  el.textContent = bagCount;
+  el.className = 'bag-count' + (bagCount <= 3 ? ' low' : '');
+}
+function harvestDone() {
+  if (bagCount <= 0) return;
+  bagCount--;
+  localStorage.setItem('bagCount', bagCount);
+  renderBagCount();
+}
+function adjustBag(delta) {
+  bagCount = Math.max(0, bagCount + delta);
+  localStorage.setItem('bagCount', bagCount);
+  renderBagCount();
+}
+
 // 表示日（ナビゲーションで変わる）
 const realToday = new Date();
 let viewDate = new Date(realToday);
@@ -221,7 +258,10 @@ function makeCard(t, dayLabel, compact) {
 }
 
 function cardCell(t, dayLabel) {
-  return `<div class="stage-cell">${makeCard(t, dayLabel, true)}</div>`;
+  const btn = t.cls === 'card-刈取'
+    ? `<button class="btn-harvest-done" onclick="harvestDone()">刈取完了 −1組</button>`
+    : '';
+  return `<div class="stage-cell">${makeCard(t, dayLabel, true)}${btn}</div>`;
 }
 
 function renderTasks() {
@@ -386,6 +426,7 @@ async function loadEvents() {
   }
 }
 
+renderBagCount();
 renderAll();
 loadEvents();
 </script>

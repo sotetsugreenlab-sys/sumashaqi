@@ -183,6 +183,10 @@ function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate()+n); 
 function parseDate(str) { const [y,m,d] = str.split('-').map(Number); return new Date(y,m-1,d); }
 function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
 
+// 表示日（ナビゲーションで変わる）
+const realToday = new Date();
+let viewDate = new Date(realToday);
+
 // 袋在庫
 if (localStorage.getItem('bagCount') === null) localStorage.setItem('bagCount', '11');
 let bagCount = parseInt(localStorage.getItem('bagCount'));
@@ -209,10 +213,6 @@ function adjustBag(delta) {
   localStorage.setItem('bagCount', bagCount);
   renderBagCount();
 }
-
-// 表示日（ナビゲーションで変わる）
-const realToday = new Date();
-let viewDate = new Date(realToday);
 
 function navigate(delta) {
   viewDate = addDays(viewDate, delta);

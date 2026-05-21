@@ -105,8 +105,8 @@ const STAGES = [
   { label: '8穴へ移植',  days: 17, cls: 'card-mid'    },
   { label: '30穴へ移植', days: 9,  cls: 'card-30'     },
 ];
-const SOW_DATES = ['2026-04-14','2026-04-23','2026-05-02'];
-const SOW_CUTOFF = SOW_DATES[SOW_DATES.length - 1];
+const SOW_DATES = ['2026-04-14','2026-04-23','2026-05-02','2026-05-15','2026-05-18','2026-05-21'];
+const SOW_CUTOFF = '2099-12-31'; // 定期播種終了（5/21以降なし）
 
 function fmt(d) {
   const w = ['日','月','火','水','木','金','土'][d.getDay()];

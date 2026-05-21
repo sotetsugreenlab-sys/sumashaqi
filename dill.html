@@ -105,8 +105,8 @@ const STAGES = [
   { label: 'LED高い段へ移動', days: 25, cls: 'card-led'    },
   { label: '30穴へ移植',    days: 8,  cls: 'card-30'      },
 ];
-const SOW_DATES = ['2026-05-13'];
-const SOW_CUTOFF = '2026-05-12';
+const SOW_DATES = ['2026-05-13','2026-05-21'];
+const SOW_CUTOFF = '2099-12-31'; // 定期播種なし（スポット播種のみ）
 
 function fmt(d) {
   const w = ['日','月','火','水','木','金','土'][d.getDay()];

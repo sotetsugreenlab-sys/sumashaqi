@@ -75,7 +75,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div id="tasks"></div>
 
 <div class="calc-box">
-  <div class="calc-title">栽培日程を計算（バジル：播種→30穴10日→6穴20日→収穫35日）</div>
+  <div class="calc-title">栽培日程を計算（バジル：播種→30穴9日→6穴17日→収穫35日）</div>
   <div class="calc-tabs">
     <button class="calc-tab active" id="tab-sow" onclick="switchTab('sow')">播種日 → 各日程</button>
     <button class="calc-tab" id="tab-harvest" onclick="switchTab('harvest')">収穫日 → 播種日</button>
@@ -99,11 +99,11 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 </div>
 
 <script>
-// バジル: 播種(0日)→30穴(10日)→6穴(20日)→収穫(35日)　播種は毎週月・金（実験バッチは固定日）
+// バジル: 播種(0日)→30穴(9日)→6穴(17日)→収穫(35日)　播種は毎週月・金（実験バッチは固定日）
 const STAGES = [
   { label: '収穫',       days: 35, cls: 'card-harvest' },
-  { label: '6穴へ移植',  days: 20, cls: 'card-mid'    },
-  { label: '30穴へ移植', days: 10, cls: 'card-30'     },
+  { label: '6穴へ移植',  days: 17, cls: 'card-mid'    },
+  { label: '30穴へ移植', days: 9,  cls: 'card-30'     },
 ];
 const SOW_DATES = ['2026-04-08','2026-04-14','2026-04-23','2026-05-02'];
 const SOW_CUTOFF = SOW_DATES[SOW_DATES.length - 1]; // これ以降の月・金は定期播種と見なす

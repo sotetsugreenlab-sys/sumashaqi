@@ -75,7 +75,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div id="tasks"></div>
 
 <div class="calc-box">
-  <div class="calc-title">栽培日程を計算（ディル：播種→30穴15日→LED25日→収穫39日）</div>
+  <div class="calc-title">栽培日程を計算（ディル：播種→30穴8日→LED25日→収穫32日）</div>
   <div class="calc-tabs">
     <button class="calc-tab active" id="tab-sow" onclick="switchTab('sow')">播種日 → 各日程</button>
     <button class="calc-tab" id="tab-harvest" onclick="switchTab('harvest')">収穫日 → 播種日</button>
@@ -99,11 +99,11 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 </div>
 
 <script>
-// ディル: 播種(0日)→30穴(15日)→LED高い段へ移動・30穴のまま(25日)→収穫(39日)
+// ディル: 播種(0日)→30穴(8日)→LED高い段へ移動・30穴のまま(25日)→収穫(32日)
 const STAGES = [
-  { label: '収穫',          days: 39, cls: 'card-harvest' },
+  { label: '収穫',          days: 32, cls: 'card-harvest' },
   { label: 'LED高い段へ移動', days: 25, cls: 'card-led'    },
-  { label: '30穴へ移植',    days: 15, cls: 'card-30'      },
+  { label: '30穴へ移植',    days: 8,  cls: 'card-30'      },
 ];
 const SOW_DATES = ['2026-05-13'];
 const SOW_CUTOFF = '2026-05-12';
@@ -201,7 +201,7 @@ function calcFromSow() {
 function calcFromHarvest() {
   const val = document.getElementById('harvest-input').value;
   if (!val) return;
-  const sow = addDays(parseDate(val), -39);
+  const sow = addDays(parseDate(val), -32);
   document.getElementById('harvest-result').innerHTML =
     [chip('播種', 0, sow)].concat(CALC_STAGES.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }

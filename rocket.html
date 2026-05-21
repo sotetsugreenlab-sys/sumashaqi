@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ルッコラ</title>
+<title>ワイルドロケット</title>
 <link rel="apple-touch-icon" href="Saibai%20Cat.png">
 <link rel="icon" href="Saibai%20Cat.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="ルッコラ">
+<meta name="apple-mobile-web-app-title" content="ワイルドロケット">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 
 .header { text-align: center; margin-bottom: 1rem; }
 .back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 10px; }
-.herb-name { font-size: 13px; color: #6D8B11; font-weight: 600; margin-bottom: 4px; }
+.herb-name { font-size: 13px; color: #8B6D11; font-weight: 600; margin-bottom: 4px; }
 .nav-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .nav-btn { font-size: 20px; color: #aaa; background: none; border: none; cursor: pointer; padding: 0 4px; line-height: 1; }
 .nav-btn:active { color: #1a1a1a; }
@@ -22,7 +22,7 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .date-sub { font-size: 13px; color: #666; margin-top: 2px; }
 .back-today { display: inline-block; margin-top: 6px; font-size: 12px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 20px; padding: 3px 12px; cursor: pointer; }
 
-.sow-banner { background: #F3F5DE; border-radius: 12px; padding: 0.75rem 1.25rem; margin-bottom: 10px; font-size: 15px; font-weight: 500; color: #6D8B11; }
+.sow-banner { background: #FAF3DC; border-radius: 12px; padding: 0.75rem 1.25rem; margin-bottom: 10px; font-size: 15px; font-weight: 500; color: #8B6D11; }
 
 .card { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }
 .card-harvest { background: #FAECE7; }
@@ -31,7 +31,7 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .card-top { display: flex; align-items: center; justify-content: space-between; }
 .card-task { font-size: 15px; font-weight: 500; }
 .card-harvest .card-task { color: #993C1D; }
-.card-mid     .card-task { color: #6D8B11; }
+.card-mid     .card-task { color: #8B6D11; }
 .card-30      .card-task { color: #534AB7; }
 .card-sow { font-size: 20px; font-weight: 500; color: #1a1a1a; margin-top: 4px; }
 .card-sub { font-size: 12px; color: #666; text-align: right; }
@@ -61,7 +61,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 
 <div class="header">
   <a class="back-link" href="herb.html">← ハーブ</a>
-  <div class="herb-name">ルッコラ</div>
+  <div class="herb-name">ワイルドロケット</div>
   <div class="nav-row">
     <button class="nav-btn" onclick="navigate(-1)">＜</button>
     <div class="date-big" id="disp-date"></div>
@@ -75,7 +75,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div id="tasks"></div>
 
 <div class="calc-box">
-  <div class="calc-title">栽培日程を計算（ルッコラ：播種→30穴9日→8穴17日→収穫30日）</div>
+  <div class="calc-title">栽培日程を計算（ワイルドロケット：播種→30穴9日→6穴20日→収穫34日）</div>
   <div class="calc-tabs">
     <button class="calc-tab active" id="tab-sow" onclick="switchTab('sow')">播種日 → 各日程</button>
     <button class="calc-tab" id="tab-harvest" onclick="switchTab('harvest')">収穫日 → 播種日</button>
@@ -99,14 +99,14 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 </div>
 
 <script>
-// ルッコラ: 播種(0日)→30穴(9日)→8穴(17日)→収穫(30日)　播種は毎週月・金（実験バッチは固定日）
+// ワイルドロケット: 播種(0日)→30穴(9日)→6穴(20日)→収穫(34日)
 const STAGES = [
-  { label: '収穫',       days: 30, cls: 'card-harvest' },
-  { label: '8穴へ移植',  days: 17, cls: 'card-mid'    },
+  { label: '収穫',       days: 34, cls: 'card-harvest' },
+  { label: '6穴へ移植',  days: 20, cls: 'card-mid'    },
   { label: '30穴へ移植', days: 9,  cls: 'card-30'     },
 ];
-const SOW_DATES = ['2026-04-14','2026-04-23','2026-05-02'];
-const SOW_CUTOFF = SOW_DATES[SOW_DATES.length - 1];
+const SOW_DATES = [];
+const SOW_CUTOFF = '2026-05-24';
 
 function fmt(d) {
   const w = ['日','月','火','水','木','金','土'][d.getDay()];
@@ -173,13 +173,13 @@ function renderTasks() {
 }
 
 function renderSowBanner() {
-  document.getElementById('sow-banner').innerHTML = isSowDay(viewDate)
+  const isSow = SOW_DATES.includes(toDateStr(viewDate)) || isSowDay(viewDate);
+  document.getElementById('sow-banner').innerHTML = isSow
     ? '<div class="sow-banner">🌱 今日は播種日</div>' : '';
 }
 
 function renderAll() { renderHeader(); renderSowBanner(); renderTasks(); }
 
-// 計算機
 function chip(label, days, date) {
   const dayStr = days === 0 ? '播種日' : `播種から${days}日目`;
   return `<div class="calc-chip"><div class="chip-label">${label} <span class="chip-day">${dayStr}</span></div><div class="chip-val">${fmtMD(date)}</div></div>`;
@@ -201,7 +201,7 @@ function calcFromSow() {
 function calcFromHarvest() {
   const val = document.getElementById('harvest-input').value;
   if (!val) return;
-  const sow = addDays(parseDate(val), -30);
+  const sow = addDays(parseDate(val), -34);
   document.getElementById('harvest-result').innerHTML =
     [chip('播種', 0, sow)].concat(CALC_STAGES.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }

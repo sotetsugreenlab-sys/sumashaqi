@@ -75,7 +75,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div id="tasks"></div>
 
 <div class="calc-box">
-  <div class="calc-title">栽培日程を計算（イタリアンパセリ：播種→30穴17日→LED31日→収穫40日）</div>
+  <div class="calc-title">栽培日程を計算（イタリアンパセリ：播種→30穴18日→LED32日→収穫41日）</div>
   <div class="calc-tabs">
     <button class="calc-tab active" id="tab-sow" onclick="switchTab('sow')">播種日 → 各日程</button>
     <button class="calc-tab" id="tab-harvest" onclick="switchTab('harvest')">収穫日 → 播種日</button>
@@ -99,11 +99,11 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 </div>
 
 <script>
-// イタリアンパセリ: 播種(0日)→30穴(17日)→LED高い段へ移動・30穴のまま(31日)→収穫(40日)
+// イタリアンパセリ: 播種(0日)→30穴(18日)→LED高い段へ移動・30穴のまま(32日)→収穫(41日)
 const STAGES = [
-  { label: '収穫',          days: 40, cls: 'card-harvest' },
-  { label: 'LED高い段へ移動', days: 31, cls: 'card-led'    },
-  { label: '30穴へ移植',    days: 17, cls: 'card-30'      },
+  { label: '収穫',          days: 41, cls: 'card-harvest' },
+  { label: 'LED高い段へ移動', days: 32, cls: 'card-led'    },
+  { label: '30穴へ移植',    days: 18, cls: 'card-30'      },
 ];
 const SOW_DATES = ['2026-05-13'];
 const SOW_CUTOFF = '2026-05-12';
@@ -201,7 +201,7 @@ function calcFromSow() {
 function calcFromHarvest() {
   const val = document.getElementById('harvest-input').value;
   if (!val) return;
-  const sow = addDays(parseDate(val), -40);
+  const sow = addDays(parseDate(val), -41);
   document.getElementById('harvest-result').innerHTML =
     [chip('播種', 0, sow)].concat(CALC_STAGES.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }

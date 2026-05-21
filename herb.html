@@ -23,32 +23,54 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 
 .sow-banner { background: #EAF3DE; border-radius: 12px; padding: 0.75rem 1.25rem; margin-bottom: 10px; font-size: 15px; font-weight: 500; color: #3B6D11; }
 
-.herb-section { margin-bottom: 20px; }
-.herb-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; padding: 6px 2px 8px; text-decoration: none; border-bottom: 1.5px solid #f0f0ed; margin-bottom: 8px; }
+/* Herb section */
+.herb-section { margin-bottom: 16px; }
+.herb-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; padding: 5px 2px 7px; text-decoration: none; border-bottom: 1.5px solid #f0f0ed; margin-bottom: 7px; }
 .herb-arrow { font-size: 16px; color: #ccc; }
 .herb-seeds { font-size: 12px; font-weight: 400; color: #999; margin-left: 6px; }
-.no-task-inline { font-size: 13px; color: #bbb; padding: 10px 4px; }
-.sow-today { font-size: 13px; font-weight: 500; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; display: inline-block; }
+.sow-today { font-size: 12px; font-weight: 500; color: #3B6D11; background: #EAF3DE; border-radius: 6px; padding: 4px 10px; margin-bottom: 5px; display: inline-block; }
+.no-task-inline { font-size: 12px; color: #ccc; padding: 4px 2px; }
 
-.card { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 8px; }
+/* Stage row - horizontal card layout */
+.stage-row { display: flex; gap: 6px; }
+.stage-cell { flex: 1; min-width: 0; }
+
+/* Compact cards */
+.card { border-radius: 10px; padding: 0.55rem 0.65rem; margin-bottom: 0; }
 .card-harvest { background: #FAECE7; }
 .card-green   { background: #EAF3DE; }
 .card-yellow  { background: #F3F5DE; }
 .card-led     { background: #E6F1FB; }
 .card-30      { background: #EEEDFE; }
-.card-top { display: flex; align-items: center; justify-content: space-between; }
-.card-task { font-size: 15px; font-weight: 500; }
+.card-task { font-size: 11px; font-weight: 500; margin-bottom: 2px; }
 .card-harvest .card-task { color: #993C1D; }
 .card-green   .card-task { color: #3B6D11; }
 .card-yellow  .card-task { color: #6D8B11; }
 .card-led     .card-task { color: #185FA5; }
 .card-30      .card-task { color: #534AB7; }
-.card-sow { font-size: 20px; font-weight: 500; color: #1a1a1a; margin-top: 4px; }
-.card-sub { font-size: 12px; color: #666; text-align: right; }
-.history { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-wrap: wrap; gap: 6px; }
-.hist-item { font-size: 12px; color: #666; }
-.hist-item span { font-weight: 500; color: #1a1a1a; }
-.hist-sep { font-size: 12px; color: #aaa; }
+.card-sow { font-size: 17px; font-weight: 500; color: #1a1a1a; }
+.card-sub { font-size: 10px; color: #888; margin-top: 1px; }
+.card-empty { border-radius: 10px; padding: 0.55rem 0.65rem; background: #fafafa; border: 1px dashed #e8e8e8; display: flex; align-items: center; justify-content: center; min-height: 56px; }
+.card-empty-text { font-size: 10px; color: #ccc; }
+
+/* Calculator */
+.calc-box { background: #f5f5f2; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; margin-bottom: 10px; }
+.calc-title { font-size: 13px; font-weight: 500; color: #666; margin-bottom: 10px; }
+.herb-tabs { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 2px; }
+.herb-tab { font-size: 12px; padding: 4px 12px; border: 0.5px solid #ccc; border-radius: 20px; background: #fff; color: #666; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.herb-tab.active { font-weight: 600; border-width: 1.5px; }
+.calc-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.calc-tab { font-size: 13px; padding: 4px 14px; border: 0.5px solid #ccc; border-radius: 20px; background: #fff; color: #666; cursor: pointer; }
+.calc-tab.active { background: #EEEDFE; border-color: #AFA9EC; color: #534AB7; font-weight: 500; }
+.calc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.calc-row label { font-size: 12px; color: #666; min-width: 48px; }
+input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; border-radius: 8px; background: #fff; color: #1a1a1a; }
+.btn-calc { font-size: 13px; padding: 5px 16px; border: 0.5px solid #AFA9EC; border-radius: 8px; background: #EEEDFE; color: #534AB7; cursor: pointer; font-weight: 500; }
+.calc-result { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.calc-chip { background: #fff; border: 0.5px solid #ccc; border-radius: 8px; padding: 6px 12px; }
+.chip-label { font-size: 11px; color: #666; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+.chip-day { font-size: 11px; color: #aaa; }
+.chip-val { font-weight: 500; font-size: 14px; color: #1a1a1a; }
 </style>
 </head>
 <body>
@@ -66,6 +88,31 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 
 <div id="sow-banner"></div>
 <div id="tasks"></div>
+
+<div class="calc-box">
+  <div class="calc-title">栽培日程を計算</div>
+  <div class="herb-tabs" id="herb-tabs"></div>
+  <div class="calc-tabs">
+    <button class="calc-tab active" id="tab-sow" onclick="switchCalcTab('sow')">播種日 → 各日程</button>
+    <button class="calc-tab" id="tab-harvest" onclick="switchCalcTab('harvest')">刈取日 → 播種日</button>
+  </div>
+  <div id="panel-sow">
+    <div class="calc-row">
+      <label>播種日</label>
+      <input type="date" id="sow-input" />
+      <button class="btn-calc" onclick="calcFromSow()">計算</button>
+    </div>
+    <div class="calc-result" id="sow-result"></div>
+  </div>
+  <div id="panel-harvest" style="display:none;">
+    <div class="calc-row">
+      <label>刈取日</label>
+      <input type="date" id="harvest-input" />
+      <button class="btn-calc" onclick="calcFromHarvest()">計算</button>
+    </div>
+    <div class="calc-result" id="harvest-result"></div>
+  </div>
+</div>
 
 <script>
 const HERBS = [
@@ -130,8 +177,13 @@ function fmt(d) {
   return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`;
 }
 function fmtShort(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function fmtMD(d) {
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+}
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
 function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function parseDate(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
 function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
 function isSowDay(d) { return d.getDay() === 1 || d.getDay() === 5; }
 function isValidSow(herb, date) {
@@ -152,56 +204,125 @@ function renderHeader() {
     ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
 }
 
-function makeCard(stages, stage, stageIdx, sow, dayLabel) {
-  const histStages = stages.slice(stageIdx + 1).reverse();
-  let histHtml = '';
-  if (histStages.length > 0) {
-    histHtml = '<div class="history">' +
-      histStages.map((h, i) =>
-        `<span class="hist-item"><span>${fmtShort(addDays(sow, h.days))}</span> ${h.label}</span>` +
-        (i < histStages.length - 1 ? '<span class="hist-sep">›</span>' : '')
-      ).join('') + '</div>';
-  }
+function makeCompactCard(stage, sow) {
   return `<div class="card ${stage.cls}">
-    <div class="card-top">
-      <div>
-        <div class="card-task">${dayLabel}${stage.label}</div>
-        <div class="card-sow">${fmtShort(sow)}播種</div>
-      </div>
-      <div class="card-sub">播種から${stage.days}日目</div>
-    </div>
-    ${histHtml}
+    <div class="card-task">${stage.label}</div>
+    <div class="card-sow">${fmtShort(sow)}播種</div>
+    <div class="card-sub">${stage.days}日目</div>
   </div>`;
 }
 
 function renderTasks() {
   const isToday = isSameDay(viewDate, realToday);
-  const dayLabel = isToday ? '今日の' : 'この日の';
   let html = '';
   HERBS.forEach(herb => {
-    let herbHtml = '';
-    herb.stages.forEach((stage, i) => {
+    const sowToday = isValidSow(herb, viewDate);
+
+    // ステージ順に、有効な播種日があるものだけカードを作る
+    let cells = herb.stages.map(stage => {
       const sow = addDays(viewDate, -stage.days);
-      if (isValidSow(herb, sow)) herbHtml += makeCard(herb.stages, stage, i, sow, dayLabel);
+      if (isValidSow(herb, sow)) {
+        return `<div class="stage-cell">${makeCompactCard(stage, sow)}</div>`;
+      }
+      return `<div class="stage-cell"><div class="card-empty"><span class="card-empty-text">−</span></div></div>`;
     });
-    const sowToday = isValidSow(herb, viewDate) ? '<div class="sow-today">🌱 今日播種</div>' : '';
+
+    const hasTask = herb.stages.some(stage => isValidSow(herb, addDays(viewDate, -stage.days)));
+    const sowBadge = sowToday ? '<div class="sow-today">🌱 今日播種</div>' : '';
+
     html += `<div class="herb-section">
       <a class="herb-header" href="${herb.href}" style="color:${herb.color}">
-        <span>${herb.name}${herb.seeds != null ? `<span class="herb-seeds">${herb.seeds}粒</span>` : ''}</span><span class="herb-arrow">›</span>
+        <span>${herb.name}${herb.seeds != null ? `<span class="herb-seeds">${herb.seeds}粒</span>` : ''}</span>
+        <span class="herb-arrow">›</span>
       </a>
-      ${sowToday}
-      ${herbHtml || (sowToday ? '' : '<div class="no-task-inline">本日の作業なし</div>')}
+      ${sowBadge}
+      ${hasTask
+        ? `<div class="stage-row">${cells.join('')}</div>`
+        : (sowToday ? '' : '<div class="no-task-inline">本日の作業なし</div>')
+      }
     </div>`;
   });
   document.getElementById('tasks').innerHTML = html;
 }
 
 function renderSowBanner() {
-  document.getElementById('sow-banner').innerHTML = isSowDay(viewDate)
-    ? '<div class="sow-banner">🌱 今日は播種日（月・金）</div>' : '';
+  const anySow = HERBS.some(h => isValidSow(h, viewDate));
+  document.getElementById('sow-banner').innerHTML = anySow
+    ? '<div class="sow-banner">🌱 今日は播種日</div>' : '';
 }
 
 function renderAll() { renderHeader(); renderSowBanner(); renderTasks(); }
+
+// 計算機
+let calcHerbIdx = 0;
+
+function initHerbTabs() {
+  document.getElementById('herb-tabs').innerHTML = HERBS.map((h, i) =>
+    `<button class="herb-tab${i===0?' active':''}" id="herb-tab-${i}"
+      onclick="selectHerbCalc(${i})"
+      style="${i===0?`background:${h.color};color:#fff;border-color:${h.color}`:''}">
+      ${h.name}
+    </button>`
+  ).join('');
+}
+
+function selectHerbCalc(idx) {
+  calcHerbIdx = idx;
+  HERBS.forEach((h, i) => {
+    const el = document.getElementById(`herb-tab-${i}`);
+    if (i === idx) {
+      el.classList.add('active');
+      el.style.background = h.color;
+      el.style.color = '#fff';
+      el.style.borderColor = h.color;
+    } else {
+      el.classList.remove('active');
+      el.style.background = '#fff';
+      el.style.color = '#666';
+      el.style.borderColor = '#ccc';
+    }
+  });
+  document.getElementById('sow-result').innerHTML = '';
+  document.getElementById('harvest-result').innerHTML = '';
+}
+
+function switchCalcTab(tab) {
+  document.getElementById('tab-sow').classList.toggle('active', tab==='sow');
+  document.getElementById('tab-harvest').classList.toggle('active', tab==='harvest');
+  document.getElementById('panel-sow').style.display = tab==='sow' ? '' : 'none';
+  document.getElementById('panel-harvest').style.display = tab==='harvest' ? '' : 'none';
+}
+
+function chip(label, days, date) {
+  const dayStr = days === 0 ? '播種日' : `播種から${days}日目`;
+  return `<div class="calc-chip"><div class="chip-label">${label} <span class="chip-day">${dayStr}</span></div><div class="chip-val">${fmtMD(date)}</div></div>`;
+}
+
+function calcFromSow() {
+  const val = document.getElementById('sow-input').value;
+  if (!val) return;
+  const sow = parseDate(val);
+  const herb = HERBS[calcHerbIdx];
+  const stages = [...herb.stages].reverse();
+  document.getElementById('sow-result').innerHTML =
+    [chip('播種', 0, sow)].concat(stages.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+
+function calcFromHarvest() {
+  const val = document.getElementById('harvest-input').value;
+  if (!val) return;
+  const herb = HERBS[calcHerbIdx];
+  const harvestDays = herb.stages[0].days;
+  const sow = addDays(parseDate(val), -harvestDays);
+  const stages = [...herb.stages].reverse();
+  document.getElementById('harvest-result').innerHTML =
+    [chip('播種', 0, sow)].concat(stages.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+
+document.getElementById('sow-input').value = toDateStr(realToday);
+document.getElementById('harvest-input').value = toDateStr(realToday);
+
+initHerbTabs();
 renderAll();
 </script>
 </body>

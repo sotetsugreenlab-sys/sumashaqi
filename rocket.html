@@ -106,7 +106,7 @@ const STAGES = [
   { label: '30穴へ移植', days: 9,  cls: 'card-30'     },
 ];
 const SOW_DATES = ['2026-05-21'];
-const SOW_CUTOFF = '2026-05-21'; // 5/22（金）以降の月・金が定期播種
+const SOW_CUTOFF = '2026-05-21'; // 5/22以降 月・水・金が定期播種
 
 function fmt(d) {
   const w = ['日','月','火','水','木','金','土'][d.getDay()];
@@ -121,7 +121,7 @@ function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return
 function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function parseDate(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
 function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
-function isSowDay(d) { return d.getDay() === 1 || d.getDay() === 5; }
+function isSowDay(d) { return d.getDay()===1||d.getDay()===3||d.getDay()===5; }
 function isValidSow(d) {
   const ds = toDateStr(d);
   return SOW_DATES.includes(ds) || (ds > SOW_CUTOFF && isSowDay(d));

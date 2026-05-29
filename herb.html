@@ -53,6 +53,22 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .card-empty { border-radius: 10px; padding: 0.55rem 0.65rem; background: #fafafa; border: 1px dashed #e8e8e8; display: flex; align-items: center; justify-content: center; min-height: 56px; }
 .card-empty-text { font-size: 10px; color: #ccc; }
 
+/* Harvest window */
+.card-harvest-w2  { background: #FEF6F3; }
+.card-harvest-w1  { background: #FCF1EC; }
+.card-harvest-ov1 { background: #F2D5C8; }
+.card-harvest-ov2 { background: #E8B89A; }
+.card-harvest-w2  .card-task { color: #C8A07A; }
+.card-harvest-w1  .card-task { color: #B5603A; }
+.card-harvest-ov1 .card-task { color: #993C1D; }
+.card-harvest-ov2 .card-task { color: #7A1A00; }
+.harvest-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 6px; margin-left: 3px; display: inline-block; vertical-align: middle; }
+.badge-w2  { background: #F5D8A0; color: #7A4F00; }
+.badge-w1  { background: #E09060; color: #fff; }
+.badge-ov1 { background: #D04020; color: #fff; }
+.badge-ov2 { background: #902000; color: #fff; }
+.harvest-stack { display: flex; flex-direction: column; gap: 4px; }
+
 /* Calculator */
 .calc-box { background: #f5f5f2; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; margin-bottom: 10px; }
 .calc-title { font-size: 13px; font-weight: 500; color: #666; margin-bottom: 10px; }
@@ -218,22 +234,44 @@ function makeCompactCard(stage, sow) {
   </div>`;
 }
 
+function makeCompactCardHarvest(stage, sow, offset) {
+  const clsMap = {'-2':'card-harvest-w2','-1':'card-harvest-w1','0':'card-harvest','1':'card-harvest-ov1','2':'card-harvest-ov2'};
+  const badgeMap = {'-2':'<span class="harvest-badge badge-w2">あと2日</span>','-1':'<span class="harvest-badge badge-w1">あと1日</span>','0':'','1':'<span class="harvest-badge badge-ov1">1日経過</span>','2':'<span class="harvest-badge badge-ov2">2日経過</span>'};
+  const cls = clsMap[offset] ?? 'card-harvest';
+  const badge = badgeMap[offset] ?? '';
+  return `<div class="card ${cls}">
+    <div class="card-task">${stage.label}${badge}</div>
+    <div class="card-sow">${fmtShort(sow)}播種</div>
+    <div class="card-sub">${stage.days + offset}日目</div>
+  </div>`;
+}
+
 function renderTasks() {
-  const isToday = isSameDay(viewDate, realToday);
   let html = '';
   HERBS.forEach(herb => {
     const sowToday = isValidSow(herb, viewDate);
+    const harvestStage = herb.stages[0]; // 刈取（最長日数）
 
-    // ステージ順に、有効な播種日があるものだけカードを作る
-    let cells = herb.stages.map(stage => {
+    // 刈取ウィンドウ ±2日
+    const harvestCards = [];
+    for (let offset = -2; offset <= 2; offset++) {
+      const sow = addDays(viewDate, -(harvestStage.days + offset));
+      if (isValidSow(herb, sow)) harvestCards.push(makeCompactCardHarvest(harvestStage, sow, offset));
+    }
+    const harvestCellHtml = harvestCards.length > 0
+      ? `<div class="harvest-stack">${harvestCards.join('')}</div>`
+      : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
+
+    // 移植・LED移動ステージ（当日のみ）
+    const otherCells = herb.stages.slice(1).map(stage => {
       const sow = addDays(viewDate, -stage.days);
-      if (isValidSow(herb, sow)) {
-        return `<div class="stage-cell">${makeCompactCard(stage, sow)}</div>`;
-      }
-      return `<div class="stage-cell"><div class="card-empty"><span class="card-empty-text">−</span></div></div>`;
+      return `<div class="stage-cell">${isValidSow(herb, sow)
+        ? makeCompactCard(stage, sow)
+        : '<div class="card-empty"><span class="card-empty-text">−</span></div>'}</div>`;
     });
 
-    const hasTask = herb.stages.some(stage => isValidSow(herb, addDays(viewDate, -stage.days)));
+    const hasTask = harvestCards.length > 0 ||
+      herb.stages.slice(1).some(s => isValidSow(herb, addDays(viewDate, -s.days)));
     const sowBadge = sowToday ? '<div class="sow-today">🌱 今日播種</div>' : '';
 
     html += `<div class="herb-section">
@@ -243,7 +281,7 @@ function renderTasks() {
       </a>
       ${sowBadge}
       ${hasTask
-        ? `<div class="stage-row">${cells.join('')}</div>`
+        ? `<div class="stage-row"><div class="stage-cell">${harvestCellHtml}</div>${otherCells.join('')}</div>`
         : (sowToday ? '' : '<div class="no-task-inline">本日の作業なし</div>')
       }
     </div>`;

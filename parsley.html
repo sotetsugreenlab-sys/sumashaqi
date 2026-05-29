@@ -99,14 +99,14 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 </div>
 
 <script>
-// イタリアンパセリ: 播種(0日)→30穴(18日)→LED高い段へ移動・30穴のまま(32日)→収穫(41日)
+// イタリアンパセリ: 播種(0日)→30穴(18日)→LED高い段へ移動(32日)→収穫(41日)　播種は毎週金曜（サンプル・6/5〜）
 const STAGES = [
   { label: '収穫',          days: 41, cls: 'card-harvest' },
   { label: 'LED高い段へ移動', days: 32, cls: 'card-led'    },
   { label: '30穴へ移植',    days: 18, cls: 'card-30'      },
 ];
-const SOW_DATES = ['2026-05-13'];
-const SOW_CUTOFF = '2026-05-21'; // 5/24以降 日曜が定期播種
+const SOW_DATES = ['2026-05-13','2026-05-21','2026-05-24','2026-05-31'];
+const SOW_CUTOFF = '2026-06-01'; // 6/5〜 毎週金曜（サンプル）
 
 function fmt(d) {
   const w = ['日','月','火','水','木','金','土'][d.getDay()];
@@ -121,7 +121,7 @@ function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return
 function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function parseDate(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
 function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
-function isSowDay(d) { return d.getDay()===0; }
+function isSowDay(d) { return d.getDay()===5; }
 function isValidSow(d) {
   const ds = toDateStr(d);
   return SOW_DATES.includes(ds) || (ds > SOW_CUTOFF && isSowDay(d));

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タイムアタック</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="タイムアタック">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem; }
+
+.header { text-align: center; margin-bottom: 1.25rem; }
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 10px; }
+.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+.page-date { font-size: 12px; color: #999; margin-top: 3px; }
+
+/* Timer card */
+.timer-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1rem 1rem 1.25rem;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.timer-label { font-size: 11px; font-weight: 600; color: #aaa; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+/* Name & process buttons */
+.section-label { font-size: 10px; color: #aaa; font-weight: 600; letter-spacing: 0.05em; margin: 10px 0 5px; }
+.btn-group { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
+.btn-name, .btn-proc {
+  font-size: 13px; padding: 5px 10px; border: 1px solid #e0e0e0;
+  border-radius: 20px; background: #fff; color: #555; cursor: pointer;
+  transition: all 0.1s;
+}
+.btn-name.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; font-weight: 600; }
+.btn-proc.active { background: #E8401C; color: #fff; border-color: #E8401C; font-weight: 600; }
+
+.memo-input {
+  width: 100%; margin-top: 6px; padding: 7px 10px; font-size: 13px;
+  border: 1px solid #ddd; border-radius: 10px; background: #fafafa;
+  color: #1a1a1a; outline: none;
+}
+.memo-input:focus { border-color: #E8401C; background: #fff; }
+
+/* Timer display */
+.timer-display {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0f0ed;
+}
+.timer-info { flex: 1; }
+.timer-who { font-size: 13px; color: #666; margin-bottom: 2px; min-height: 18px; }
+.timer-elapsed { font-size: 30px; font-weight: 600; color: #1a1a1a; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+.timer-starttime { font-size: 11px; color: #aaa; margin-top: 1px; min-height: 15px; }
+.btn-toggle {
+  width: 72px; height: 72px; border-radius: 50%; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+  background: #E8401C; color: #fff;
+  box-shadow: 0 2px 8px rgba(232,64,28,0.3);
+  transition: all 0.1s;
+}
+.btn-toggle.running { background: #555; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.btn-toggle:active { transform: scale(0.93); }
+.btn-toggle:disabled { background: #e0e0e0; color: #aaa; box-shadow: none; cursor: default; }
+
+/* Log section */
+.log-section { margin-top: 6px; }
+.log-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.log-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+.btn-clear-log { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 6px; }
+
+.log-empty { text-align: center; color: #bbb; font-size: 13px; padding: 2rem 0; background: #fff; border-radius: 12px; }
+
+.log-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.log-table th { font-size: 10px; color: #aaa; font-weight: 600; padding: 8px 8px 6px; text-align: left; border-bottom: 1px solid #f0f0ed; background: #fafaf8; }
+.log-table td { font-size: 12px; color: #333; padding: 9px 8px; border-bottom: 0.5px solid #f5f5f3; vertical-align: middle; }
+.log-table tr:last-child td { border-bottom: none; }
+.log-name-chip { display: inline-block; background: #1a1a1a; color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+.log-duration { font-weight: 600; color: #E8401C; }
+.btn-delete-row { font-size: 14px; color: #ccc; background: none; border: none; cursor: pointer; padding: 0 2px; }
+.btn-delete-row:active { color: #E8401C; }
+
+/* Summary */
+.summary-section { margin-top: 14px; }
+.summary-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+.summary-card { background: #fff; border-radius: 12px; padding: 0.75rem 1rem; flex: 1; min-width: 140px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.summary-card-title { font-size: 10px; color: #aaa; font-weight: 600; margin-bottom: 8px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 5px; }
+.summary-row:last-child { margin-bottom: 0; }
+.summary-name { color: #333; }
+.summary-min { font-weight: 600; color: #E8401C; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-link" href="index.html">← トップ</a>
+  <div class="page-title">⏱ タイムアタック</div>
+  <div class="page-date" id="page-date"></div>
+</div>
+
+<div id="timer-slots"></div>
+
+<div class="log-section">
+  <div class="log-header">
+    <div class="log-title">今日の記録</div>
+    <button class="btn-clear-log" onclick="clearLog()">全削除</button>
+  </div>
+  <div id="log-container"></div>
+  <div class="summary-section" id="summary-section" style="display:none"></div>
+</div>
+
+<script>
+const NAMES = ['狩俣','下田','まき','布川','星野','北島'];
+const PROCESS_GROUPS = [
+  { group: 'スマシャキ', procs: ['刈取（スマシャキ）','トリミング（スマシャキ）','袋づめ（スマシャキ）','パウチ（スマシャキ）','播種（スマシャキ）','30穴（スマシャキ）','5穴（スマシャキ）'] },
+  { group: 'ハーブ',     procs: ['刈取（ハーブ）','トリミング（ハーブ）','袋づめ（ハーブ）','パウチ（ハーブ）','播種（ハーブ）','6穴（ハーブ）'] },
+  { group: '共通',       procs: ['ボード洗い','液肥管理','その他洗い物','掃除','わさび','その他'] },
+];
+
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtTime(d) {
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function fmtElapsed(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+    : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+const realToday = new Date();
+const todayStr = toDateStr(realToday);
+
+// Show date
+const w = ['日','月','火','水','木','金','土'][realToday.getDay()];
+document.getElementById('page-date').textContent =
+  `${realToday.getFullYear()}年${realToday.getMonth()+1}月${realToday.getDate()}日（${w}）`;
+
+// Timer state
+const NUM_SLOTS = 2;
+let slots = Array.from({length: NUM_SLOTS}, () => ({
+  name: null, process: null, memo: '',
+  startTime: null, startMs: null, running: false, interval: null
+}));
+
+// Log storage
+function loadLog() {
+  const raw = localStorage.getItem(`ta_log_${todayStr}`);
+  return raw ? JSON.parse(raw) : [];
+}
+function saveLog(log) {
+  localStorage.setItem(`ta_log_${todayStr}`, JSON.stringify(log));
+}
+
+// Render timer slots
+function renderSlots() {
+  document.getElementById('timer-slots').innerHTML = slots.map((slot, idx) => `
+    <div class="timer-card" id="slot-${idx}">
+      <div class="timer-label">タイマー ${idx + 1}</div>
+
+      <div class="section-label">担当</div>
+      <div class="btn-group">
+        ${NAMES.map(n => `<button class="btn-name${slot.name===n?' active':''}"
+          onclick="selectName(${idx},'${n}')" ${slot.running?'disabled':''}>${n}</button>`).join('')}
+      </div>
+
+      ${PROCESS_GROUPS.map(g => `
+        <div class="section-label">${g.group}</div>
+        <div class="btn-group">
+          ${g.procs.map(p => `<button class="btn-proc${slot.process===p?' active':''}"
+            onclick="selectProcess(${idx},'${p}')" ${slot.running?'disabled':''}>${p}</button>`).join('')}
+        </div>
+      `).join('')}
+
+      ${slot.process === 'その他' ? `
+        <input class="memo-input" type="text" placeholder="内容を入力…"
+          value="${slot.memo}" oninput="updateMemo(${idx}, this.value)"
+          ${slot.running?'readonly':''} />
+      ` : ''}
+
+      <div class="timer-display">
+        <div class="timer-info">
+          <div class="timer-who">${slot.name && slot.process
+            ? `${slot.name} ／ ${slot.process === 'その他' && slot.memo ? slot.memo : slot.process}`
+            : '<span style="color:#ccc">名前と工程を選択</span>'}</div>
+          <div class="timer-elapsed" id="elapsed-${idx}">
+            ${slot.startMs != null ? fmtElapsed(Date.now() - slot.startMs) : '00:00'}
+          </div>
+          <div class="timer-starttime" id="starttime-${idx}">
+            ${slot.startTime ? `開始 ${slot.startTime}` : ''}
+          </div>
+        </div>
+        <button class="btn-toggle${slot.running?' running':''}"
+          onclick="toggleTimer(${idx})"
+          ${!slot.name || !slot.process ? 'disabled' : ''}>
+          ${slot.running ? '■\n停止' : '▶\nスタート'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectName(idx, name) {
+  if (slots[idx].running) return;
+  slots[idx].name = slots[idx].name === name ? null : name;
+  renderSlots();
+}
+
+function selectProcess(idx, proc) {
+  if (slots[idx].running) return;
+  slots[idx].process = slots[idx].process === proc ? null : proc;
+  if (proc !== 'その他') slots[idx].memo = '';
+  renderSlots();
+}
+
+function updateMemo(idx, val) {
+  slots[idx].memo = val;
+  // just update the who-line without full re-render
+  const whoEl = document.querySelector(`#slot-${idx} .timer-who`);
+  if (whoEl && slots[idx].name) {
+    whoEl.textContent = `${slots[idx].name} ／ ${val || 'その他'}`;
+  }
+}
+
+function toggleTimer(idx) {
+  const slot = slots[idx];
+  if (!slot.name || !slot.process) return;
+
+  if (!slot.running) {
+    // Start
+    slot.startMs = Date.now();
+    slot.startTime = fmtTime(new Date());
+    slot.running = true;
+    slot.interval = setInterval(() => {
+      const el = document.getElementById(`elapsed-${idx}`);
+      if (el) el.textContent = fmtElapsed(Date.now() - slot.startMs);
+    }, 500);
+    renderSlots();
+  } else {
+    // Stop
+    clearInterval(slot.interval);
+    slot.interval = null;
+    const endTime = fmtTime(new Date());
+    const durationMs = Date.now() - slot.startMs;
+    const durationMin = Math.round(durationMs / 60000);
+    const durationSec = Math.floor(durationMs / 1000);
+
+    const log = loadLog();
+    log.push({
+      name: slot.name,
+      process: slot.process,
+      memo: slot.memo,
+      startTime: slot.startTime,
+      endTime,
+      durationMin,
+      durationSec,
+      id: Date.now(),
+    });
+    saveLog(log);
+
+    slot.running = false;
+    slot.name = null;
+    slot.process = null;
+    slot.memo = '';
+    slot.startMs = null;
+    slot.startTime = null;
+    renderSlots();
+    renderLog();
+  }
+}
+
+function renderLog() {
+  const log = loadLog();
+  const container = document.getElementById('log-container');
+  if (log.length === 0) {
+    container.innerHTML = '<div class="log-empty">まだ記録がありません</div>';
+    document.getElementById('summary-section').style.display = 'none';
+    return;
+  }
+
+  const rows = [...log].reverse().map(entry => {
+    const label = entry.process === 'その他' && entry.memo
+      ? `その他（${entry.memo}）` : entry.process;
+    const dispMin = entry.durationMin > 0
+      ? `${entry.durationMin}分` : `${entry.durationSec}秒`;
+    return `<tr>
+      <td><span class="log-name-chip">${entry.name}</span></td>
+      <td>${label}</td>
+      <td style="white-space:nowrap">${entry.startTime}</td>
+      <td style="white-space:nowrap">${entry.endTime}</td>
+      <td class="log-duration" style="white-space:nowrap">${dispMin}</td>
+      <td><button class="btn-delete-row" onclick="deleteEntry(${entry.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `<table class="log-table">
+    <thead><tr>
+      <th>担当</th><th>工程</th><th>開始</th><th>終了</th><th>時間</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+
+  renderSummary(log);
+}
+
+function renderSummary(log) {
+  const section = document.getElementById('summary-section');
+  section.style.display = '';
+
+  // Per-person totals
+  const byName = {};
+  const byProc = {};
+  log.forEach(e => {
+    byName[e.name] = (byName[e.name] || 0) + e.durationMin;
+    const label = e.process === 'その他' && e.memo ? `その他（${e.memo}）` : e.process;
+    byProc[label] = (byProc[label] || 0) + e.durationMin;
+  });
+
+  const nameRows = Object.entries(byName)
+    .sort((a,b) => b[1]-a[1])
+    .map(([n,m]) => `<div class="summary-row"><span class="summary-name">${n}</span><span class="summary-min">${m}分</span></div>`)
+    .join('');
+  const procRows = Object.entries(byProc)
+    .sort((a,b) => b[1]-a[1])
+    .map(([p,m]) => `<div class="summary-row"><span class="summary-name" style="font-size:11px">${p}</span><span class="summary-min">${m}分</span></div>`)
+    .join('');
+
+  section.innerHTML = `<div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-card-title">担当別 合計時間</div>
+      ${nameRows}
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-title">工程別 合計時間</div>
+      ${procRows}
+    </div>
+  </div>`;
+}
+
+function deleteEntry(id) {
+  const log = loadLog().filter(e => e.id !== id);
+  saveLog(log);
+  renderLog();
+}
+
+function clearLog() {
+  if (!confirm('今日の記録をすべて削除しますか？')) return;
+  localStorage.removeItem(`ta_log_${todayStr}`);
+  renderLog();
+}
+
+renderSlots();
+renderLog();
+</script>
+</body>
+</html>

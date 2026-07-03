@@ -117,6 +117,26 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
 .gantt-bar:hover { opacity: 1; z-index: 10; }
 .gantt-bar-label { font-size: 9px; color: #fff; white-space: nowrap; padding: 0 4px; line-height: 22px; display: block; overflow: hidden; text-overflow: ellipsis; }
 .gantt-empty { text-align: center; color: #bbb; font-size: 13px; padding: 1.5rem 0; }
+
+/* Date navigation */
+.date-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; }
+.btn-date { font-size: 18px; color: #534AB7; background: none; border: none; cursor: pointer; padding: 2px 8px; line-height: 1; }
+.btn-date:disabled { color: #ccc; cursor: default; }
+.date-nav-label { font-size: 13px; color: #555; font-weight: 600; min-width: 160px; text-align: center; }
+.date-nav-today { font-size: 10px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-left: 2px; }
+
+/* Monthly report */
+.monthly-section { margin-top: 14px; }
+.btn-monthly { font-size: 12px; color: #fff; background: #3B6D11; border: none; border-radius: 20px; padding: 5px 14px; cursor: pointer; font-weight: 600; }
+.monthly-header-title { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 12px; }
+.monthly-days { background: #fff; border-radius: 12px; padding: 8px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 10px; }
+.monthly-day-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 6px 0; border-bottom: 0.5px solid #f0f0ed; }
+.monthly-day-row:last-child { border-bottom: none; }
+.monthly-day-date { font-weight: 700; color: #333; min-width: 80px; }
+.monthly-day-names { flex: 1; color: #777; font-size: 11px; }
+.monthly-day-total { font-weight: 600; color: #E8401C; white-space: nowrap; }
+.btn-clear-month { display: block; width: 100%; margin-top: 10px; padding: 10px; background: none; border: 1px solid #E8401C; color: #E8401C; border-radius: 10px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.btn-clear-month:active { background: #E8401C; color: #fff; }
 </style>
 </head>
 <body>
@@ -124,14 +144,19 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
 <div class="header">
   <a class="back-link" href="index.html">← トップ</a>
   <div class="page-title">⏱ タイムアタック</div>
-  <div class="page-date" id="page-date"></div>
+  <div class="date-nav">
+    <button class="btn-date" id="btn-date-prev" onclick="changeDate(-1)">‹</button>
+    <div class="date-nav-label" id="page-date"></div>
+    <button class="btn-date" id="btn-date-next" onclick="changeDate(1)" disabled>›</button>
+    <button class="date-nav-today" id="btn-today" onclick="goToday()" style="display:none">今日</button>
+  </div>
 </div>
 
 <div id="timer-slots"></div>
 
 <div class="log-section">
   <div class="log-header">
-    <div class="log-title">今日の記録</div>
+    <div class="log-title" id="log-title">今日の記録</div>
     <button class="btn-clear-log" onclick="clearLog()">全削除</button>
   </div>
   <div id="log-container"></div>
@@ -146,12 +171,18 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
   <div id="gantt-content"></div>
 </div>
 
-<div style="padding: 12px 16px 0; text-align: center;">
+<div class="log-section monthly-section" id="monthly-section" style="display:none">
+  <div id="monthly-content"></div>
+</div>
+
+<div style="padding: 12px 16px 0; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
   <button class="btn-gantt-toggle" onclick="toggleGantt()">📊 日報を見る</button>
+  <button class="btn-monthly" onclick="toggleMonthly()">📅 今月のまとめ</button>
 </div>
 
 <script>
 const NAMES = ['狩俣','下田','まき','布川','星野','北島','わっしー','れみ'];
+
 const PROCESS_GROUPS = [
   { group: 'スマシャキ', procs: ['刈取（スマシャキ）','トリミング（スマシャキ）','袋づめ（スマシャキ）','パウチ（スマシャキ）','播種（スマシャキ）','30穴（スマシャキ）','5穴（スマシャキ）'] },
   { group: 'ハーブ',     procs: ['刈取（ハーブ）','トリミング（ハーブ）','袋づめ（ハーブ）','パウチ（ハーブ）','播種（ハーブ）','30穴（ハーブ）','6穴（ハーブ）'] },
@@ -176,11 +207,54 @@ function fmtElapsed(ms) {
 
 const realToday = new Date();
 const todayStr = toDateStr(realToday);
+let viewDate = todayStr;
 
-// Show date
-const w = ['日','月','火','水','木','金','土'][realToday.getDay()];
-document.getElementById('page-date').textContent =
-  `${realToday.getFullYear()}年${realToday.getMonth()+1}月${realToday.getDate()}日（${w}）`;
+function fmtHM(totalMin) {
+  if (totalMin < 60) return `${totalMin}分`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m > 0 ? `${h}時間${m}分` : `${h}時間`;
+}
+
+function updateDateDisplay() {
+  const d = new Date(viewDate + 'T00:00:00');
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  const isToday = viewDate === todayStr;
+  document.getElementById('page-date').textContent =
+    `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+  document.getElementById('btn-date-next').disabled = isToday;
+  document.getElementById('btn-today').style.display = isToday ? 'none' : '';
+  document.getElementById('timer-slots').style.display = isToday ? '' : 'none';
+  document.getElementById('log-title').textContent =
+    isToday ? '今日の記録' : `${d.getMonth()+1}月${d.getDate()}日の記録`;
+}
+
+function changeDate(delta) {
+  const d = new Date(viewDate + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  if (d > realToday) return;
+  if ((realToday - d) / 86400000 > 31) return;
+  viewDate = toDateStr(d);
+  updateDateDisplay();
+  ganttVisible = false;
+  document.getElementById('gantt-section').style.display = 'none';
+  document.getElementById('gantt-banner').innerHTML = '';
+  monthlyVisible = false;
+  document.getElementById('monthly-section').style.display = 'none';
+  renderLog();
+}
+
+function goToday() {
+  viewDate = todayStr;
+  updateDateDisplay();
+  ganttVisible = false;
+  document.getElementById('gantt-section').style.display = 'none';
+  document.getElementById('gantt-banner').innerHTML = '';
+  monthlyVisible = false;
+  document.getElementById('monthly-section').style.display = 'none';
+  renderLog();
+  checkAutoGantt();
+}
 
 // Timer state
 const NUM_SLOTS = 3;
@@ -189,9 +263,9 @@ let slots = Array.from({length: NUM_SLOTS}, () => ({
   startTime: null, startMs: null, running: false, interval: null
 }));
 
-// Log storage
+// Log storage — load from viewDate, always save to todayStr
 function loadLog() {
-  const raw = localStorage.getItem(`ta_log_${todayStr}`);
+  const raw = localStorage.getItem(`ta_log_${viewDate}`);
   return raw ? JSON.parse(raw) : [];
 }
 function saveLog(log) {
@@ -261,7 +335,6 @@ function selectProcess(idx, proc) {
 
 function updateMemo(idx, val) {
   slots[idx].memo = val;
-  // just update the who-line without full re-render
   const whoEl = document.querySelector(`#slot-${idx} .timer-who`);
   if (whoEl && slots[idx].name) {
     whoEl.textContent = `${slots[idx].name} ／ ${val || 'その他'}`;
@@ -317,9 +390,10 @@ function toggleTimer(idx) {
 
 function renderLog() {
   const log = loadLog();
+  const isToday = viewDate === todayStr;
   const container = document.getElementById('log-container');
   if (log.length === 0) {
-    container.innerHTML = '<div class="log-empty">まだ記録がありません</div>';
+    container.innerHTML = `<div class="log-empty">${isToday ? 'まだ記録がありません' : 'この日の記録はありません'}</div>`;
     document.getElementById('summary-section').style.display = 'none';
     return;
   }
@@ -329,13 +403,15 @@ function renderLog() {
       ? `その他（${entry.memo}）` : entry.process;
     const dispMin = entry.durationMin > 0
       ? `${entry.durationMin}分` : `${entry.durationSec}秒`;
+    const del = isToday
+      ? `<button class="btn-delete-row" onclick="deleteEntry(${entry.id})">✕</button>` : '';
     return `<tr>
       <td><span class="log-name-chip">${entry.name}</span></td>
       <td>${label}</td>
       <td style="white-space:nowrap">${entry.startTime}</td>
       <td style="white-space:nowrap">${entry.endTime}</td>
       <td class="log-duration" style="white-space:nowrap">${dispMin}</td>
-      <td><button class="btn-delete-row" onclick="deleteEntry(${entry.id})">✕</button></td>
+      <td>${del}</td>
     </tr>`;
   }).join('');
 
@@ -352,46 +428,33 @@ function renderLog() {
 function renderSummary(log) {
   const section = document.getElementById('summary-section');
   section.style.display = '';
-
-  // Per-person totals
-  const byName = {};
-  const byProc = {};
+  const byName = {}, byProc = {};
   log.forEach(e => {
     byName[e.name] = (byName[e.name] || 0) + e.durationMin;
     const label = e.process === 'その他' && e.memo ? `その他（${e.memo}）` : e.process;
     byProc[label] = (byProc[label] || 0) + e.durationMin;
   });
-
-  const nameRows = Object.entries(byName)
-    .sort((a,b) => b[1]-a[1])
-    .map(([n,m]) => `<div class="summary-row"><span class="summary-name">${n}</span><span class="summary-min">${m}分</span></div>`)
-    .join('');
-  const procRows = Object.entries(byProc)
-    .sort((a,b) => b[1]-a[1])
-    .map(([p,m]) => `<div class="summary-row"><span class="summary-name" style="font-size:11px">${p}</span><span class="summary-min">${m}分</span></div>`)
-    .join('');
-
+  const nameRows = Object.entries(byName).sort((a,b)=>b[1]-a[1])
+    .map(([n,m]) => `<div class="summary-row"><span class="summary-name">${n}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
+  const procRows = Object.entries(byProc).sort((a,b)=>b[1]-a[1])
+    .map(([p,m]) => `<div class="summary-row"><span class="summary-name" style="font-size:11px">${p}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
   section.innerHTML = `<div class="summary-grid">
-    <div class="summary-card">
-      <div class="summary-card-title">担当別 合計時間</div>
-      ${nameRows}
-    </div>
-    <div class="summary-card">
-      <div class="summary-card-title">工程別 合計時間</div>
-      ${procRows}
-    </div>
+    <div class="summary-card"><div class="summary-card-title">担当別 合計時間</div>${nameRows}</div>
+    <div class="summary-card"><div class="summary-card-title">工程別 合計時間</div>${procRows}</div>
   </div>`;
 }
 
 function deleteEntry(id) {
   const log = loadLog().filter(e => e.id !== id);
-  saveLog(log);
+  localStorage.setItem(`ta_log_${viewDate}`, JSON.stringify(log));
   renderLog();
 }
 
 function clearLog() {
-  if (!confirm('今日の記録をすべて削除しますか？')) return;
-  localStorage.removeItem(`ta_log_${todayStr}`);
+  const d = new Date(viewDate + 'T00:00:00');
+  const label = viewDate === todayStr ? '今日' : `${d.getMonth()+1}月${d.getDate()}日`;
+  if (!confirm(`${label}の記録をすべて削除しますか？`)) return;
+  localStorage.removeItem(`ta_log_${viewDate}`);
   renderLog();
 }
 
@@ -478,19 +541,93 @@ function renderGantt() {
   </div>`;
 }
 
-// Auto-show at 17:00
 function checkAutoGantt() {
-  const now = new Date();
-  if (now.getHours() >= 17 && !ganttVisible) {
+  if (new Date().getHours() >= 17 && !ganttVisible && viewDate === todayStr) {
     ganttVisible = true;
-    const sec = document.getElementById('gantt-section');
-    sec.style.display = '';
+    document.getElementById('gantt-section').style.display = '';
     document.getElementById('gantt-banner').innerHTML =
       '<div class="gantt-banner">📊 17時です！今日の日報をチェックしましょう</div>';
     renderGantt();
   }
 }
 
+// Monthly report
+let monthlyVisible = false;
+
+function toggleMonthly() {
+  monthlyVisible = !monthlyVisible;
+  document.getElementById('monthly-section').style.display = monthlyVisible ? '' : 'none';
+  if (monthlyVisible) renderMonthly();
+}
+
+function getMonthKeys() {
+  const prefix = `ta_log_${viewDate.substring(0, 7)}`;
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(prefix)) keys.push(k);
+  }
+  return keys.sort();
+}
+
+function renderMonthly() {
+  const ym = viewDate.substring(0, 7);
+  const keys = getMonthKeys();
+  const content = document.getElementById('monthly-content');
+  if (keys.length === 0) {
+    content.innerHTML = '<div class="gantt-empty">この月の記録はありません</div>';
+    return;
+  }
+  const allEntries = [], dayLogs = {};
+  keys.forEach(k => {
+    const entries = JSON.parse(localStorage.getItem(k) || '[]');
+    const dateStr = k.replace('ta_log_', '');
+    dayLogs[dateStr] = entries;
+    allEntries.push(...entries);
+  });
+  const byName = {}, byProc = {};
+  allEntries.forEach(e => {
+    byName[e.name] = (byName[e.name] || 0) + e.durationMin;
+    const label = e.process === 'その他' && e.memo ? `その他（${e.memo}）` : e.process;
+    byProc[label] = (byProc[label] || 0) + e.durationMin;
+  });
+  const nameRows = Object.entries(byName).sort((a,b)=>b[1]-a[1])
+    .map(([n,m]) => `<div class="summary-row"><span class="summary-name">${n}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
+  const procRows = Object.entries(byProc).sort((a,b)=>b[1]-a[1])
+    .map(([p,m]) => `<div class="summary-row"><span class="summary-name" style="font-size:11px">${p}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
+  const dayRows = Object.entries(dayLogs).sort().map(([dateStr, entries]) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    const wday = ['日','月','火','水','木','金','土'][d.getDay()];
+    const totalMin = entries.reduce((s, e) => s + e.durationMin, 0);
+    const names = [...new Set(entries.map(e => e.name))].join('・');
+    return `<div class="monthly-day-row">
+      <span class="monthly-day-date">${d.getMonth()+1}/${d.getDate()}（${wday}）</span>
+      <span class="monthly-day-names">${names}</span>
+      <span class="monthly-day-total">${fmtHM(totalMin)}</span>
+    </div>`;
+  }).join('');
+  const [y, m2] = ym.split('-');
+  content.innerHTML = `
+    <div class="monthly-header-title">${y}年${parseInt(m2)}月 まとめ（${keys.length}日分）</div>
+    <div class="summary-grid" style="margin-bottom:12px">
+      <div class="summary-card"><div class="summary-card-title">担当別 合計時間</div>${nameRows}</div>
+      <div class="summary-card"><div class="summary-card-title">工程別 合計時間</div>${procRows}</div>
+    </div>
+    <div class="monthly-days">${dayRows}</div>
+    <button class="btn-clear-month" onclick="clearMonth('${ym}')">この月のデータを削除</button>
+  `;
+}
+
+function clearMonth(ym) {
+  const [y, m2] = ym.split('-');
+  if (!confirm(`${y}年${parseInt(m2)}月の全データを削除しますか？\nこの操作は元に戻せません。`)) return;
+  getMonthKeys().forEach(k => localStorage.removeItem(k));
+  monthlyVisible = false;
+  document.getElementById('monthly-section').style.display = 'none';
+  renderLog();
+}
+
+updateDateDisplay();
 renderSlots();
 renderLog();
 checkAutoGantt();

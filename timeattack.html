@@ -94,6 +94,29 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
 .summary-row:last-child { margin-bottom: 0; }
 .summary-name { color: #333; }
 .summary-min { font-weight: 600; color: #E8401C; }
+
+/* Gantt */
+.gantt-section { margin-top: 18px; }
+.gantt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.gantt-title { font-size: 13px; font-weight: 700; color: #333; }
+.btn-gantt-toggle { font-size: 12px; color: #fff; background: #534AB7; border: none; border-radius: 20px; padding: 5px 14px; cursor: pointer; font-weight: 600; }
+
+.gantt-banner { background: #534AB7; color: #fff; border-radius: 12px; padding: 10px 16px; font-size: 13px; font-weight: 600; margin-bottom: 12px; text-align: center; }
+
+.gantt-chart { background: #fff; border-radius: 12px; padding: 12px 8px 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+.gantt-axis { display: flex; margin-bottom: 4px; }
+.gantt-name-spacer { width: 52px; flex-shrink: 0; }
+.gantt-axis-labels { flex: 1; position: relative; height: 18px; }
+.gantt-axis-label { position: absolute; font-size: 9px; color: #aaa; transform: translateX(-50%); white-space: nowrap; }
+.gantt-row { display: flex; align-items: center; margin-bottom: 6px; }
+.gantt-row:last-child { margin-bottom: 0; }
+.gantt-name { width: 52px; flex-shrink: 0; font-size: 11px; font-weight: 700; color: #333; text-align: right; padding-right: 8px; }
+.gantt-timeline { flex: 1; position: relative; height: 28px; background: #f7f7f5; border-radius: 6px; overflow: visible; }
+.gantt-grid-line { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,0.07); pointer-events: none; }
+.gantt-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; min-width: 3px; overflow: hidden; cursor: default; opacity: 0.9; }
+.gantt-bar:hover { opacity: 1; z-index: 10; }
+.gantt-bar-label { font-size: 9px; color: #fff; white-space: nowrap; padding: 0 4px; line-height: 22px; display: block; overflow: hidden; text-overflow: ellipsis; }
+.gantt-empty { text-align: center; color: #bbb; font-size: 13px; padding: 1.5rem 0; }
 </style>
 </head>
 <body>
@@ -113,6 +136,18 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
   </div>
   <div id="log-container"></div>
   <div class="summary-section" id="summary-section" style="display:none"></div>
+</div>
+
+<div class="log-section gantt-section" id="gantt-section" style="display:none">
+  <div class="gantt-header">
+    <div class="gantt-title">📊 日報タイムライン</div>
+  </div>
+  <div id="gantt-banner"></div>
+  <div id="gantt-content"></div>
+</div>
+
+<div style="padding: 12px 16px 0; text-align: center;">
+  <button class="btn-gantt-toggle" onclick="toggleGantt()">📊 日報を見る</button>
 </div>
 
 <script>
@@ -360,8 +395,106 @@ function clearLog() {
   renderLog();
 }
 
+function parseTimeToMin(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function getProcessColor(proc) {
+  const sumashaqi = ['刈取（スマシャキ）','トリミング（スマシャキ）','袋づめ（スマシャキ）','パウチ（スマシャキ）','播種（スマシャキ）','30穴（スマシャキ）','5穴（スマシャキ）'];
+  const herb = ['刈取（ハーブ）','トリミング（ハーブ）','袋づめ（ハーブ）','パウチ（ハーブ）','播種（ハーブ）','30穴（ハーブ）','6穴（ハーブ）'];
+  if (sumashaqi.includes(proc)) return '#534AB7';
+  if (herb.includes(proc)) return '#3B6D11';
+  return '#E8401C';
+}
+
+let ganttVisible = false;
+
+function toggleGantt() {
+  ganttVisible = !ganttVisible;
+  const sec = document.getElementById('gantt-section');
+  sec.style.display = ganttVisible ? '' : 'none';
+  if (ganttVisible) renderGantt();
+}
+
+function renderGantt() {
+  const log = loadLog();
+  const content = document.getElementById('gantt-content');
+  if (log.length === 0) {
+    content.innerHTML = '<div class="gantt-empty">まだ記録がありません</div>';
+    return;
+  }
+
+  const allMins = log.flatMap(e => [parseTimeToMin(e.startTime), parseTimeToMin(e.endTime)]);
+  const minTime = Math.min(...allMins, 8 * 60);
+  const maxTime = Math.max(...allMins, 17 * 60);
+  const span = maxTime - minTime || 60;
+
+  const hours = [];
+  for (let h = Math.floor(minTime / 60); h <= Math.ceil(maxTime / 60); h++) hours.push(h);
+
+  const axisHtml = hours.map(h => {
+    const pct = ((h * 60 - minTime) / span) * 100;
+    return `<div class="gantt-axis-label" style="left:${pct}%">${h}:00</div>`;
+  }).join('');
+
+  const byName = {};
+  log.forEach(e => {
+    if (!byName[e.name]) byName[e.name] = [];
+    byName[e.name].push(e);
+  });
+
+  const gridLines = hours.map(h => {
+    const pct = ((h * 60 - minTime) / span) * 100;
+    return `<div class="gantt-grid-line" style="left:${pct}%"></div>`;
+  }).join('');
+
+  const rowsHtml = Object.entries(byName).map(([name, entries]) => {
+    const bars = entries.map(e => {
+      const startMin = parseTimeToMin(e.startTime);
+      const endMin = parseTimeToMin(e.endTime);
+      const left = ((startMin - minTime) / span) * 100;
+      const width = Math.max(((endMin - startMin) / span) * 100, 0.5);
+      const color = getProcessColor(e.process);
+      const label = e.process === 'その他' && e.memo ? `その他（${e.memo}）` : e.process;
+      const dispMin = e.durationMin > 0 ? `${e.durationMin}分` : `${e.durationSec}秒`;
+      return `<div class="gantt-bar" style="left:${left}%;width:${width}%;background:${color}"
+        title="${label}  ${e.startTime}→${e.endTime}（${dispMin}）">
+        <span class="gantt-bar-label">${label}</span>
+      </div>`;
+    }).join('');
+    return `<div class="gantt-row">
+      <div class="gantt-name">${name}</div>
+      <div class="gantt-timeline">${gridLines}${bars}</div>
+    </div>`;
+  }).join('');
+
+  content.innerHTML = `<div class="gantt-chart">
+    <div class="gantt-axis">
+      <div class="gantt-name-spacer"></div>
+      <div class="gantt-axis-labels">${axisHtml}</div>
+    </div>
+    ${rowsHtml}
+  </div>`;
+}
+
+// Auto-show at 17:00
+function checkAutoGantt() {
+  const now = new Date();
+  if (now.getHours() >= 17 && !ganttVisible) {
+    ganttVisible = true;
+    const sec = document.getElementById('gantt-section');
+    sec.style.display = '';
+    document.getElementById('gantt-banner').innerHTML =
+      '<div class="gantt-banner">📊 17時です！今日の日報をチェックしましょう</div>';
+    renderGantt();
+  }
+}
+
 renderSlots();
 renderLog();
+checkAutoGantt();
+setInterval(checkAutoGantt, 60000);
 </script>
 </body>
 </html>

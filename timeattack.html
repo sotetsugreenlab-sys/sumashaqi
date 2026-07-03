@@ -116,7 +116,7 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
 </div>
 
 <script>
-const NAMES = ['狩俣','下田','まき','布川','星野','北島'];
+const NAMES = ['狩俣','下田','まき','布川','星野','北島','わっしー','れみ'];
 const PROCESS_GROUPS = [
   { group: 'スマシャキ', procs: ['刈取（スマシャキ）','トリミング（スマシャキ）','袋づめ（スマシャキ）','パウチ（スマシャキ）','播種（スマシャキ）','30穴（スマシャキ）','5穴（スマシャキ）'] },
   { group: 'ハーブ',     procs: ['刈取（ハーブ）','トリミング（ハーブ）','袋づめ（ハーブ）','パウチ（ハーブ）','播種（ハーブ）','30穴（ハーブ）','6穴（ハーブ）'] },
@@ -148,7 +148,7 @@ document.getElementById('page-date').textContent =
   `${realToday.getFullYear()}年${realToday.getMonth()+1}月${realToday.getDate()}日（${w}）`;
 
 // Timer state
-const NUM_SLOTS = 2;
+const NUM_SLOTS = 3;
 let slots = Array.from({length: NUM_SLOTS}, () => ({
   name: null, process: null, memo: '',
   startTime: null, startMs: null, running: false, interval: null

@@ -31,13 +31,13 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .card { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }
 .card-刈取 { background: #FAECE7; }
 .card-3穴  { background: #E6F1FB; }
-.card-6穴  { background: #EAF3DE; }
+.card-5穴  { background: #EAF3DE; }
 .card-30穴 { background: #EEEDFE; }
 .card-top { display: flex; align-items: center; justify-content: space-between; }
 .card-task { font-size: 15px; font-weight: 500; }
 .card-刈取 .card-task { color: #993C1D; }
 .card-3穴  .card-task { color: #185FA5; }
-.card-6穴  .card-task { color: #3B6D11; }
+.card-5穴  .card-task { color: #3B6D11; }
 .card-30穴 .card-task { color: #534AB7; }
 .card-sow { font-size: 20px; font-weight: 500; color: #1a1a1a; margin-top: 4px; }
 .card-sub { font-size: 12px; color: #666; text-align: right; }
@@ -155,8 +155,8 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-// 33日コース: 播種(0日)→30穴(5日)→6穴(15日)→刈取(33日)
-// 34日コース: 播種(0日)→30穴(5日)→6穴(15日)→刈取(34日)
+// 33日コース: 播種(0日)→30穴(5日)→5穴(15日)→刈取(33日)
+// 34日コース: 播種(0日)→30穴(5日)→5穴(15日)→刈取(34日)
 
 // 液肥管理
 const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
@@ -276,8 +276,8 @@ function renderTasks() {
   const sow6   = addDays(viewDate, -15);
   const sowH34 = addDays(viewDate, -34);
   const sowH35 = addDays(viewDate, -35);
-  const hist34 = [{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:15}];
-  const hist35 = [{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:15}];
+  const hist34 = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
+  const hist35 = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
   const hist6  = [{label:'30穴',daysFromSow:5}];
 
   let html = `<div class="col-header">
@@ -291,10 +291,10 @@ function renderTasks() {
     ${cardCell({label:'刈取', cls:'card-刈取', days:35, sow:sowH35, history:hist35}, dayLabel)}
   </div>`;
 
-  // 6穴（両コース同じ播種日）
+  // 5穴（両コース同じ播種日）
   html += `<div class="stage-row">
-    ${cardCell({label:'6穴へ移植', cls:'card-6穴', days:15, sow:sow6, history:hist6}, dayLabel)}
-    ${cardCell({label:'6穴へ移植', cls:'card-6穴', days:15, sow:sow6, history:hist6}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow6, history:hist6}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow6, history:hist6}, dayLabel)}
   </div>`;
 
   // 30穴（両コース同じ播種日）
@@ -363,7 +363,7 @@ function switchTab(tab) {
 function schForSow(sow) {
   return [
     { label: '30穴', days: 5  },
-    { label: '6穴',  days: 15 },
+    { label: '5穴',  days: 15 },
     { label: '刈取', days: 34 },
   ];
 }

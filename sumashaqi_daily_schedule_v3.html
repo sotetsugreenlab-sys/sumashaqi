@@ -270,11 +270,10 @@ function makeCard(t, dayLabel, compact) {
     histHtml += '</div>';
   }
   if (compact) {
-    const stageDate = addDays(t.sow, t.days);
     return `<div class="${cls}">
       <div class="card-task">${t.label}</div>
-      <div class="card-sow">${fmtShort(stageDate)}</div>
-      <div class="card-sub">${fmtShort(t.sow)}播種 ${t.days}日目</div>
+      <div class="card-sow">${fmtShort(t.sow)}播種</div>
+      <div class="card-sub">${t.days}日目</div>
       ${histHtml}
     </div>`;
   }
@@ -298,33 +297,38 @@ function renderTasks() {
   const isToday = isSameDay(viewDate, realToday);
   const dayLabel = isToday ? '今日の' : 'この日の';
 
-  const sowH34  = addDays(viewDate, -34);
-  const sowH35  = addDays(viewDate, -35);
-  const hist34  = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
-  const hist35  = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
-  const hist5   = [{label:'30穴',daysFromSow:5}];
+  const sowH34   = addDays(viewDate, -34);
+  const sowH35   = addDays(viewDate, -35);
+  const sow5_34  = addDays(viewDate, -15);
+  const sow5_35  = addDays(viewDate, -16);
+  const sow30_34 = addDays(viewDate, -5);
+  const sow30_35 = addDays(viewDate, -6);
+  const hist34   = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
+  const hist35   = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
+  const hist5_34 = [{label:'30穴',daysFromSow:5}];
+  const hist5_35 = [{label:'30穴',daysFromSow:5}];
 
   let html = `<div class="col-header">
     <div class="col-label col-label-old">34日コース</div>
     <div class="col-label col-label-new">35日コース</div>
   </div>`;
 
-  // 刈取（コースごとに異なる播種日）
+  // 刈取
   html += `<div class="stage-row">
     ${cardCell({label:'刈取', cls:'card-刈取', days:34, sow:sowH34, history:hist34}, dayLabel)}
     ${cardCell({label:'刈取', cls:'card-刈取', days:35, sow:sowH35, history:hist35}, dayLabel)}
   </div>`;
 
-  // 5穴（各列は刈取と同じバッチ・播種日が異なるので工程日も異なる）
+  // 5穴（35日コースは1日早い播種）
   html += `<div class="stage-row">
-    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sowH34, history:hist5}, dayLabel)}
-    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sowH35, history:hist5}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow5_34, history:hist5_34}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow5_35, history:hist5_35}, dayLabel)}
   </div>`;
 
-  // 30穴（各列は刈取と同じバッチ・播種日が異なるので工程日も異なる）
+  // 30穴（35日コースは1日早い播種）
   html += `<div class="stage-row">
-    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sowH34, history:[]}, dayLabel)}
-    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sowH35, history:[]}, dayLabel)}
+    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30_34, history:[]}, dayLabel)}
+    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30_35, history:[]}, dayLabel)}
   </div>`;
 
   document.getElementById('tasks').innerHTML = html;

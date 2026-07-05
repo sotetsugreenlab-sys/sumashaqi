@@ -297,13 +297,16 @@ function renderTasks() {
   const isToday = isSameDay(viewDate, realToday);
   const dayLabel = isToday ? '今日の' : 'この日の';
 
-  const sow30  = addDays(viewDate, -5);
-  const sow5   = addDays(viewDate, -15);
-  const sowH34 = addDays(viewDate, -34);
-  const sowH35 = addDays(viewDate, -35);
-  const hist34 = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
-  const hist35 = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
-  const hist5  = [{label:'30穴',daysFromSow:5}];
+  const sow30_34 = addDays(viewDate, -5);
+  const sow5_34  = addDays(viewDate, -15);
+  const sow30_35 = addDays(viewDate, -6);
+  const sow5_35  = addDays(viewDate, -16);
+  const sowH34   = addDays(viewDate, -34);
+  const sowH35   = addDays(viewDate, -35);
+  const hist34   = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
+  const hist35   = [{label:'30穴',daysFromSow:6},{label:'5穴',daysFromSow:16}];
+  const hist5_34 = [{label:'30穴',daysFromSow:5}];
+  const hist5_35 = [{label:'30穴',daysFromSow:6}];
 
   let html = `<div class="col-header">
     <div class="col-label col-label-old">34日コース</div>
@@ -316,16 +319,16 @@ function renderTasks() {
     ${cardCell({label:'刈取', cls:'card-刈取', days:35, sow:sowH35, history:hist35}, dayLabel)}
   </div>`;
 
-  // 5穴（今日5穴作業をするバッチ）
+  // 5穴（コースごとにずれた播種日）
   html += `<div class="stage-row">
-    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow5, history:hist5}, dayLabel)}
-    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow5, history:hist5}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow5_34, history:hist5_34}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:16, sow:sow5_35, history:hist5_35}, dayLabel)}
   </div>`;
 
-  // 30穴（今日30穴作業をするバッチ）
+  // 30穴（コースごとにずれた播種日）
   html += `<div class="stage-row">
-    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30, history:[]}, dayLabel)}
-    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30, history:[]}, dayLabel)}
+    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30_34, history:[]}, dayLabel)}
+    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:6, sow:sow30_35, history:[]}, dayLabel)}
   </div>`;
 
   document.getElementById('tasks').innerHTML = html;

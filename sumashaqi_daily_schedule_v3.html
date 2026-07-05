@@ -120,7 +120,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div id="tasks"></div>
 
 <div class="calc-box">
-  <div class="calc-title">栽培日程を計算（33日目）</div>
+  <div class="calc-title">栽培日程を計算（34日目）</div>
   <div class="calc-tabs">
     <button class="calc-tab active" id="tab-sow" onclick="switchTab('sow')">播種日 → 各日程</button>
     <button class="calc-tab" id="tab-harvest" onclick="switchTab('harvest')">刈取日 → 播種日</button>
@@ -274,21 +274,21 @@ function renderTasks() {
 
   const sow30  = addDays(viewDate, -5);
   const sow6   = addDays(viewDate, -15);
-  const sowH33 = addDays(viewDate, -33);
   const sowH34 = addDays(viewDate, -34);
-  const hist33 = [{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:15}];
+  const sowH35 = addDays(viewDate, -35);
   const hist34 = [{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:15}];
+  const hist35 = [{label:'30穴',daysFromSow:5},{label:'6穴',daysFromSow:15}];
   const hist6  = [{label:'30穴',daysFromSow:5}];
 
   let html = `<div class="col-header">
-    <div class="col-label col-label-old">33日コース</div>
-    <div class="col-label col-label-new">34日コース</div>
+    <div class="col-label col-label-old">34日コース</div>
+    <div class="col-label col-label-new">35日コース</div>
   </div>`;
 
   // 刈取（コースごとに異なる播種日）
   html += `<div class="stage-row">
-    ${cardCell({label:'刈取', cls:'card-刈取', days:33, sow:sowH33, history:hist33}, dayLabel)}
     ${cardCell({label:'刈取', cls:'card-刈取', days:34, sow:sowH34, history:hist34}, dayLabel)}
+    ${cardCell({label:'刈取', cls:'card-刈取', days:35, sow:sowH35, history:hist35}, dayLabel)}
   </div>`;
 
   // 6穴（両コース同じ播種日）
@@ -364,7 +364,7 @@ function schForSow(sow) {
   return [
     { label: '30穴', days: 5  },
     { label: '6穴',  days: 15 },
-    { label: '刈取', days: 33 },
+    { label: '刈取', days: 34 },
   ];
 }
 function calcFromSow() {
@@ -377,7 +377,7 @@ function calcFromSow() {
 function calcFromHarvest() {
   const val = document.getElementById('harvest-input').value;
   if (!val) return;
-  const sow = addDays(parseDate(val), -33);
+  const sow = addDays(parseDate(val), -34);
   document.getElementById('harvest-result').innerHTML =
     [chip('播種日', 0, sow)].concat(schForSow(sow).map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }

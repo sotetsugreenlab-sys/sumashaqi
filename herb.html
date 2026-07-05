@@ -68,6 +68,10 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .badge-ov1 { background: #D04020; color: #fff; }
 .badge-ov2 { background: #902000; color: #fff; }
 .harvest-stack { display: flex; flex-direction: column; gap: 4px; }
+.name-only-section { margin-top: 16px; padding-top: 12px; border-top: 1.5px solid #f0f0ed; }
+.name-only-title { font-size: 11px; color: #aaa; margin-bottom: 8px; }
+.name-only-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.name-only-item { font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 20px; background: #f5f5f2; text-decoration: none; }
 
 /* Calculator */
 .calc-box { background: #f5f5f2; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; margin-bottom: 10px; }
@@ -144,7 +148,8 @@ const HERBS = [
   },
   {
     name: 'ルッコラ', href: 'rucola.html', color: '#6D8B11', seeds: 8,
-    sowDays: [1,2,3,4,0], sowCutoff: '2099-12-31', // 本栽培では定期播種なし
+    nameOnly: true,
+    sowDays: [1,2,3,4,0], sowCutoff: '2099-12-31',
     sowDates: ['2026-04-14','2026-04-23','2026-05-02','2026-05-15','2026-05-18','2026-05-21','2026-05-22','2026-05-25','2026-05-29'],
     stages: [
       { label: '収穫',       days: 30, cls: 'card-harvest' },
@@ -174,6 +179,7 @@ const HERBS = [
   },
   {
     name: 'イタリアンパセリ', href: 'parsley.html', color: '#7B4FA8', seeds: 5,
+    nameOnly: true,
     sowDays: [5], sowCutoff: '2099-12-31', // 6/25以降播種なし
     sowDates: ['2026-05-13','2026-05-21','2026-05-24','2026-05-27','2026-05-31','2026-06-05','2026-06-12','2026-06-19'],
     stages: [
@@ -184,6 +190,7 @@ const HERBS = [
   },
   {
     name: 'ディル', href: 'dill.html', color: '#B5860D', seeds: 3,
+    nameOnly: true,
     sowDays: [5], sowCutoff: '2099-12-31', // 6/25以降播種なし
     sowDates: ['2026-05-13','2026-05-21','2026-05-24','2026-05-27','2026-05-31','2026-06-05','2026-06-12','2026-06-19'],
     stages: [
@@ -248,11 +255,13 @@ function makeCompactCardHarvest(stage, sow, offset) {
 
 function renderTasks() {
   let html = '';
-  HERBS.forEach(herb => {
-    const sowToday = isValidSow(herb, viewDate);
-    const harvestStage = herb.stages[0]; // 刈取（最長日数）
+  const activeHerbs = HERBS.filter(h => !h.nameOnly);
+  const nameOnlyHerbs = HERBS.filter(h => h.nameOnly);
 
-    // 刈取ウィンドウ ±2日
+  activeHerbs.forEach(herb => {
+    const sowToday = isValidSow(herb, viewDate);
+    const harvestStage = herb.stages[0];
+
     const harvestCards = [];
     for (let offset = -2; offset <= 2; offset++) {
       const sow = addDays(viewDate, -(harvestStage.days + offset));
@@ -262,7 +271,6 @@ function renderTasks() {
       ? `<div class="harvest-stack">${harvestCards.join('')}</div>`
       : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
 
-    // 移植・LED移動ステージ（当日のみ）
     const otherCells = herb.stages.slice(1).map(stage => {
       const sow = addDays(viewDate, -stage.days);
       return `<div class="stage-cell">${isValidSow(herb, sow)
@@ -286,6 +294,17 @@ function renderTasks() {
       }
     </div>`;
   });
+
+  // 名前のみ表示（下部まとめ）
+  if (nameOnlyHerbs.length > 0) {
+    html += `<div class="name-only-section">
+      <div class="name-only-title">その他のハーブ</div>
+      <div class="name-only-list">${nameOnlyHerbs.map(h =>
+        `<a class="name-only-item" href="${h.href}" style="color:${h.color}">${h.name}</a>`
+      ).join('')}</div>
+    </div>`;
+  }
+
   document.getElementById('tasks').innerHTML = html;
 }
 

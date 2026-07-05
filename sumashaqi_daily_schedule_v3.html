@@ -270,10 +270,11 @@ function makeCard(t, dayLabel, compact) {
     histHtml += '</div>';
   }
   if (compact) {
+    const stageDate = addDays(t.sow, t.days);
     return `<div class="${cls}">
       <div class="card-task">${t.label}</div>
-      <div class="card-sow">${fmtShort(t.sow)}播種</div>
-      <div class="card-sub">${t.days}日目</div>
+      <div class="card-sow">${fmtShort(stageDate)}</div>
+      <div class="card-sub">${fmtShort(t.sow)}播種 ${t.days}日目</div>
       ${histHtml}
     </div>`;
   }

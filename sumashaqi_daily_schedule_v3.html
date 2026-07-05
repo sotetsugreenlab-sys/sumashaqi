@@ -358,12 +358,18 @@ function renderBanner(events) {
 }
 
 function renderDelivery() {
-  // 日=0 月=1 水=3 金=5
-  const deliveryDays = [0, 1, 3, 5];
+  const deliveryItems = {
+    0: 'フリル15・バジル5・パクチー5・ルッコラ5', // 日
+    1: 'フリル25・バジル5・ルッコラ5',             // 月
+    2: 'フリル15',                                 // 火
+    3: 'フリル30・バジル5・パクチー5・ルッコラ5', // 水
+    4: 'フリル30・バジル5・ルッコラ5',             // 木
+    5: 'フリル20・バジル5・ルッコラ5',             // 金
+    6: 'フリル20',                                 // 土
+  };
+  const items = deliveryItems[viewDate.getDay()];
   const el = document.getElementById('delivery-banner');
-  el.innerHTML = deliveryDays.includes(viewDate.getDay())
-    ? '<div class="delivery-banner">🎒 緑園都市配送</div>'
-    : '';
+  el.innerHTML = `<div class="delivery-banner">🎒 緑園都市・真音city配送<br><span style="font-size:13px;font-weight:400">${items}</span></div>`;
 }
 
 function renderAll() {

@@ -138,6 +138,7 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
 .btn-clear-month { display: block; width: 100%; margin-top: 10px; padding: 10px; background: none; border: 1px solid #E8401C; color: #E8401C; border-radius: 10px; font-size: 13px; cursor: pointer; font-weight: 600; }
 .btn-clear-month:active { background: #E8401C; color: #fff; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
@@ -256,6 +257,12 @@ function goToday() {
   checkAutoGantt();
 }
 
+// Supabase
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
 // Timer state
 const NUM_SLOTS = 3;
 let slots = Array.from({length: NUM_SLOTS}, () => ({
@@ -263,13 +270,25 @@ let slots = Array.from({length: NUM_SLOTS}, () => ({
   startTime: null, startMs: null, running: false, interval: null
 }));
 
-// Log storage — load from viewDate, always save to todayStr
-function loadLog() {
-  const raw = localStorage.getItem(`ta_log_${viewDate}`);
-  return raw ? JSON.parse(raw) : [];
+// Log storage (Supabase)
+async function loadLog() {
+  const { data, error } = await db
+    .from('work_logs').select('*').eq('date', viewDate).order('id');
+  if (error) { console.error(error); return []; }
+  return (data || []).map(r => ({
+    id: r.id, name: r.name, process: r.process, memo: r.memo,
+    startTime: r.start_time, endTime: r.end_time,
+    durationMin: r.duration_min, durationSec: r.duration_sec
+  }));
 }
-function saveLog(log) {
-  localStorage.setItem(`ta_log_${todayStr}`, JSON.stringify(log));
+async function saveEntry(entry) {
+  const { error } = await db.from('work_logs').insert({
+    id: entry.id, date: todayStr,
+    name: entry.name, process: entry.process, memo: entry.memo,
+    start_time: entry.startTime, end_time: entry.endTime,
+    duration_min: entry.durationMin, duration_sec: entry.durationSec
+  });
+  if (error) console.error(error);
 }
 
 // Render timer slots
@@ -341,12 +360,11 @@ function updateMemo(idx, val) {
   }
 }
 
-function toggleTimer(idx) {
+async function toggleTimer(idx) {
   const slot = slots[idx];
   if (!slot.name || !slot.process) return;
 
   if (!slot.running) {
-    // Start
     slot.startMs = Date.now();
     slot.startTime = fmtTime(new Date());
     slot.running = true;
@@ -356,48 +374,35 @@ function toggleTimer(idx) {
     }, 500);
     renderSlots();
   } else {
-    // Stop
     clearInterval(slot.interval);
     slot.interval = null;
     const endTime = fmtTime(new Date());
     const durationMs = Date.now() - slot.startMs;
-    const durationMin = Math.round(durationMs / 60000);
-    const durationSec = Math.floor(durationMs / 1000);
-
-    const log = loadLog();
-    log.push({
-      name: slot.name,
-      process: slot.process,
-      memo: slot.memo,
-      startTime: slot.startTime,
-      endTime,
-      durationMin,
-      durationSec,
+    const entry = {
       id: Date.now(),
-    });
-    saveLog(log);
-
-    slot.running = false;
-    slot.name = null;
-    slot.process = null;
-    slot.memo = '';
-    slot.startMs = null;
-    slot.startTime = null;
+      name: slot.name, process: slot.process, memo: slot.memo,
+      startTime: slot.startTime, endTime,
+      durationMin: Math.round(durationMs / 60000),
+      durationSec: Math.floor(durationMs / 1000),
+    };
+    slot.running = false; slot.name = null; slot.process = null;
+    slot.memo = ''; slot.startMs = null; slot.startTime = null;
     renderSlots();
-    renderLog();
+    await saveEntry(entry);
+    await renderLog();
   }
 }
 
-function renderLog() {
-  const log = loadLog();
+async function renderLog() {
   const isToday = viewDate === todayStr;
   const container = document.getElementById('log-container');
+  container.innerHTML = '<div class="log-empty" style="color:#ccc">読み込み中…</div>';
+  const log = await loadLog();
   if (log.length === 0) {
     container.innerHTML = `<div class="log-empty">${isToday ? 'まだ記録がありません' : 'この日の記録はありません'}</div>`;
     document.getElementById('summary-section').style.display = 'none';
     return;
   }
-
   const rows = [...log].reverse().map(entry => {
     const label = entry.process === 'その他' && entry.memo
       ? `その他（${entry.memo}）` : entry.process;
@@ -414,14 +419,12 @@ function renderLog() {
       <td>${del}</td>
     </tr>`;
   }).join('');
-
   container.innerHTML = `<table class="log-table">
     <thead><tr>
       <th>担当</th><th>工程</th><th>開始</th><th>終了</th><th>時間</th><th></th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
-
   renderSummary(log);
 }
 
@@ -444,18 +447,17 @@ function renderSummary(log) {
   </div>`;
 }
 
-function deleteEntry(id) {
-  const log = loadLog().filter(e => e.id !== id);
-  localStorage.setItem(`ta_log_${viewDate}`, JSON.stringify(log));
-  renderLog();
+async function deleteEntry(id) {
+  await db.from('work_logs').delete().eq('id', id);
+  await renderLog();
 }
 
-function clearLog() {
+async function clearLog() {
   const d = new Date(viewDate + 'T00:00:00');
   const label = viewDate === todayStr ? '今日' : `${d.getMonth()+1}月${d.getDate()}日`;
   if (!confirm(`${label}の記録をすべて削除しますか？`)) return;
-  localStorage.removeItem(`ta_log_${viewDate}`);
-  renderLog();
+  await db.from('work_logs').delete().eq('date', viewDate);
+  await renderLog();
 }
 
 function parseTimeToMin(t) {
@@ -480,8 +482,8 @@ function toggleGantt() {
   if (ganttVisible) renderGantt();
 }
 
-function renderGantt() {
-  const log = loadLog();
+async function renderGantt() {
+  const log = await loadLog();
   const content = document.getElementById('gantt-content');
   if (log.length === 0) {
     content.innerHTML = '<div class="gantt-empty">まだ記録がありません</div>';
@@ -560,36 +562,29 @@ function toggleMonthly() {
   if (monthlyVisible) renderMonthly();
 }
 
-function getMonthKeys() {
-  const prefix = `ta_log_${viewDate.substring(0, 7)}`;
-  const keys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && k.startsWith(prefix)) keys.push(k);
-  }
-  return keys.sort();
-}
-
-function renderMonthly() {
+async function renderMonthly() {
   const ym = viewDate.substring(0, 7);
-  const keys = getMonthKeys();
   const content = document.getElementById('monthly-content');
-  if (keys.length === 0) {
+  content.innerHTML = '<div class="gantt-empty" style="color:#ccc">読み込み中…</div>';
+  const { data, error } = await db
+    .from('work_logs').select('*')
+    .gte('date', `${ym}-01`).lte('date', `${ym}-31`).order('date').order('id');
+  if (error || !data || data.length === 0) {
     content.innerHTML = '<div class="gantt-empty">この月の記録はありません</div>';
     return;
   }
-  const allEntries = [], dayLogs = {};
-  keys.forEach(k => {
-    const entries = JSON.parse(localStorage.getItem(k) || '[]');
-    const dateStr = k.replace('ta_log_', '');
-    dayLogs[dateStr] = entries;
-    allEntries.push(...entries);
-  });
-  const byName = {}, byProc = {};
+  const allEntries = data.map(r => ({
+    id: r.id, name: r.name, process: r.process, memo: r.memo,
+    startTime: r.start_time, endTime: r.end_time,
+    durationMin: r.duration_min, durationSec: r.duration_sec, date: r.date
+  }));
+  const byName = {}, byProc = {}, dayLogs = {};
   allEntries.forEach(e => {
     byName[e.name] = (byName[e.name] || 0) + e.durationMin;
     const label = e.process === 'その他' && e.memo ? `その他（${e.memo}）` : e.process;
     byProc[label] = (byProc[label] || 0) + e.durationMin;
+    if (!dayLogs[e.date]) dayLogs[e.date] = [];
+    dayLogs[e.date].push(e);
   });
   const nameRows = Object.entries(byName).sort((a,b)=>b[1]-a[1])
     .map(([n,m]) => `<div class="summary-row"><span class="summary-name">${n}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
@@ -598,7 +593,7 @@ function renderMonthly() {
   const dayRows = Object.entries(dayLogs).sort().map(([dateStr, entries]) => {
     const d = new Date(dateStr + 'T00:00:00');
     const wday = ['日','月','火','水','木','金','土'][d.getDay()];
-    const totalMin = entries.reduce((s, e) => s + e.durationMin, 0);
+    const totalMin = entries.reduce((s,e) => s + e.durationMin, 0);
     const names = [...new Set(entries.map(e => e.name))].join('・');
     return `<div class="monthly-day-row">
       <span class="monthly-day-date">${d.getMonth()+1}/${d.getDate()}（${wday}）</span>
@@ -607,8 +602,9 @@ function renderMonthly() {
     </div>`;
   }).join('');
   const [y, m2] = ym.split('-');
+  const days = Object.keys(dayLogs).length;
   content.innerHTML = `
-    <div class="monthly-header-title">${y}年${parseInt(m2)}月 まとめ（${keys.length}日分）</div>
+    <div class="monthly-header-title">${y}年${parseInt(m2)}月 まとめ（${days}日分）</div>
     <div class="summary-grid" style="margin-bottom:12px">
       <div class="summary-card"><div class="summary-card-title">担当別 合計時間</div>${nameRows}</div>
       <div class="summary-card"><div class="summary-card-title">工程別 合計時間</div>${procRows}</div>
@@ -618,14 +614,23 @@ function renderMonthly() {
   `;
 }
 
-function clearMonth(ym) {
+async function clearMonth(ym) {
   const [y, m2] = ym.split('-');
   if (!confirm(`${y}年${parseInt(m2)}月の全データを削除しますか？\nこの操作は元に戻せません。`)) return;
-  getMonthKeys().forEach(k => localStorage.removeItem(k));
+  await db.from('work_logs').delete().gte('date', `${ym}-01`).lte('date', `${ym}-31`);
   monthlyVisible = false;
   document.getElementById('monthly-section').style.display = 'none';
-  renderLog();
+  await renderLog();
 }
+
+// リアルタイム同期
+db.channel('work_logs_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'work_logs' }, () => {
+    renderLog();
+    if (ganttVisible) renderGantt();
+    if (monthlyVisible) renderMonthly();
+  })
+  .subscribe();
 
 updateDateDisplay();
 renderSlots();

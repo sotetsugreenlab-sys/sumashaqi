@@ -280,14 +280,11 @@ function renderTasks() {
 
     const hasTask = harvestCards.length > 0 ||
       herb.stages.slice(1).some(s => isValidSow(herb, addDays(viewDate, -s.days)));
-    const sowBadge = sowToday ? '<div class="sow-today">🌱 今日播種</div>' : '';
-
     html += `<div class="herb-section">
       <a class="herb-header" href="${herb.href}" style="color:${herb.color}">
         <span>${herb.name}${herb.seeds != null ? `<span class="herb-seeds">${herb.seeds}粒</span>` : ''}</span>
         <span class="herb-arrow">›</span>
       </a>
-      ${sowBadge}
       ${hasTask
         ? `<div class="stage-row"><div class="stage-cell">${harvestCellHtml}</div>${otherCells.join('')}</div>`
         : (sowToday ? '' : '<div class="no-task-inline">本日の作業なし</div>')

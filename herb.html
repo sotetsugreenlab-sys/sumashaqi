@@ -309,9 +309,7 @@ function renderTasks() {
 }
 
 function renderSowBanner() {
-  const anySow = HERBS.some(h => isValidSow(h, viewDate));
-  document.getElementById('sow-banner').innerHTML = anySow
-    ? '<div class="sow-banner">🌱 今日は播種日</div>' : '';
+  document.getElementById('sow-banner').innerHTML = '<div class="sow-banner">🌱 毎日播種を３品種お願いします❤️</div>';
 }
 
 function renderAll() { renderHeader(); renderSowBanner(); renderTasks(); }

@@ -125,18 +125,8 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
 .date-nav-label { font-size: 13px; color: #555; font-weight: 600; min-width: 160px; text-align: center; }
 .date-nav-today { font-size: 10px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-left: 2px; }
 
-/* Monthly report */
-.monthly-section { margin-top: 14px; }
-.btn-monthly { font-size: 12px; color: #fff; background: #3B6D11; border: none; border-radius: 20px; padding: 5px 14px; cursor: pointer; font-weight: 600; }
-.monthly-header-title { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 12px; }
-.monthly-days { background: #fff; border-radius: 12px; padding: 8px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 10px; }
-.monthly-day-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 6px 0; border-bottom: 0.5px solid #f0f0ed; }
-.monthly-day-row:last-child { border-bottom: none; }
-.monthly-day-date { font-weight: 700; color: #333; min-width: 80px; }
-.monthly-day-names { flex: 1; color: #777; font-size: 11px; }
-.monthly-day-total { font-weight: 600; color: #E8401C; white-space: nowrap; }
-.btn-clear-month { display: block; width: 100%; margin-top: 10px; padding: 10px; background: none; border: 1px solid #E8401C; color: #E8401C; border-radius: 10px; font-size: 13px; cursor: pointer; font-weight: 600; }
-.btn-clear-month:active { background: #E8401C; color: #fff; }
+.gantt-names-line { font-size: 12px; color: #555; margin-bottom: 10px; }
+.gantt-names-line span { font-weight: 600; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -161,24 +151,25 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem;
     <button class="btn-clear-log" onclick="clearLog()">全削除</button>
   </div>
   <div id="log-container"></div>
-  <div class="summary-section" id="summary-section" style="display:none"></div>
 </div>
 
 <div class="log-section gantt-section" id="gantt-section" style="display:none">
   <div class="gantt-header">
-    <div class="gantt-title">📊 日報タイムライン</div>
+    <div class="gantt-title">📊 日報</div>
   </div>
-  <div id="gantt-banner"></div>
+  <div class="date-nav" style="margin:0 0 12px">
+    <button class="btn-date" id="btn-gantt-prev" onclick="changeGanttDate(-1)">‹</button>
+    <div class="date-nav-label" id="gantt-date-label"></div>
+    <button class="btn-date" id="btn-gantt-next" onclick="changeGanttDate(1)">›</button>
+    <button class="date-nav-today" id="btn-gantt-today" onclick="ganttGoToday()">今日</button>
+  </div>
+  <div id="gantt-names"></div>
   <div id="gantt-content"></div>
+  <div id="gantt-proc-summary"></div>
 </div>
 
-<div class="log-section monthly-section" id="monthly-section" style="display:none">
-  <div id="monthly-content"></div>
-</div>
-
-<div style="padding: 12px 16px 0; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+<div style="padding: 12px 16px 0; text-align:center;">
   <button class="btn-gantt-toggle" onclick="toggleGantt()">📊 日報を見る</button>
-  <button class="btn-monthly" onclick="toggleMonthly()">📅 今月のまとめ</button>
 </div>
 
 <script>
@@ -239,9 +230,6 @@ function changeDate(delta) {
   updateDateDisplay();
   ganttVisible = false;
   document.getElementById('gantt-section').style.display = 'none';
-  document.getElementById('gantt-banner').innerHTML = '';
-  monthlyVisible = false;
-  document.getElementById('monthly-section').style.display = 'none';
   renderLog();
 }
 
@@ -250,9 +238,6 @@ function goToday() {
   updateDateDisplay();
   ganttVisible = false;
   document.getElementById('gantt-section').style.display = 'none';
-  document.getElementById('gantt-banner').innerHTML = '';
-  monthlyVisible = false;
-  document.getElementById('monthly-section').style.display = 'none';
   renderLog();
   checkAutoGantt();
 }
@@ -400,7 +385,6 @@ async function renderLog() {
   const log = await loadLog();
   if (log.length === 0) {
     container.innerHTML = `<div class="log-empty">${isToday ? 'まだ記録がありません' : 'この日の記録はありません'}</div>`;
-    document.getElementById('summary-section').style.display = 'none';
     return;
   }
   const rows = [...log].reverse().map(entry => {
@@ -425,27 +409,8 @@ async function renderLog() {
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
-  renderSummary(log);
 }
 
-function renderSummary(log) {
-  const section = document.getElementById('summary-section');
-  section.style.display = '';
-  const byName = {}, byProc = {};
-  log.forEach(e => {
-    byName[e.name] = (byName[e.name] || 0) + e.durationMin;
-    const label = e.process === 'その他' && e.memo ? `その他（${e.memo}）` : e.process;
-    byProc[label] = (byProc[label] || 0) + e.durationMin;
-  });
-  const nameRows = Object.entries(byName).sort((a,b)=>b[1]-a[1])
-    .map(([n,m]) => `<div class="summary-row"><span class="summary-name">${n}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
-  const procRows = Object.entries(byProc).sort((a,b)=>b[1]-a[1])
-    .map(([p,m]) => `<div class="summary-row"><span class="summary-name" style="font-size:11px">${p}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
-  section.innerHTML = `<div class="summary-grid">
-    <div class="summary-card"><div class="summary-card-title">担当別 合計時間</div>${nameRows}</div>
-    <div class="summary-card"><div class="summary-card-title">工程別 合計時間</div>${procRows}</div>
-  </div>`;
-}
 
 async function deleteEntry(id) {
   await db.from('work_logs').delete().eq('id', id);
@@ -474,46 +439,84 @@ function getProcessColor(proc) {
 }
 
 let ganttVisible = false;
+let ganttDate = todayStr;
+
+function changeGanttDate(delta) {
+  const d = new Date(ganttDate + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  if (d > realToday) return;
+  ganttDate = toDateStr(d);
+  updateGanttDateDisplay();
+  renderGantt();
+}
+
+function ganttGoToday() {
+  ganttDate = todayStr;
+  updateGanttDateDisplay();
+  renderGantt();
+}
+
+function updateGanttDateDisplay() {
+  const d = new Date(ganttDate + 'T00:00:00');
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  document.getElementById('gantt-date-label').textContent =
+    `${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+  document.getElementById('btn-gantt-next').disabled = ganttDate === todayStr;
+  document.getElementById('btn-gantt-today').style.display = ganttDate === todayStr ? 'none' : '';
+}
 
 function toggleGantt() {
   ganttVisible = !ganttVisible;
   const sec = document.getElementById('gantt-section');
   sec.style.display = ganttVisible ? '' : 'none';
-  if (ganttVisible) renderGantt();
+  if (ganttVisible) {
+    ganttDate = viewDate;
+    updateGanttDateDisplay();
+    renderGantt();
+  }
 }
 
 async function renderGantt() {
-  const log = await loadLog();
+  const { data, error } = await db
+    .from('work_logs').select('*').eq('date', ganttDate).order('id');
+  const log = (data || []).map(r => ({
+    id: r.id, name: r.name, process: r.process, memo: r.memo,
+    startTime: r.start_time, endTime: r.end_time,
+    durationMin: r.duration_min, durationSec: r.duration_sec
+  }));
+
+  const namesEl = document.getElementById('gantt-names');
   const content = document.getElementById('gantt-content');
+  const procEl = document.getElementById('gantt-proc-summary');
+
   if (log.length === 0) {
-    content.innerHTML = '<div class="gantt-empty">まだ記録がありません</div>';
+    namesEl.innerHTML = '';
+    content.innerHTML = '<div class="gantt-empty">この日の記録はありません</div>';
+    procEl.innerHTML = '';
     return;
   }
 
+  // 担当者
+  const names = [...new Set(log.map(e => e.name))];
+  namesEl.innerHTML = `<div class="gantt-names-line">担当: <span>${names.join('・')}</span></div>`;
+
+  // タイムライン
   const allMins = log.flatMap(e => [parseTimeToMin(e.startTime), parseTimeToMin(e.endTime)]);
   const minTime = Math.min(...allMins, 8 * 60);
   const maxTime = Math.max(...allMins, 17 * 60);
   const span = maxTime - minTime || 60;
-
   const hours = [];
   for (let h = Math.floor(minTime / 60); h <= Math.ceil(maxTime / 60); h++) hours.push(h);
-
   const axisHtml = hours.map(h => {
     const pct = ((h * 60 - minTime) / span) * 100;
     return `<div class="gantt-axis-label" style="left:${pct}%">${h}:00</div>`;
   }).join('');
-
-  const byName = {};
-  log.forEach(e => {
-    if (!byName[e.name]) byName[e.name] = [];
-    byName[e.name].push(e);
-  });
-
   const gridLines = hours.map(h => {
     const pct = ((h * 60 - minTime) / span) * 100;
     return `<div class="gantt-grid-line" style="left:${pct}%"></div>`;
   }).join('');
-
+  const byName = {};
+  log.forEach(e => { if (!byName[e.name]) byName[e.name] = []; byName[e.name].push(e); });
   const rowsHtml = Object.entries(byName).map(([name, entries]) => {
     const bars = entries.map(e => {
       const startMin = parseTimeToMin(e.startTime);
@@ -533,13 +536,27 @@ async function renderGantt() {
       <div class="gantt-timeline">${gridLines}${bars}</div>
     </div>`;
   }).join('');
-
   content.innerHTML = `<div class="gantt-chart">
-    <div class="gantt-axis">
-      <div class="gantt-name-spacer"></div>
+    <div class="gantt-axis"><div class="gantt-name-spacer"></div>
       <div class="gantt-axis-labels">${axisHtml}</div>
-    </div>
-    ${rowsHtml}
+    </div>${rowsHtml}
+  </div>`;
+
+  // 行程別時間
+  const byProc = {}, procNames = {};
+  log.forEach(e => {
+    const label = e.process === 'その他' && e.memo ? `その他（${e.memo}）` : e.process;
+    byProc[label] = (byProc[label] || 0) + e.durationMin;
+    if (!procNames[label]) procNames[label] = new Set();
+    procNames[label].add(e.name);
+  });
+  const procRows = Object.entries(byProc).sort((a,b) => b[1]-a[1])
+    .map(([p, m]) => `<div class="summary-row">
+      <span class="summary-name">${p}<span style="color:#aaa;font-size:10px;margin-left:5px">${[...procNames[p]].join('・')}</span></span>
+      <span class="summary-min">${fmtHM(m)}</span>
+    </div>`).join('');
+  procEl.innerHTML = `<div class="summary-card" style="margin-top:12px">
+    <div class="summary-card-title">行程別時間</div>${procRows}
   </div>`;
 }
 
@@ -553,82 +570,11 @@ function checkAutoGantt() {
   }
 }
 
-// Monthly report
-let monthlyVisible = false;
-
-function toggleMonthly() {
-  monthlyVisible = !monthlyVisible;
-  document.getElementById('monthly-section').style.display = monthlyVisible ? '' : 'none';
-  if (monthlyVisible) renderMonthly();
-}
-
-async function renderMonthly() {
-  const ym = viewDate.substring(0, 7);
-  const content = document.getElementById('monthly-content');
-  content.innerHTML = '<div class="gantt-empty" style="color:#ccc">読み込み中…</div>';
-  const { data, error } = await db
-    .from('work_logs').select('*')
-    .gte('date', `${ym}-01`).lte('date', `${ym}-31`).order('date').order('id');
-  if (error || !data || data.length === 0) {
-    content.innerHTML = '<div class="gantt-empty">この月の記録はありません</div>';
-    return;
-  }
-  const allEntries = data.map(r => ({
-    id: r.id, name: r.name, process: r.process, memo: r.memo,
-    startTime: r.start_time, endTime: r.end_time,
-    durationMin: r.duration_min, durationSec: r.duration_sec, date: r.date
-  }));
-  const byName = {}, byProc = {}, dayLogs = {};
-  allEntries.forEach(e => {
-    byName[e.name] = (byName[e.name] || 0) + e.durationMin;
-    const label = e.process === 'その他' && e.memo ? `その他（${e.memo}）` : e.process;
-    byProc[label] = (byProc[label] || 0) + e.durationMin;
-    if (!dayLogs[e.date]) dayLogs[e.date] = [];
-    dayLogs[e.date].push(e);
-  });
-  const nameRows = Object.entries(byName).sort((a,b)=>b[1]-a[1])
-    .map(([n,m]) => `<div class="summary-row"><span class="summary-name">${n}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
-  const procRows = Object.entries(byProc).sort((a,b)=>b[1]-a[1])
-    .map(([p,m]) => `<div class="summary-row"><span class="summary-name" style="font-size:11px">${p}</span><span class="summary-min">${fmtHM(m)}</span></div>`).join('');
-  const dayRows = Object.entries(dayLogs).sort().map(([dateStr, entries]) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    const wday = ['日','月','火','水','木','金','土'][d.getDay()];
-    const totalMin = entries.reduce((s,e) => s + e.durationMin, 0);
-    const names = [...new Set(entries.map(e => e.name))].join('・');
-    return `<div class="monthly-day-row">
-      <span class="monthly-day-date">${d.getMonth()+1}/${d.getDate()}（${wday}）</span>
-      <span class="monthly-day-names">${names}</span>
-      <span class="monthly-day-total">${fmtHM(totalMin)}</span>
-    </div>`;
-  }).join('');
-  const [y, m2] = ym.split('-');
-  const days = Object.keys(dayLogs).length;
-  content.innerHTML = `
-    <div class="monthly-header-title">${y}年${parseInt(m2)}月 まとめ（${days}日分）</div>
-    <div class="summary-grid" style="margin-bottom:12px">
-      <div class="summary-card"><div class="summary-card-title">担当別 合計時間</div>${nameRows}</div>
-      <div class="summary-card"><div class="summary-card-title">工程別 合計時間</div>${procRows}</div>
-    </div>
-    <div class="monthly-days">${dayRows}</div>
-    <button class="btn-clear-month" onclick="clearMonth('${ym}')">この月のデータを削除</button>
-  `;
-}
-
-async function clearMonth(ym) {
-  const [y, m2] = ym.split('-');
-  if (!confirm(`${y}年${parseInt(m2)}月の全データを削除しますか？\nこの操作は元に戻せません。`)) return;
-  await db.from('work_logs').delete().gte('date', `${ym}-01`).lte('date', `${ym}-31`);
-  monthlyVisible = false;
-  document.getElementById('monthly-section').style.display = 'none';
-  await renderLog();
-}
-
 // リアルタイム同期
 db.channel('work_logs_changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'work_logs' }, () => {
     renderLog();
     if (ganttVisible) renderGantt();
-    if (monthlyVisible) renderMonthly();
   })
   .subscribe();
 

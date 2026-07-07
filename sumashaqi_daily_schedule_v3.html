@@ -109,9 +109,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
   <div class="ekihi-line" id="ekihi-line" style="display:none"></div>
   <div class="bag-bar">
     <span class="bag-label">袋在庫</span>
-    <button class="bag-adj" onclick="adjustBag(-1)">－</button>
     <span class="bag-count" id="bag-count-display">--</span>
-    <button class="bag-adj" onclick="adjustBag(1)">＋</button>
     <span class="bag-unit">組</span>
   </div>
 </div>
@@ -212,31 +210,16 @@ function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
 const realToday = new Date();
 let viewDate = new Date(realToday);
 
-// 袋在庫
-if (localStorage.getItem('bagCount') === null) localStorage.setItem('bagCount', '11');
-let bagCount = parseInt(localStorage.getItem('bagCount'));
-
-// 日付が変わったら自動で−1
-const _todayStr = toDateStr(realToday);
-const _lastDate = localStorage.getItem('bagLastDate');
-if (_lastDate && _lastDate !== _todayStr) {
-  const daysDiff = Math.round((parseDate(_todayStr) - parseDate(_lastDate)) / 86400000);
-  if (daysDiff > 0) {
-    bagCount = Math.max(0, bagCount - daysDiff);
-    localStorage.setItem('bagCount', bagCount);
-  }
-}
-localStorage.setItem('bagLastDate', _todayStr);
+// 袋在庫 - 基準日から毎日1組減（在庫が変わったらここを更新）
+const BAG_BASE_DATE = '2026-07-07';
+const BAG_BASE_COUNT = 15;
 
 function renderBagCount() {
+  const daysDiff = Math.round((parseDate(toDateStr(viewDate)) - parseDate(BAG_BASE_DATE)) / 86400000);
+  const count = Math.max(0, BAG_BASE_COUNT - daysDiff);
   const el = document.getElementById('bag-count-display');
-  el.textContent = bagCount;
-  el.className = 'bag-count' + (bagCount <= 3 ? ' low' : '');
-}
-function adjustBag(delta) {
-  bagCount = Math.max(0, bagCount + delta);
-  localStorage.setItem('bagCount', bagCount);
-  renderBagCount();
+  el.textContent = count;
+  el.className = 'bag-count' + (count <= 3 ? ' low' : '');
 }
 
 function navigate(delta) {
@@ -377,6 +360,7 @@ function renderAll() {
   renderEkihi();
   renderDelivery();
   renderTasks();
+  renderBagCount();
   if (cachedEvents) renderBanner(cachedEvents);
 }
 
@@ -468,7 +452,6 @@ async function loadEvents() {
   }
 }
 
-renderBagCount();
 renderAll();
 loadEvents();
 </script>

@@ -415,7 +415,13 @@ function renderDelivery() {
     5: 'フリル20・バジル5・ルッコラ5',             // 金
     6: 'フリル20',                                 // 土
   };
-  const items = deliveryItems[viewDate.getDay()];
+  const dateOverrides = {
+    '2026-07-08': 'フリル30',
+    '2026-07-09': 'フリル30',
+    '2026-07-10': 'フリル20',
+  };
+  const ds = `${viewDate.getFullYear()}-${String(viewDate.getMonth()+1).padStart(2,'0')}-${String(viewDate.getDate()).padStart(2,'0')}`;
+  const items = dateOverrides[ds] ?? deliveryItems[viewDate.getDay()];
   const el = document.getElementById('delivery-banner');
   el.innerHTML = `<div class="delivery-banner">🎒 緑園都市配送<br><span style="font-size:13px;font-weight:400">${items}</span></div>`;
 }

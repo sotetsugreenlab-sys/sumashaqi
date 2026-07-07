@@ -82,8 +82,16 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .bag-count { font-size: 22px; font-weight: 700; color: #993C1D; line-height: 1; }
 .bag-count.low { color: #E24B4A; }
 .bag-unit { font-size: 13px; color: #666; }
-.bag-adj { font-size: 16px; background: #f5f5f2; border: 0.5px solid #ddd; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; color: #666; line-height: 1; display: flex; align-items: center; justify-content: center; }
-.bag-adj:active { background: #e8e8e5; }
+.liquid-bar { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 5px; }
+.liquid-label { font-size: 13px; color: #666; }
+.liquid-count { font-size: 22px; font-weight: 700; color: #185FA5; line-height: 1; }
+.liquid-unit { font-size: 13px; color: #666; }
+.liquid-adj-row { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.liquid-input { width: 56px; font-size: 13px; padding: 4px 6px; border: 0.5px solid #ddd; border-radius: 6px; text-align: center; background: #fafafa; }
+.liquid-btn { font-size: 12px; padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+.liquid-btn-minus { background: #E6F1FB; color: #185FA5; }
+.liquid-btn-plus { background: #EAF3DE; color: #3B6D11; }
+.liquid-btn:active { opacity: 0.75; }
 .btn-harvest-done { margin-top: 5px; width: 100%; font-size: 11px; font-weight: 500; padding: 4px 0; background: #FAECE7; border: 1px solid #E8A090; border-radius: 8px; color: #993C1D; cursor: pointer; }
 .btn-harvest-done:active { background: #F5D5CC; }
 
@@ -94,6 +102,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .sync-status.ok { color: #3B6D11; }
 .sync-status.err { color: #E24B4A; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
@@ -111,6 +120,19 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
     <span class="bag-label">袋在庫</span>
     <span class="bag-count" id="bag-count-display">--</span>
     <span class="bag-unit">組</span>
+  </div>
+  <div class="liquid-bar">
+    <span class="liquid-label">貯液</span>
+    <span class="liquid-count" id="liquid-display">--</span>
+    <span class="liquid-unit">L</span>
+  </div>
+  <div class="liquid-adj-row">
+    <input type="number" id="liquid-used" class="liquid-input" placeholder="0" min="0" step="0.1">
+    <span class="liquid-unit">L</span>
+    <button class="liquid-btn liquid-btn-minus" onclick="adjustLiquid(-1)">使った −</button>
+    <input type="number" id="liquid-made" class="liquid-input" placeholder="0" min="0" step="0.1">
+    <span class="liquid-unit">L</span>
+    <button class="liquid-btn liquid-btn-plus" onclick="adjustLiquid(1)">作った ＋</button>
   </div>
 </div>
 
@@ -175,6 +197,49 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div class="sync-status" id="sync-status">読み込み中...</div>
 
 <script>
+// Supabase（貯液管理）
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+let liquidAmount = 0;
+
+async function loadLiquidStock() {
+  const { data, error } = await db.from('liquid_log').select('delta');
+  if (error) { console.error(error); return; }
+  liquidAmount = (data || []).reduce((sum, r) => sum + (r.delta || 0), 0);
+  renderLiquidStock();
+}
+
+function renderLiquidStock() {
+  const el = document.getElementById('liquid-display');
+  const val = Math.round(liquidAmount * 10) / 10;
+  el.textContent = val % 1 === 0 ? val : val.toFixed(1);
+}
+
+async function adjustLiquid(sign) {
+  const inputId = sign < 0 ? 'liquid-used' : 'liquid-made';
+  const val = parseFloat(document.getElementById(inputId).value);
+  if (!val || val <= 0) return;
+  const delta = sign * val;
+  const { error } = await db.from('liquid_log').insert({ delta });
+  if (error) { console.error(error); return; }
+  document.getElementById(inputId).value = '';
+  liquidAmount += delta;
+  renderLiquidStock();
+}
+
+// 全端末リアルタイム同期
+db.channel('liquid_log_changes')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'liquid_log' }, payload => {
+    liquidAmount += payload.new.delta;
+    renderLiquidStock();
+  })
+  .subscribe();
+
+loadLiquidStock();
+
 const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 

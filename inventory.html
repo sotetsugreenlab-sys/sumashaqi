@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在庫管理</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="在庫管理">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 3rem; }
+
+.header { text-align: center; margin-bottom: 1.25rem; }
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 10px; }
+.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+.page-note { font-size: 12px; color: #aaa; margin-top: 5px; }
+
+.section { margin-bottom: 20px; }
+.section-title {
+  font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 0.08em;
+  margin-bottom: 8px; padding: 0 2px;
+}
+
+.item-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.item-name { font-size: 15px; font-weight: 600; color: #1a1a1a; flex: 1; }
+.item-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.item-count { font-size: 24px; font-weight: 700; color: #185FA5; min-width: 36px; text-align: center; line-height: 1; }
+.item-count.zero { color: #ccc; }
+.btn-adj {
+  width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
+  font-size: 20px; font-weight: 300; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.btn-minus { background: #f0f0ee; color: #666; }
+.btn-plus  { background: #185FA5; color: #fff; box-shadow: 0 2px 6px rgba(24,95,165,0.3); }
+.btn-adj:active { opacity: 0.7; transform: scale(0.93); }
+.btn-minus:disabled { opacity: 0.3; cursor: default; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-link" href="index.html">← トップ</a>
+  <div class="page-title">📦 在庫管理</div>
+  <div class="page-note">※ 封を開けていないもの</div>
+</div>
+
+<div id="content"></div>
+
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+const SECTIONS = [
+  {
+    title: '種',
+    items: ['スマシャキ', 'バジル', 'ワイルド', 'パクチー']
+  },
+  {
+    title: 'SGL内備品',
+    items: ['みどりテープ', 'きいろテープ', 'ぴんくテープ', 'あおテープ', 'しろテープ']
+  },
+];
+
+let counts = {};
+
+async function loadInventory() {
+  const { data, error } = await db.from('inventory').select('item, count');
+  if (error) { console.error(error); return; }
+  (data || []).forEach(r => { counts[r.item] = r.count; });
+  render();
+}
+
+function render() {
+  let html = '';
+  SECTIONS.forEach(sec => {
+    html += `<div class="section">
+      <div class="section-title">【${sec.title}】</div>`;
+    sec.items.forEach(item => {
+      const c = counts[item] ?? 0;
+      html += `<div class="item-card">
+        <div class="item-name">${item}</div>
+        <div class="item-controls">
+          <button class="btn-adj btn-minus" onclick="adjust('${item}', -1)" ${c <= 0 ? 'disabled' : ''}>−</button>
+          <div class="item-count${c === 0 ? ' zero' : ''}">${c}</div>
+          <button class="btn-adj btn-plus" onclick="adjust('${item}', 1)">＋</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('content').innerHTML = html;
+}
+
+async function adjust(item, delta) {
+  const newCount = Math.max(0, (counts[item] ?? 0) + delta);
+  counts[item] = newCount;
+  render();
+  const { error } = await db.from('inventory').upsert({ item, count: newCount });
+  if (error) console.error(error);
+}
+
+// 全端末リアルタイム同期
+db.channel('inventory_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+    if (payload.new) counts[payload.new.item] = payload.new.count;
+    render();
+  })
+  .subscribe();
+
+loadInventory();
+</script>
+</body>
+</html>

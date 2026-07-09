@@ -15,33 +15,52 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; display:
 .logo { font-size: 13px; color: #aaa; margin-bottom: 6px; letter-spacing: 0.05em; }
 .title { font-size: 24px; font-weight: 600; color: #1a1a1a; margin-bottom: 2rem; }
 
-.menu { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px; }
+.menu { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px; }
 
+/* 2-column grid row */
+.menu-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Square card */
 .menu-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   background: #fff;
   border-radius: 16px;
-  padding: 1.4rem 1.5rem;
+  padding: 1.4rem 0.75rem;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
   transition: box-shadow 0.15s, transform 0.1s;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  aspect-ratio: 1 / 1;
+  text-align: center;
+  gap: 0.5rem;
 }
-.menu-card:active { transform: scale(0.98); box-shadow: 0 0px 2px rgba(0,0,0,0.07); }
+.menu-card:active { transform: scale(0.97); box-shadow: 0 0px 2px rgba(0,0,0,0.07); }
 
-.menu-icon { font-size: 32px; flex-shrink: 0; }
+/* Wide card (タイムアタック) */
+.menu-card.wide {
+  flex-direction: row;
+  justify-content: flex-start;
+  aspect-ratio: unset;
+  padding: 1.2rem 1.4rem;
+  gap: 1rem;
+  text-align: left;
+}
+
+.menu-icon { font-size: 36px; }
+.menu-card.wide .menu-icon { font-size: 32px; flex-shrink: 0; }
+
 .menu-text {}
-.menu-name { font-size: 18px; font-weight: 600; color: #1a1a1a; }
-.menu-desc { font-size: 12px; color: #999; margin-top: 3px; }
+.menu-name { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.menu-card.wide .menu-name { font-size: 18px; }
+.menu-desc { font-size: 11px; color: #999; margin-top: 3px; }
 
-.card-sumashaqi  { border-left: 4px solid #534AB7; }
-.card-herb       { border-left: 4px solid #3B6D11; }
-.card-timeattack { border-left: 4px solid #E8401C; }
-.card-inventory  { border-left: 4px solid #185FA5; }
-.card-shift      { border-left: 4px solid #3B6D11; }
-.badge-new { font-size: 10px; font-weight: 700; background: #E8401C; color: #fff; border-radius: 8px; padding: 2px 7px; margin-left: 7px; vertical-align: middle; letter-spacing: 0.02em; }
+.card-sumashaqi  { border-top: 4px solid #534AB7; }
+.card-herb       { border-top: 4px solid #3B6D11; }
+.card-timeattack { border-left: 4px solid #E8401C; border-top: none; }
+.card-inventory  { border-top: 4px solid #185FA5; }
+.card-shift      { border-top: 4px solid #E8A020; }
 </style>
 </head>
 <body>
@@ -50,43 +69,45 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; display:
 <div class="title">何を確認する？</div>
 
 <div class="menu">
-  <a class="menu-card card-sumashaqi" href="sumashaqi_daily_schedule_v3.html">
-    <div class="menu-icon">🌱</div>
-    <div class="menu-text">
-      <div class="menu-name">スマシャキ</div>
-      <div class="menu-desc">当日の栽培作業・液肥管理</div>
-    </div>
-  </a>
+  <div class="menu-row">
+    <a class="menu-card card-sumashaqi" href="sumashaqi_daily_schedule_v3.html">
+      <div class="menu-icon">🌱</div>
+      <div class="menu-text">
+        <div class="menu-name">スマシャキ</div>
+        <div class="menu-desc">栽培作業・液肥</div>
+      </div>
+    </a>
+    <a class="menu-card card-herb" href="herb.html">
+      <div class="menu-icon">🌿</div>
+      <div class="menu-text">
+        <div class="menu-name">ハーブ</div>
+        <div class="menu-desc">バジル・パクチー</div>
+      </div>
+    </a>
+  </div>
 
-  <a class="menu-card card-herb" href="herb.html">
-    <div class="menu-icon">🌿</div>
-    <div class="menu-text">
-      <div class="menu-name">ハーブ</div>
-      <div class="menu-desc">バジル・ルッコラ・パクチー</div>
-    </div>
-  </a>
+  <div class="menu-row">
+    <a class="menu-card card-shift" href="shift.html">
+      <div class="menu-icon">📅</div>
+      <div class="menu-text">
+        <div class="menu-name">シフト</div>
+        <div class="menu-desc">月間・交換管理</div>
+      </div>
+    </a>
+    <a class="menu-card card-inventory" href="inventory.html">
+      <div class="menu-icon">📦</div>
+      <div class="menu-text">
+        <div class="menu-name">在庫</div>
+        <div class="menu-desc">備品・貯液管理</div>
+      </div>
+    </a>
+  </div>
 
-  <a class="menu-card card-timeattack" href="timeattack.html">
+  <a class="menu-card wide card-timeattack" href="timeattack.html">
     <div class="menu-icon">⏱</div>
     <div class="menu-text">
       <div class="menu-name">タイムアタック</div>
       <div class="menu-desc">作業時間の計測・記録</div>
-    </div>
-  </a>
-
-  <a class="menu-card card-shift" href="shift.html">
-    <div class="menu-icon">📅</div>
-    <div class="menu-text">
-      <div class="menu-name">シフト管理</div>
-      <div class="menu-desc">月間シフト・交換の管理</div>
-    </div>
-  </a>
-
-  <a class="menu-card card-inventory" href="inventory.html">
-    <div class="menu-icon">📦</div>
-    <div class="menu-text">
-      <div class="menu-name">在庫管理</div>
-      <div class="menu-desc">SGL備品・貯液の管理</div>
     </div>
   </a>
 </div>

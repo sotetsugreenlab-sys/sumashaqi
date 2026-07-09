@@ -554,10 +554,11 @@ function render() {
     if (holiday) html += `<div class="cell-holiday">${holiday}</div>`;
     if (data) {
       html += '<div class="staff-list">';
+      const wasabiSet = new Set(data.other || []);
       (data.other || []).forEach(n => {
         html += `<div class="staff-name other">${n}</div>`;
       });
-      (data.cultivation || []).forEach(n => {
+      (data.cultivation || []).filter(n => !wasabiSet.has(n)).forEach(n => {
         html += `<div class="staff-name cultivation">${n}</div>`;
       });
       (data.delivery || []).forEach(n => {

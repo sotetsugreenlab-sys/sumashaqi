@@ -530,11 +530,11 @@ function render() {
       (data.cultivation || []).forEach(n => {
         html += `<div class="staff-name cultivation">${n}</div>`;
       });
-      (data.delivery || []).forEach(n => {
-        html += `<div class="staff-name delivery">${n}</div>`;
-      });
       (data.other || []).forEach(n => {
         html += `<div class="staff-name other">${n}</div>`;
+      });
+      (data.delivery || []).forEach(n => {
+        html += `<div class="staff-name delivery">${n}</div>`;
       });
       if (data.note) {
         html += `<div class="staff-name" style="color:#888;font-size:9px">${data.note}</div>`;

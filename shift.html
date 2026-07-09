@@ -177,20 +177,16 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 0 0 3rem; }
 
     <div class="edit-section" id="edit-section">
       <div class="edit-group">
-        <div class="edit-group-label oth">わさびスタッフ（緑）</div>
+        <div class="edit-group-label oth">わさびスタッフ（緑）<span id="wasabi-cult-count" style="font-weight:400;color:#888;margin-left:6px;font-size:11px"></span></div>
         <div class="staff-chips" id="chips-other"></div>
       </div>
       <div class="edit-group">
-        <div class="edit-group-label cult">出荷栽培のみ（黒）</div>
+        <div class="edit-group-label cult">出荷栽培スタッフ（黒）</div>
         <div class="staff-chips" id="chips-cult"></div>
       </div>
       <div class="edit-group">
         <div class="edit-group-label deliv">配送スタッフ（オレンジ）</div>
         <div class="staff-chips" id="chips-deliv"></div>
-      </div>
-      <div class="edit-group">
-        <div class="edit-group-label" style="color:#888">メモ</div>
-        <textarea class="note-input" id="note-input" rows="2" placeholder="定例・来客など"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
@@ -208,9 +204,10 @@ const db = supabase.createClient(
 
 const SHIFT_PW = '510ab';
 
-const CULT_STAFF = ['れみ','かりまた','しもだ','まき','わっしー','わし','わしやま','はまにし'];
-const DELIV_STAFF = ['前島','宮本'];
-const OTHER_STAFF = ['布川','星野','北島','みい','おさむ'];
+const CULT_STAFF = ['れみ','鷲山','かりまた','下田','まき','星野','布川','北島'];
+const DELIV_STAFF = ['前島','宮本','かりまた','北島'];
+const OTHER_STAFF = ['れみ','鷲山','かりまた','下田','まき','星野','布川','北島'];
+const MAX_WASABI_CULT = 3;
 
 const HOLIDAYS = {
   '2026-01-01':'元日','2026-01-12':'成人の日',
@@ -620,17 +617,23 @@ function checkPw() {
 }
 
 function showEditForm() {
-  const data = shifts[editDate] || { cultivation: [], delivery: [], other: [], note: '' };
+  const data = shifts[editDate] || { cultivation: [], delivery: [], other: [] };
   editCult = [...(data.cultivation || [])];
   editDeliv = [...(data.delivery || [])];
   editOther = [...(data.other || [])];
 
+  renderChips('chips-other', OTHER_STAFF, editOther, 'oth');
   renderChips('chips-cult', CULT_STAFF, editCult, 'cult');
   renderChips('chips-deliv', DELIV_STAFF, editDeliv, 'deliv');
-  renderChips('chips-other', OTHER_STAFF, editOther, 'oth');
-
-  document.getElementById('note-input').value = data.note || '';
+  updateWasabiCultCount();
   document.getElementById('edit-section').classList.add('open');
+}
+
+function updateWasabiCultCount() {
+  const total = editOther.length + editCult.length;
+  const el = document.getElementById('wasabi-cult-count');
+  el.textContent = `緑+黒 ${total}/3`;
+  el.style.color = total >= MAX_WASABI_CULT ? '#E8401C' : '#888';
 }
 
 function renderChips(containerId, staffList, selected, cls) {
@@ -642,29 +645,41 @@ function renderChips(containerId, staffList, selected, cls) {
 }
 
 function toggleStaff(containerId, name, cls) {
-  let arr;
-  if (cls === 'cult') arr = editCult;
-  else if (cls === 'deliv') arr = editDeliv;
-  else arr = editOther;
+  if (cls === 'deliv') {
+    // Radio: select only one
+    if (editDeliv.includes(name)) {
+      editDeliv = [];
+    } else {
+      editDeliv = [name];
+    }
+    renderChips('chips-deliv', DELIV_STAFF, editDeliv, 'deliv');
+    return;
+  }
 
+  const arr = cls === 'cult' ? editCult : editOther;
   const idx = arr.indexOf(name);
-  if (idx >= 0) arr.splice(idx, 1);
-  else arr.push(name);
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+  } else {
+    // Check combined green+black limit
+    if (editOther.length + editCult.length >= MAX_WASABI_CULT) return;
+    arr.push(name);
+  }
 
-  const staffList = cls === 'cult' ? CULT_STAFF : (cls === 'deliv' ? DELIV_STAFF : OTHER_STAFF);
+  const staffList = cls === 'cult' ? CULT_STAFF : OTHER_STAFF;
   renderChips(containerId, staffList, arr, cls);
+  updateWasabiCultCount();
 }
 
 async function saveShift() {
-  const note = document.getElementById('note-input').value.trim();
   const row = {
     shift_date: editDate,
     cultivation_staff: editCult,
     delivery_staff: editDeliv,
     other_staff: editOther,
-    note: note || null
+    note: null
   };
-  shifts[editDate] = { cultivation: editCult, delivery: editDeliv, other: editOther, note };
+  shifts[editDate] = { cultivation: editCult, delivery: editDeliv, other: editOther, note: '' };
   render();
   closeModal();
   const { error } = await db.from('shifts').upsert(row);

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シフト管理</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="シフト管理">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; padding: 0 0 3rem; }
+
+.header { text-align: center; padding: 1rem 0.75rem 0.75rem; }
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 8px; }
+.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+
+/* Month navigation */
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 1rem; }
+.month-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #EEEDFE; color: #534AB7; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.month-btn:active { background: #d8d6fd; }
+.month-label { font-size: 18px; font-weight: 700; color: #1a1a1a; min-width: 120px; text-align: center; }
+
+/* Calendar */
+.calendar-wrap { padding: 0 4px; }
+.cal-head { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 3px; }
+.cal-head-cell { text-align: center; font-size: 11px; font-weight: 700; padding: 4px 0;
+  color: #888; }
+.cal-head-cell.sun { color: #E8401C; }
+.cal-head-cell.sat { color: #185FA5; }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-cell {
+  background: #fff;
+  border-radius: 8px;
+  min-height: 72px;
+  padding: 4px 3px;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.cal-cell:active { background: #f5f5f3; }
+.cal-cell.empty { background: transparent; box-shadow: none; cursor: default; }
+.cal-cell.today { outline: 2px solid #534AB7; }
+.cal-cell.other-month { opacity: 0.3; }
+
+.cell-date {
+  font-size: 11px; font-weight: 700; margin-bottom: 2px;
+  line-height: 1;
+}
+.cell-date.sun { color: #E8401C; }
+.cell-date.sat { color: #185FA5; }
+.cell-date.weekday { color: #1a1a1a; }
+.cell-holiday { font-size: 8px; color: #E8401C; line-height: 1; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.staff-list { display: flex; flex-direction: column; gap: 1px; }
+.staff-name {
+  font-size: 10px; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.staff-name.cultivation { color: #1a1a1a; }
+.staff-name.delivery { color: #ED7D31; font-weight: 600; }
+.staff-name.other { color: #3B8A28; }
+
+/* Legend */
+.legend { display: flex; gap: 12px; justify-content: center; padding: 8px; font-size: 11px; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-cult { background: #1a1a1a; }
+.dot-deliv { background: #ED7D31; }
+.dot-other { background: #3B8A28; }
+
+/* Modal overlay */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 480px; padding: 1.25rem 1.25rem 2rem;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.modal-date { font-size: 13px; color: #888; margin-bottom: 1rem; }
+
+.pw-section { margin-bottom: 1rem; }
+.pw-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.pw-row { display: flex; gap: 8px; }
+.pw-input { flex: 1; font-size: 15px; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 10px; outline: none; }
+.pw-input:focus { border-color: #534AB7; }
+.pw-btn { font-size: 13px; font-weight: 600; padding: 8px 16px; background: #534AB7; color: #fff; border: none; border-radius: 10px; cursor: pointer; }
+.pw-btn:active { opacity: 0.8; }
+.pw-error { font-size: 12px; color: #E8401C; margin-top: 4px; display: none; }
+.pw-error.show { display: block; }
+
+.edit-section { display: none; }
+.edit-section.open { display: block; }
+.edit-group { margin-bottom: 14px; }
+.edit-group-label { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.edit-group-label.cult { color: #1a1a1a; }
+.edit-group-label.deliv { color: #ED7D31; }
+.edit-group-label.oth { color: #3B8A28; }
+
+.staff-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.staff-chip {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 13px; padding: 4px 10px; border-radius: 20px; border: none; cursor: pointer;
+}
+.staff-chip.cult { background: #f0f0ee; color: #1a1a1a; }
+.staff-chip.deliv { background: #FFF0E5; color: #ED7D31; }
+.staff-chip.oth { background: #EBF7E8; color: #3B8A28; }
+.staff-chip.active { font-weight: 700; }
+.staff-chip.cult.active { background: #1a1a1a; color: #fff; }
+.staff-chip.deliv.active { background: #ED7D31; color: #fff; }
+.staff-chip.oth.active { background: #3B8A28; color: #fff; }
+
+.note-input { width: 100%; font-size: 13px; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 10px; outline: none; resize: none; font-family: sans-serif; }
+.note-input:focus { border-color: #534AB7; }
+
+.modal-footer { display: flex; gap: 8px; margin-top: 1rem; }
+.btn-save { flex: 1; font-size: 15px; font-weight: 700; padding: 12px; background: #534AB7; color: #fff; border: none; border-radius: 12px; cursor: pointer; }
+.btn-save:active { opacity: 0.8; }
+.btn-cancel { font-size: 14px; padding: 12px 16px; background: #f0f0ee; color: #555; border: none; border-radius: 12px; cursor: pointer; }
+.btn-cancel:active { background: #e0e0de; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-link" href="index.html">← トップ</a>
+  <div class="page-title">📅 シフト管理</div>
+</div>
+
+<div class="month-nav">
+  <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+  <div class="month-label" id="month-label"></div>
+  <button class="month-btn" onclick="changeMonth(1)">›</button>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot dot-cult"></div><span>栽培</span></div>
+  <div class="legend-item"><div class="legend-dot dot-deliv"></div><span>配送</span></div>
+  <div class="legend-item"><div class="legend-dot dot-other"></div><span>その他</span></div>
+</div>
+
+<div class="calendar-wrap">
+  <div class="cal-head">
+    <div class="cal-head-cell sun">日</div>
+    <div class="cal-head-cell">月</div>
+    <div class="cal-head-cell">火</div>
+    <div class="cal-head-cell">水</div>
+    <div class="cal-head-cell">木</div>
+    <div class="cal-head-cell">金</div>
+    <div class="cal-head-cell sat">土</div>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="modal" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">シフト編集</div>
+    <div class="modal-date" id="modal-date"></div>
+
+    <div class="pw-section" id="pw-section">
+      <div class="pw-label">パスワードを入力してください</div>
+      <div class="pw-row">
+        <input class="pw-input" type="password" id="pw-input" placeholder="パスワード" onkeydown="if(event.key==='Enter') checkPw()">
+        <button class="pw-btn" onclick="checkPw()">OK</button>
+      </div>
+      <div class="pw-error" id="pw-error">パスワードが違います</div>
+    </div>
+
+    <div class="edit-section" id="edit-section">
+      <div class="edit-group">
+        <div class="edit-group-label cult">栽培スタッフ（黒）</div>
+        <div class="staff-chips" id="chips-cult"></div>
+      </div>
+      <div class="edit-group">
+        <div class="edit-group-label deliv">配送スタッフ（オレンジ）</div>
+        <div class="staff-chips" id="chips-deliv"></div>
+      </div>
+      <div class="edit-group">
+        <div class="edit-group-label oth">その他スタッフ（緑）</div>
+        <div class="staff-chips" id="chips-other"></div>
+      </div>
+      <div class="edit-group">
+        <div class="edit-group-label" style="color:#888">メモ</div>
+        <textarea class="note-input" id="note-input" rows="2" placeholder="定例・来客など"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+        <button class="btn-save" onclick="saveShift()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+const SHIFT_PW = '510ab';
+
+const CULT_STAFF = ['れみ','かりまた','しもだ','まき','わっしー','わし','わしやま','はまにし'];
+const DELIV_STAFF = ['前島','宮本'];
+const OTHER_STAFF = ['布川','星野','北島','みい','おさむ'];
+
+const HOLIDAYS = {
+  '2026-01-01':'元日','2026-01-12':'成人の日',
+  '2026-02-11':'建国記念','2026-02-23':'天皇誕生日',
+  '2026-03-20':'春分の日',
+  '2026-04-29':'昭和の日',
+  '2026-05-03':'憲法記念日','2026-05-04':'みどりの日','2026-05-05':'こどもの日','2026-05-06':'振替休日',
+  '2026-07-20':'海の日',
+  '2026-08-11':'山の日',
+  '2026-09-21':'敬老の日','2026-09-23':'秋分の日',
+  '2026-10-12':'スポーツの日',
+  '2026-11-03':'文化の日','2026-11-23':'勤労感謝の日',
+  '2026-12-23':'天皇誕生日',
+};
+
+// Pre-loaded shift data from Excel
+const INITIAL_SHIFTS = {
+  "2026-01-01":{"cultivation":["れみ","秋山"],"delivery":[],"other":[]},
+  "2026-01-02":{"cultivation":["はまにし","かりまた"],"delivery":[],"other":[]},
+  "2026-01-03":{"cultivation":["わっしー","秋山"],"delivery":[],"other":[]},
+  "2026-01-04":{"cultivation":["わっしー","秋山","かり"],"delivery":[],"other":[]},
+  "2026-01-05":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-06":{"cultivation":["まき","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-07":{"cultivation":["れみ","秋山","しもだ"],"delivery":[],"other":[]},
+  "2026-01-08":{"cultivation":["れみ","かりまた"],"delivery":[],"other":[]},
+  "2026-01-09":{"cultivation":["わっしー","かり","まき"],"delivery":[],"other":[]},
+  "2026-01-10":{"cultivation":["わっしー","しもだ","まき"],"delivery":[],"other":[]},
+  "2026-01-11":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-12":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-13":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-14":{"cultivation":["はまにし","秋山","しもだ"],"delivery":[],"other":[]},
+  "2026-01-15":{"cultivation":["れみ","かりまた"],"delivery":[],"other":[]},
+  "2026-01-16":{"cultivation":["わっしー","秋山","まき"],"delivery":[],"other":[]},
+  "2026-01-17":{"cultivation":["わっしー","秋山","しもだ"],"delivery":[],"other":[]},
+  "2026-01-18":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-19":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-20":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-21":{"cultivation":["はまにし","秋山","しもだ"],"delivery":[],"other":[]},
+  "2026-01-22":{"cultivation":["れみ","かりまた"],"delivery":[],"other":[]},
+  "2026-01-23":{"cultivation":["わっしー","かり","まき"],"delivery":[],"other":[]},
+  "2026-01-24":{"cultivation":["わっしー","しもだ","まき"],"delivery":[],"other":[]},
+  "2026-01-25":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-26":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-27":{"cultivation":["わっしー","かり","しもだ"],"delivery":[],"other":[]},
+  "2026-01-28":{"cultivation":["はまにし","しもだ","まき"],"delivery":[],"other":[]},
+  "2026-01-29":{"cultivation":["れみ","かりまた"],"delivery":[],"other":[]},
+  "2026-01-30":{"cultivation":["わっしー","かり","まき"],"delivery":[],"other":[]},
+  "2026-01-31":{"cultivation":["わっしー","しもだ","まき"],"delivery":[],"other":[]},
+  "2026-02-01":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-02-02":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-03":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-02-04":{"cultivation":["しもだ"],"delivery":["かりまた"],"other":[]},
+  "2026-02-05":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-06":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-07":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-02-08":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-09":{"cultivation":["しもだ","わしやま"],"delivery":["前島"],"other":[]},
+  "2026-02-10":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-02-11":{"cultivation":["しもだ"],"delivery":["かりまた"],"other":[]},
+  "2026-02-12":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-13":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-14":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-02-15":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-02-16":{"cultivation":["しもだ","わしやま"],"delivery":["前島"],"other":[]},
+  "2026-02-17":{"cultivation":["しもだ"],"delivery":["かりまた"],"other":[]},
+  "2026-02-18":{"cultivation":["しもだ"],"delivery":["かりまた"],"other":[]},
+  "2026-02-19":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-20":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-21":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-02-22":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-02-23":{"cultivation":["しもだ","わしやま"],"delivery":["前島"],"other":[]},
+  "2026-02-24":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-02-25":{"cultivation":["しもだ"],"delivery":["かりまた"],"other":[]},
+  "2026-02-26":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-27":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-02-28":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-03-01":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-03-02":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-03-03":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-03-04":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-03-05":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-03-06":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-03-07":{"cultivation":["まき"],"delivery":["かりまた","宮本"],"other":[]},
+  "2026-03-08":{"cultivation":["かりまた","しもだ"],"delivery":["前島","宮本"],"other":[]},
+  "2026-03-09":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-03-10":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-03-11":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-03-12":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":[]},
+  "2026-03-13":{"cultivation":["しもだ","まき"],"delivery":["宮本"],"other":[]},
+  "2026-03-14":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-03-15":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-03-16":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-03-17":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-03-18":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-03-19":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":[]},
+  "2026-03-20":{"cultivation":["しもだ","まき"],"delivery":["宮本"],"other":[]},
+  "2026-03-21":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-03-22":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-03-23":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-03-24":{"cultivation":["わし","まき"],"delivery":["前島"],"other":[]},
+  "2026-03-25":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-03-26":{"cultivation":["れみ","まき"],"delivery":["宮本"],"other":[]},
+  "2026-03-27":{"cultivation":["わし","まき"],"delivery":["宮本"],"other":[]},
+  "2026-03-28":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-03-29":{"cultivation":["かりまた","れみ"],"delivery":["前島"],"other":[]},
+  "2026-03-30":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-03-31":{"cultivation":["かりまた","まき"],"delivery":[],"other":[]},
+  "2026-04-01":{"cultivation":["れみ","まき"],"delivery":["前島"],"other":[]},
+  "2026-04-02":{"cultivation":["かりまた","れみ"],"delivery":["前島"],"other":[]},
+  "2026-04-03":{"cultivation":["かりまた","わしやま"],"delivery":["宮本"],"other":[]},
+  "2026-04-04":{"cultivation":["れみ","まき"],"delivery":["宮本"],"other":[]},
+  "2026-04-05":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-04-06":{"cultivation":["かりまた","わしやま"],"delivery":["前島"],"other":[]},
+  "2026-04-07":{"cultivation":["まき"],"delivery":["かりまた"],"other":[]},
+  "2026-04-08":{"cultivation":["れみ","まき"],"delivery":["前島"],"other":[]},
+  "2026-04-09":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-04-10":{"cultivation":["かりまた","まき"],"delivery":["宮本"],"other":[]},
+  "2026-04-11":{"cultivation":["しもだ","まき"],"delivery":["宮本"],"other":[]},
+  "2026-04-12":{"cultivation":["まき","れみ"],"delivery":["かりまた"],"other":["北島","布川","星野"]},
+  "2026-04-13":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":["おさむ","布川","星野"]},
+  "2026-04-14":{"cultivation":["まき"],"delivery":["かりまた"],"other":["星野"]},
+  "2026-04-15":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":["布川","星野"]},
+  "2026-04-16":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":["北島"]},
+  "2026-04-17":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":[]},
+  "2026-04-18":{"cultivation":["しもだ","まき"],"delivery":["宮本"],"other":["布川"]},
+  "2026-04-19":{"cultivation":["まき"],"delivery":["かりまた"],"other":["北島","布川","星野"]},
+  "2026-04-20":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":[]},
+  "2026-04-21":{"cultivation":["まき"],"delivery":["かりまた"],"other":["布川","星野"]},
+  "2026-04-22":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-04-23":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":["北島"]},
+  "2026-04-24":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":["北島"]},
+  "2026-04-25":{"cultivation":["しもだ","まき"],"delivery":["宮本"],"other":[]},
+  "2026-04-26":{"cultivation":["まき"],"delivery":["かりまた"],"other":["北島"]},
+  "2026-04-27":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":["星野"]},
+  "2026-04-28":{"cultivation":["まき"],"delivery":["かりまた"],"other":["布川"]},
+  "2026-04-29":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":["布川","星野"]},
+  "2026-04-30":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":["北島","布川"]},
+  "2026-05-01":{"cultivation":["しもだ","まき"],"delivery":["宮本"],"other":[]},
+  "2026-05-02":{"cultivation":["しもだ"],"delivery":["かりまた"],"other":[]},
+  "2026-05-03":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":["みい","布川"]},
+  "2026-05-04":{"cultivation":["れみ","まき"],"delivery":["前島"],"other":[]},
+  "2026-05-05":{"cultivation":["まき"],"delivery":["かりまた"],"other":["みい","布川"]},
+  "2026-05-06":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-05-07":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":["みい"]},
+  "2026-05-08":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-05-09":{"cultivation":["しもだ"],"delivery":["かりまた"],"other":["みい","布川"]},
+  "2026-05-10":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-05-11":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":["布川"]},
+  "2026-05-12":{"cultivation":["かりまた","まき"],"delivery":[],"other":["みい","布川"]},
+  "2026-05-13":{"cultivation":["まき","しもだ"],"delivery":["前島"],"other":["みい"]},
+  "2026-05-14":{"cultivation":["かりまた"],"delivery":["宮本"],"other":["北島"]},
+  "2026-05-15":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川"]},
+  "2026-05-16":{"cultivation":["まき"],"delivery":["かりまた"],"other":["北島","星野"]},
+  "2026-05-17":{"cultivation":["しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-05-18":{"cultivation":["しもだ","かりまた"],"delivery":["前島"],"other":["星野"]},
+  "2026-05-19":{"cultivation":["しもだ"],"delivery":["かりまた"],"other":["布川","星野"]},
+  "2026-05-20":{"cultivation":["かりまた"],"delivery":["前島"],"other":["北島","みい"]},
+  "2026-05-21":{"cultivation":["かりまた"],"delivery":["宮本"],"other":["北島"]},
+  "2026-05-22":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川"]},
+  "2026-05-23":{"cultivation":["まき"],"delivery":["かりまた"],"other":["北島","星野"]},
+  "2026-05-24":{"cultivation":["しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-05-25":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":["星野"]},
+  "2026-05-26":{"cultivation":["かりまた","しもだ"],"delivery":[],"other":["布川","星野"]},
+  "2026-05-27":{"cultivation":["かりまた"],"delivery":["前島"],"other":["星野"]},
+  "2026-05-28":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":["星野"]},
+  "2026-05-29":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川","星野"]},
+  "2026-05-30":{"cultivation":["まき"],"delivery":["かりまた"],"other":["北島","星野"]},
+  "2026-05-31":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":["北島","星野"]},
+  "2026-06-01":{"cultivation":["しもだ","まき"],"delivery":["宮本"],"other":[]},
+  "2026-06-02":{"cultivation":["かりまた","しもだ"],"delivery":[],"other":[]},
+  "2026-06-03":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":["みい","布川"]},
+  "2026-06-04":{"cultivation":["れみ","まき"],"delivery":["前島"],"other":[]},
+  "2026-06-05":{"cultivation":["かりまた","まき"],"delivery":[],"other":["みい","布川"]},
+  "2026-06-06":{"cultivation":["かりまた","しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-06-07":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":["みい"]},
+  "2026-06-08":{"cultivation":["かりまた","まき"],"delivery":["前島"],"other":[]},
+  "2026-06-09":{"cultivation":["かりまた","しもだ"],"delivery":[],"other":["みい","布川"]},
+  "2026-06-10":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":[]},
+  "2026-06-11":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":["布川"]},
+  "2026-06-12":{"cultivation":["かりまた","まき"],"delivery":[],"other":["みい","布川"]},
+  "2026-06-13":{"cultivation":["まき","しもだ"],"delivery":["前島"],"other":["みい"]},
+  "2026-06-14":{"cultivation":["かりまた"],"delivery":["宮本"],"other":["北島"]},
+  "2026-06-15":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川"]},
+  "2026-06-16":{"cultivation":["かりまた","まき"],"delivery":[],"other":["北島","星野"]},
+  "2026-06-17":{"cultivation":["しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-06-18":{"cultivation":["しもだ","かりまた"],"delivery":["前島"],"other":["星野"]},
+  "2026-06-19":{"cultivation":["かりまた","しもだ"],"delivery":[],"other":["布川","星野"]},
+  "2026-06-20":{"cultivation":["かりまた"],"delivery":["前島"],"other":["北島","みい"]},
+  "2026-06-21":{"cultivation":["かりまた"],"delivery":["宮本"],"other":["北島"]},
+  "2026-06-22":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川"]},
+  "2026-06-23":{"cultivation":["かりまた","まき"],"delivery":[],"other":["北島","星野"]},
+  "2026-06-24":{"cultivation":["しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-06-25":{"cultivation":["しもだ","まき"],"delivery":["前島"],"other":["星野"]},
+  "2026-06-26":{"cultivation":["かりまた","しもだ"],"delivery":[],"other":["布川","星野"]},
+  "2026-06-27":{"cultivation":["かりまた"],"delivery":["前島"],"other":["星野"]},
+  "2026-06-28":{"cultivation":["かりまた","しもだ"],"delivery":["宮本"],"other":["星野"]},
+  "2026-06-29":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川","星野"]},
+  "2026-06-30":{"cultivation":["かりまた","まき"],"delivery":[],"other":["北島","星野"]},
+  "2026-07-01":{"cultivation":["れみ"],"delivery":["前島"],"other":["布川"]},
+  "2026-07-02":{"cultivation":["れみ"],"delivery":["前島"],"other":["星野"]},
+  "2026-07-03":{"cultivation":["かりまた","まき"],"delivery":[],"other":["星野"]},
+  "2026-07-04":{"cultivation":["かりまた"],"delivery":["前島"],"other":["布川","北島"]},
+  "2026-07-05":{"cultivation":["かりまた"],"delivery":["宮本"],"other":["星野","北島"]},
+  "2026-07-06":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川"]},
+  "2026-07-07":{"cultivation":["かりまた","まき"],"delivery":[],"other":["北島"]},
+  "2026-07-08":{"cultivation":["しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-07-09":{"cultivation":["しもだ"],"delivery":["前島"],"other":["星野"]},
+  "2026-07-10":{"cultivation":["かりまた","まき"],"delivery":[],"other":["星野"]},
+  "2026-07-11":{"cultivation":["かりまた"],"delivery":["前島"],"other":["布川","北島"]},
+  "2026-07-12":{"cultivation":["かりまた"],"delivery":["宮本"],"other":["星野","北島"]},
+  "2026-07-13":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川"]},
+  "2026-07-14":{"cultivation":["かりまた","まき"],"delivery":[],"other":[]},
+  "2026-07-15":{"cultivation":["しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-07-16":{"cultivation":["しもだ"],"delivery":["前島"],"other":["星野"]},
+  "2026-07-17":{"cultivation":["かりまた","まき"],"delivery":[],"other":["星野"]},
+  "2026-07-18":{"cultivation":["かりまた"],"delivery":["前島"],"other":["布川","北島"]},
+  "2026-07-19":{"cultivation":["かりまた"],"delivery":["宮本"],"other":["星野"]},
+  "2026-07-20":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川"]},
+  "2026-07-21":{"cultivation":["かりまた","まき"],"delivery":[],"other":["北島"]},
+  "2026-07-22":{"cultivation":["しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-07-23":{"cultivation":["しもだ"],"delivery":["前島"],"other":["星野"]},
+  "2026-07-24":{"cultivation":["かりまた","まき"],"delivery":[],"other":["星野"]},
+  "2026-07-25":{"cultivation":["かりまた"],"delivery":["前島"],"other":["布川","北島"]},
+  "2026-07-26":{"cultivation":["かりまた"],"delivery":["宮本"],"other":["星野","北島"]},
+  "2026-07-27":{"cultivation":["しもだ"],"delivery":["宮本"],"other":["布川"]},
+  "2026-07-28":{"cultivation":["かりまた","まき"],"delivery":[],"other":["北島"]},
+  "2026-07-29":{"cultivation":["しもだ"],"delivery":["前島"],"other":["布川"]},
+  "2026-07-30":{"cultivation":["しもだ"],"delivery":["前島"],"other":["星野"]},
+  "2026-07-31":{"cultivation":["かりまた","まき"],"delivery":[],"other":["星野"]},
+};
+
+let shifts = {};
+let viewYear = new Date().getFullYear();
+let viewMonth = new Date().getMonth();
+let editDate = null;
+let editCult = [], editDeliv = [], editOther = [];
+
+function toDateStr(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+async function loadShifts() {
+  const { data, error } = await db.from('shifts').select('*');
+  if (error) { console.error(error); return; }
+  (data || []).forEach(r => {
+    shifts[r.shift_date] = {
+      cultivation: r.cultivation_staff || [],
+      delivery: r.delivery_staff || [],
+      other: r.other_staff || [],
+      note: r.note || ''
+    };
+  });
+
+  // Seed initial data if Supabase is empty for months with data
+  if ((data || []).length === 0) {
+    await seedInitialData();
+  }
+  render();
+}
+
+async function seedInitialData() {
+  const rows = Object.entries(INITIAL_SHIFTS).map(([date, d]) => ({
+    shift_date: date,
+    cultivation_staff: d.cultivation || [],
+    delivery_staff: d.delivery || [],
+    other_staff: d.other || [],
+    note: null
+  }));
+  const { error } = await db.from('shifts').upsert(rows);
+  if (error) console.error('seed error:', error);
+  rows.forEach(r => {
+    shifts[r.shift_date] = {
+      cultivation: r.cultivation_staff,
+      delivery: r.delivery_staff,
+      other: r.other_staff,
+      note: r.note || ''
+    };
+  });
+}
+
+function render() {
+  const today = new Date();
+  const todayStr = toDateStr(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // Month label
+  const MONTH_JP = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('month-label').textContent = `${viewYear}年 ${MONTH_JP[viewMonth]}`;
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  let html = '';
+  let dayCount = 0;
+
+  // Leading empty cells
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div class="cal-cell empty"></div>';
+    dayCount++;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = (firstDay + d - 1) % 7;
+    const ds = toDateStr(viewYear, viewMonth, d);
+    const data = shifts[ds];
+    const holiday = HOLIDAYS[ds];
+    const isToday = ds === todayStr;
+
+    const dateClass = dow === 0 ? 'sun' : (dow === 6 ? 'sat' : 'weekday');
+    let cellClass = 'cal-cell';
+    if (isToday) cellClass += ' today';
+
+    html += `<div class="${cellClass}" onclick="openEdit('${ds}')">`;
+    html += `<div class="cell-date ${dateClass}">${d}</div>`;
+    if (holiday) html += `<div class="cell-holiday">${holiday}</div>`;
+    if (data) {
+      html += '<div class="staff-list">';
+      (data.cultivation || []).forEach(n => {
+        html += `<div class="staff-name cultivation">${n}</div>`;
+      });
+      (data.delivery || []).forEach(n => {
+        html += `<div class="staff-name delivery">${n}</div>`;
+      });
+      (data.other || []).forEach(n => {
+        html += `<div class="staff-name other">${n}</div>`;
+      });
+      if (data.note) {
+        html += `<div class="staff-name" style="color:#888;font-size:9px">${data.note}</div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    dayCount++;
+  }
+
+  // Trailing empty cells to complete the last row
+  const remaining = (7 - (dayCount % 7)) % 7;
+  for (let i = 0; i < remaining; i++) {
+    html += '<div class="cal-cell empty"></div>';
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  render();
+}
+
+function openEdit(dateStr) {
+  editDate = dateStr;
+  const d = new Date(dateStr + 'T00:00:00');
+  const DOW = ['日','月','火','水','木','金','土'];
+  const MONTH_JP = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('modal-title').textContent = `${MONTH_JP[d.getMonth()]}${d.getDate()}日（${DOW[d.getDay()]}）`;
+  document.getElementById('modal-date').textContent = 'シフトを編集';
+
+  // Reset password section
+  document.getElementById('pw-section').style.display = '';
+  document.getElementById('edit-section').classList.remove('open');
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').classList.remove('show');
+
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('pw-input').focus(), 100);
+}
+
+function checkPw() {
+  const val = document.getElementById('pw-input').value;
+  if (val !== SHIFT_PW) {
+    document.getElementById('pw-error').classList.add('show');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+    return;
+  }
+  document.getElementById('pw-section').style.display = 'none';
+  showEditForm();
+}
+
+function showEditForm() {
+  const data = shifts[editDate] || { cultivation: [], delivery: [], other: [], note: '' };
+  editCult = [...(data.cultivation || [])];
+  editDeliv = [...(data.delivery || [])];
+  editOther = [...(data.other || [])];
+
+  renderChips('chips-cult', CULT_STAFF, editCult, 'cult');
+  renderChips('chips-deliv', DELIV_STAFF, editDeliv, 'deliv');
+  renderChips('chips-other', OTHER_STAFF, editOther, 'oth');
+
+  document.getElementById('note-input').value = data.note || '';
+  document.getElementById('edit-section').classList.add('open');
+}
+
+function renderChips(containerId, staffList, selected, cls) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = staffList.map(name => {
+    const active = selected.includes(name) ? 'active' : '';
+    return `<button class="staff-chip ${cls} ${active}" onclick="toggleStaff('${containerId}','${name}','${cls}')">${name}</button>`;
+  }).join('');
+}
+
+function toggleStaff(containerId, name, cls) {
+  let arr;
+  if (cls === 'cult') arr = editCult;
+  else if (cls === 'deliv') arr = editDeliv;
+  else arr = editOther;
+
+  const idx = arr.indexOf(name);
+  if (idx >= 0) arr.splice(idx, 1);
+  else arr.push(name);
+
+  const staffList = cls === 'cult' ? CULT_STAFF : (cls === 'deliv' ? DELIV_STAFF : OTHER_STAFF);
+  renderChips(containerId, staffList, arr, cls);
+}
+
+async function saveShift() {
+  const note = document.getElementById('note-input').value.trim();
+  const row = {
+    shift_date: editDate,
+    cultivation_staff: editCult,
+    delivery_staff: editDeliv,
+    other_staff: editOther,
+    note: note || null
+  };
+  shifts[editDate] = { cultivation: editCult, delivery: editDeliv, other: editOther, note };
+  render();
+  closeModal();
+  const { error } = await db.from('shifts').upsert(row);
+  if (error) console.error(error);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  editDate = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal')) closeModal();
+}
+
+// Realtime sync
+db.channel('shifts_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts' }, payload => {
+    if (payload.new) {
+      const r = payload.new;
+      shifts[r.shift_date] = {
+        cultivation: r.cultivation_staff || [],
+        delivery: r.delivery_staff || [],
+        other: r.other_staff || [],
+        note: r.note || ''
+      };
+      render();
+    }
+  })
+  .subscribe();
+
+loadShifts();
+</script>
+</body>
+</html>

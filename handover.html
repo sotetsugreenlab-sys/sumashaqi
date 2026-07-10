@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>引き継ぎ</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="引き継ぎ">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-bottom: 90px; }
+
+.header { text-align: center; padding: 1rem 0.75rem 0.75rem; }
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 8px; }
+.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+
+.list { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
+
+.note-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.note-left { flex: 1; min-width: 0; }
+.note-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.note-author {
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+  background: #EEEDFE; color: #534AB7;
+}
+.note-time { font-size: 11px; color: #aaa; }
+.note-text { font-size: 14px; color: #1a1a1a; line-height: 1.55; word-break: break-all; }
+
+.note-del {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #f0f0ee;
+  color: #aaa;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.note-del:active { background: #FFE5E5; color: #E8401C; }
+
+.empty { text-align: center; padding: 3rem 1rem; color: #bbb; font-size: 14px; }
+
+/* FAB */
+.fab {
+  position: fixed; bottom: 24px; right: 20px;
+  width: 56px; height: 56px;
+  background: #0891B2; color: #fff;
+  border: none; border-radius: 50%;
+  font-size: 28px; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(8,145,178,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.fab:active { opacity: 0.85; transform: scale(0.95); }
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 480px; padding: 1.25rem 1.25rem 2rem;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 1rem; }
+
+/* Author chips */
+.author-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+.author-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.author-chip {
+  font-size: 13px; padding: 5px 12px; border-radius: 20px;
+  border: 1.5px solid #ddd; background: #fff; color: #555; cursor: pointer;
+}
+.author-chip.active { border-color: #0891B2; background: #E0F5FA; color: #0891B2; font-weight: 700; }
+
+/* Textarea */
+.msg-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+.msg-input {
+  width: 100%; font-size: 14px; padding: 10px 12px;
+  border: 1.5px solid #ddd; border-radius: 12px;
+  outline: none; resize: none; font-family: sans-serif;
+  min-height: 100px;
+}
+.msg-input:focus { border-color: #0891B2; }
+
+.modal-footer { display: flex; gap: 8px; margin-top: 14px; }
+.btn-post {
+  flex: 1; font-size: 15px; font-weight: 700; padding: 12px;
+  background: #0891B2; color: #fff; border: none; border-radius: 12px; cursor: pointer;
+}
+.btn-post:active { opacity: 0.8; }
+.btn-cancel { font-size: 14px; padding: 12px 16px; background: #f0f0ee; color: #555; border: none; border-radius: 12px; cursor: pointer; }
+
+/* Delete password modal */
+.pw-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.pw-row { display: flex; gap: 8px; }
+.pw-input { flex: 1; font-size: 15px; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 10px; outline: none; }
+.pw-input:focus { border-color: #E8401C; }
+.pw-btn { font-size: 13px; font-weight: 600; padding: 8px 16px; background: #E8401C; color: #fff; border: none; border-radius: 10px; cursor: pointer; }
+.pw-error { font-size: 12px; color: #E8401C; margin-top: 4px; display: none; }
+.pw-error.show { display: block; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-link" href="index.html">← トップ</a>
+  <div class="page-title">📋 引き継ぎ</div>
+</div>
+
+<div class="list" id="list">
+  <div class="empty">読み込み中...</div>
+</div>
+
+<button class="fab" onclick="openAdd()">＋</button>
+
+<!-- 追加モーダル -->
+<div class="modal-overlay" id="add-modal" onclick="handleOverlayClick(event,'add-modal')">
+  <div class="modal">
+    <div class="modal-title">引き継ぎを追加</div>
+    <div class="author-label">名前</div>
+    <div class="author-chips" id="author-chips"></div>
+    <div class="msg-label">内容</div>
+    <textarea class="msg-input" id="msg-input" placeholder="引き継ぎ内容を書いてください"></textarea>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('add-modal')">キャンセル</button>
+      <button class="btn-post" onclick="postMessage()">投稿</button>
+    </div>
+  </div>
+</div>
+
+<!-- 削除パスワードモーダル -->
+<div class="modal-overlay" id="del-modal" onclick="handleOverlayClick(event,'del-modal')">
+  <div class="modal">
+    <div class="modal-title">削除の確認</div>
+    <div class="pw-label">パスワードを入力してください</div>
+    <div class="pw-row">
+      <input class="pw-input" type="password" id="pw-input" placeholder="パスワード" onkeydown="if(event.key==='Enter') confirmDelete()">
+      <button class="pw-btn" onclick="confirmDelete()">削除</button>
+    </div>
+    <div class="pw-error" id="pw-error">パスワードが違います</div>
+  </div>
+</div>
+
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+const SHIFT_PW = '510ab';
+const STAFF = ['れみ','鷲山','かりまた','下田','まき','星野','布川','北島','前島','宮本'];
+
+let selectedAuthor = '';
+let deleteTargetId = null;
+let messages = [];
+
+// 著者チップ描画
+function renderAuthorChips() {
+  document.getElementById('author-chips').innerHTML = STAFF.map(name =>
+    `<button class="author-chip ${selectedAuthor===name?'active':''}" onclick="selectAuthor('${name}')">${name}</button>`
+  ).join('');
+}
+
+function selectAuthor(name) {
+  selectedAuthor = name;
+  renderAuthorChips();
+}
+
+// メッセージ一覧描画
+function renderList() {
+  const list = document.getElementById('list');
+  if (!messages.length) {
+    list.innerHTML = '<div class="empty">引き継ぎはありません</div>';
+    return;
+  }
+  list.innerHTML = messages.map(m => {
+    const dt = new Date(m.created_at);
+    const time = `${dt.getMonth()+1}月${dt.getDate()}日 ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    return `
+      <div class="note-card">
+        <div class="note-left">
+          <div class="note-meta">
+            <span class="note-author">${m.author}</span>
+            <span class="note-time">${time}</span>
+          </div>
+          <div class="note-text">${m.message.replace(/\n/g,'<br>')}</div>
+        </div>
+        <button class="note-del" onclick="openDelete('${m.id}')">×</button>
+      </div>`;
+  }).join('');
+}
+
+async function loadMessages() {
+  const { data, error } = await db.from('handover').select('*').order('created_at', {ascending: false});
+  if (error) { console.error(error); return; }
+  messages = data || [];
+  renderList();
+}
+
+// 追加
+function openAdd() {
+  selectedAuthor = '';
+  renderAuthorChips();
+  document.getElementById('msg-input').value = '';
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('msg-input').focus(), 100);
+}
+
+async function postMessage() {
+  const text = document.getElementById('msg-input').value.trim();
+  if (!selectedAuthor) { alert('名前を選んでください'); return; }
+  if (!text) { alert('内容を入力してください'); return; }
+
+  const { error } = await db.from('handover').insert({ message: text, author: selectedAuthor });
+  if (error) { console.error(error); alert('投稿に失敗しました'); return; }
+  closeModal('add-modal');
+  loadMessages();
+}
+
+// 削除
+function openDelete(id) {
+  deleteTargetId = id;
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').classList.remove('show');
+  document.getElementById('del-modal').classList.add('open');
+  setTimeout(() => document.getElementById('pw-input').focus(), 100);
+}
+
+async function confirmDelete() {
+  if (document.getElementById('pw-input').value !== SHIFT_PW) {
+    document.getElementById('pw-error').classList.add('show');
+    document.getElementById('pw-input').value = '';
+    return;
+  }
+  const { error } = await db.from('handover').delete().eq('id', deleteTargetId);
+  if (error) { console.error(error); alert('削除に失敗しました'); return; }
+  closeModal('del-modal');
+  loadMessages();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function handleOverlayClick(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+// リアルタイム同期
+db.channel('handover_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'handover' }, () => {
+    loadMessages();
+  })
+  .subscribe();
+
+loadMessages();
+</script>
+</body>
+</html>

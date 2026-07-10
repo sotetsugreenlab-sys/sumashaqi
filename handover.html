@@ -107,14 +107,10 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 .btn-post:active { opacity: 0.8; }
 .btn-cancel { font-size: 14px; padding: 12px 16px; background: #f0f0ee; color: #555; border: none; border-radius: 12px; cursor: pointer; }
 
-/* Delete password modal */
-.pw-label { font-size: 12px; color: #888; margin-bottom: 4px; }
-.pw-row { display: flex; gap: 8px; }
-.pw-input { flex: 1; font-size: 15px; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 10px; outline: none; }
-.pw-input:focus { border-color: #E8401C; }
-.pw-btn { font-size: 13px; font-weight: 600; padding: 8px 16px; background: #E8401C; color: #fff; border: none; border-radius: 10px; cursor: pointer; }
-.pw-error { font-size: 12px; color: #E8401C; margin-top: 4px; display: none; }
-.pw-error.show { display: block; }
+/* Delete confirm modal */
+.del-confirm-text { font-size: 14px; color: #555; margin-bottom: 1.2rem; line-height: 1.5; }
+.btn-del-ok { flex: 1; font-size: 15px; font-weight: 700; padding: 12px; background: #E8401C; color: #fff; border: none; border-radius: 12px; cursor: pointer; }
+.btn-del-ok:active { opacity: 0.8; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -146,16 +142,15 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
   </div>
 </div>
 
-<!-- 削除パスワードモーダル -->
+<!-- 削除確認モーダル -->
 <div class="modal-overlay" id="del-modal" onclick="handleOverlayClick(event,'del-modal')">
   <div class="modal">
     <div class="modal-title">削除の確認</div>
-    <div class="pw-label">パスワードを入力してください</div>
-    <div class="pw-row">
-      <input class="pw-input" type="password" id="pw-input" placeholder="パスワード" onkeydown="if(event.key==='Enter') confirmDelete()">
-      <button class="pw-btn" onclick="confirmDelete()">削除</button>
+    <div class="del-confirm-text">終了で間違いないですか？</div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('del-modal')">キャンセル</button>
+      <button class="btn-del-ok" onclick="confirmDelete()">OK</button>
     </div>
-    <div class="pw-error" id="pw-error">パスワードが違います</div>
   </div>
 </div>
 
@@ -165,7 +160,6 @@ const db = supabase.createClient(
   'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
 );
 
-const SHIFT_PW = '510ab';
 const STAFF = ['れみ','鷲山','かりまた','下田','まき','星野','布川','北島','前島','宮本'];
 
 let selectedAuthor = '';
@@ -238,18 +232,10 @@ async function postMessage() {
 // 削除
 function openDelete(id) {
   deleteTargetId = id;
-  document.getElementById('pw-input').value = '';
-  document.getElementById('pw-error').classList.remove('show');
   document.getElementById('del-modal').classList.add('open');
-  setTimeout(() => document.getElementById('pw-input').focus(), 100);
 }
 
 async function confirmDelete() {
-  if (document.getElementById('pw-input').value !== SHIFT_PW) {
-    document.getElementById('pw-error').classList.add('show');
-    document.getElementById('pw-input').value = '';
-    return;
-  }
   const { error } = await db.from('handover').delete().eq('id', deleteTargetId);
   if (error) { console.error(error); alert('削除に失敗しました'); return; }
   closeModal('del-modal');

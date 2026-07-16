@@ -12,9 +12,23 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-bottom: 90px; }
 
-.header { text-align: center; padding: 1rem 0.75rem 0.75rem; }
+.header { text-align: center; padding: 1rem 0.75rem 0.5rem; }
 .back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 8px; }
 .page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+
+/* Filter bar */
+.filter-bar {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 10px 12px 8px; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-chip {
+  flex-shrink: 0; font-size: 12px; padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid #ddd; background: #fff; color: #666; cursor: pointer;
+  white-space: nowrap;
+}
+.filter-chip.active { border-color: #0891B2; background: #0891B2; color: #fff; font-weight: 700; }
 
 .list { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
 
@@ -28,11 +42,14 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
   align-items: flex-start;
 }
 .note-left { flex: 1; min-width: 0; }
-.note-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.note-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
 .note-author {
   font-size: 11px; font-weight: 700;
   padding: 2px 8px; border-radius: 20px;
   background: #EEEDFE; color: #534AB7;
+}
+.note-cat {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; color: #fff;
 }
 .note-time { font-size: 11px; color: #aaa; }
 .note-text { font-size: 14px; color: #1a1a1a; line-height: 1.55; word-break: break-all; }
@@ -80,14 +97,14 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 }
 .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 1rem; }
 
-/* Author chips */
-.author-label { font-size: 12px; color: #888; margin-bottom: 6px; }
-.author-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-.author-chip {
+/* Chips (author / category) */
+.chip-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+.chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.chip-btn {
   font-size: 13px; padding: 5px 12px; border-radius: 20px;
   border: 1.5px solid #ddd; background: #fff; color: #555; cursor: pointer;
 }
-.author-chip.active { border-color: #0891B2; background: #E0F5FA; color: #0891B2; font-weight: 700; }
+.chip-btn.active { border-color: #0891B2; background: #E0F5FA; color: #0891B2; font-weight: 700; }
 
 /* Textarea */
 .msg-label { font-size: 12px; color: #888; margin-bottom: 6px; }
@@ -121,6 +138,8 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
   <div class="page-title">📋 引き継ぎ</div>
 </div>
 
+<div class="filter-bar" id="filter-bar"></div>
+
 <div class="list" id="list">
   <div class="empty">読み込み中...</div>
 </div>
@@ -131,8 +150,10 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 <div class="modal-overlay" id="add-modal" onclick="handleOverlayClick(event,'add-modal')">
   <div class="modal">
     <div class="modal-title">引き継ぎを追加</div>
-    <div class="author-label">名前</div>
-    <div class="author-chips" id="author-chips"></div>
+    <div class="chip-label">名前</div>
+    <div class="chip-group" id="author-chips"></div>
+    <div class="chip-label">カテゴリ</div>
+    <div class="chip-group" id="cat-chips"></div>
     <div class="msg-label">内容</div>
     <textarea class="msg-input" id="msg-input" placeholder="引き継ぎ内容を書いてください"></textarea>
     <div class="modal-footer">
@@ -161,38 +182,74 @@ const db = supabase.createClient(
 );
 
 const STAFF = ['れみ','鷲山','かりまた','下田','まき','星野','布川','北島','前島','宮本'];
+const CATEGORIES = ['スマシャキ','ハーブ','わさび','発注関係','配送','子ども食堂','その他'];
+const CAT_COLORS = {
+  'スマシャキ': '#534AB7',
+  'ハーブ':     '#3B6D11',
+  'わさび':     '#16a34a',
+  '発注関係':   '#E8A020',
+  '配送':       '#185FA5',
+  '子ども食堂': '#E8401C',
+  'その他':     '#999',
+};
 
 let selectedAuthor = '';
+let selectedPostCat = 'その他';
+let activeFilter = 'all';
 let deleteTargetId = null;
 let messages = [];
 
-// 著者チップ描画
-function renderAuthorChips() {
-  document.getElementById('author-chips').innerHTML = STAFF.map(name =>
-    `<button class="author-chip ${selectedAuthor===name?'active':''}" onclick="selectAuthor('${name}')">${name}</button>`
+// フィルターバー
+function renderFilterBar() {
+  const bar = document.getElementById('filter-bar');
+  const all = `<button class="filter-chip ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">すべて</button>`;
+  const cats = CATEGORIES.map(c =>
+    `<button class="filter-chip ${activeFilter===c?'active':''}" onclick="setFilter('${c}')">${c}</button>`
   ).join('');
+  bar.innerHTML = all + cats;
 }
 
-function selectAuthor(name) {
-  selectedAuthor = name;
-  renderAuthorChips();
+function setFilter(cat) {
+  activeFilter = cat;
+  renderFilterBar();
+  renderList();
 }
+
+// 著者チップ
+function renderAuthorChips() {
+  document.getElementById('author-chips').innerHTML = STAFF.map(name =>
+    `<button class="chip-btn ${selectedAuthor===name?'active':''}" onclick="selectAuthor('${name}')">${name}</button>`
+  ).join('');
+}
+function selectAuthor(name) { selectedAuthor = name; renderAuthorChips(); }
+
+// カテゴリチップ（投稿モーダル内）
+function renderCatChips() {
+  document.getElementById('cat-chips').innerHTML = CATEGORIES.map(c =>
+    `<button class="chip-btn ${selectedPostCat===c?'active':''}" onclick="selectPostCat('${c}')">${c}</button>`
+  ).join('');
+}
+function selectPostCat(c) { selectedPostCat = c; renderCatChips(); }
 
 // メッセージ一覧描画
 function renderList() {
   const list = document.getElementById('list');
-  if (!messages.length) {
+  const filtered = activeFilter === 'all' ? messages : messages.filter(m => m.category === activeFilter);
+  if (!filtered.length) {
     list.innerHTML = '<div class="empty">引き継ぎはありません</div>';
     return;
   }
-  list.innerHTML = messages.map(m => {
+  list.innerHTML = filtered.map(m => {
     const dt = new Date(m.created_at);
     const time = `${dt.getMonth()+1}月${dt.getDate()}日 ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const cat = m.category || 'その他';
+    const catColor = CAT_COLORS[cat] || '#999';
     return `
       <div class="note-card">
         <div class="note-left">
           <div class="note-meta">
             <span class="note-author">${m.author}</span>
+            <span class="note-cat" style="background:${catColor}">${cat}</span>
             <span class="note-time">${time}</span>
           </div>
           <div class="note-text">${m.message.replace(/\n/g,'<br>')}</div>
@@ -212,7 +269,9 @@ async function loadMessages() {
 // 追加
 function openAdd() {
   selectedAuthor = '';
+  selectedPostCat = 'その他';
   renderAuthorChips();
+  renderCatChips();
   document.getElementById('msg-input').value = '';
   document.getElementById('add-modal').classList.add('open');
   setTimeout(() => document.getElementById('msg-input').focus(), 100);
@@ -223,7 +282,7 @@ async function postMessage() {
   if (!selectedAuthor) { alert('名前を選んでください'); return; }
   if (!text) { alert('内容を入力してください'); return; }
 
-  const { error } = await db.from('handover').insert({ message: text, author: selectedAuthor });
+  const { error } = await db.from('handover').insert({ message: text, author: selectedAuthor, category: selectedPostCat });
   if (error) { console.error(error); alert('投稿に失敗しました'); return; }
   closeModal('add-modal');
   loadMessages();
@@ -257,6 +316,7 @@ db.channel('handover_changes')
   })
   .subscribe();
 
+renderFilterBar();
 loadMessages();
 </script>
 </body>

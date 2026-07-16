@@ -22,7 +22,9 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .back-today { display: inline-block; margin-top: 6px; font-size: 12px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 20px; padding: 3px 12px; cursor: pointer; }
 .ekihi-line { font-size: 14px; font-weight: 500; color: #3B6D11; margin-top: 4px; }
 
-.delivery-banner { background: #E6F1FB; border-radius: 12px; padding: 0.75rem 1.25rem; margin-bottom: 10px; font-size: 15px; font-weight: 500; color: #185FA5; }
+.delivery-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.delivery-banner { background: #E6F1FB; border-radius: 12px; padding: 0.75rem 1.25rem; font-size: 15px; font-weight: 500; color: #185FA5; flex: 1; }
+.kodomo-banner { background: #FAEEDA; border-radius: 12px; padding: 0.75rem; font-size: 14px; font-weight: 600; color: #854F0B; display: flex; align-items: center; justify-content: center; text-align: center; flex-shrink: 0; }
 
 .event-banner { background: #FAEEDA; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
 .event-banner-title { font-size: 12px; font-weight: 500; color: #854F0B; margin-bottom: 4px; }
@@ -405,6 +407,8 @@ function renderBanner(events) {
   el.innerHTML = `<div class="event-banner"><div class="event-banner-title">イレギュラー</div>${items}</div>`;
 }
 
+const KODOMO_DATES = ['2026-07-14','2026-07-18','2026-07-21','2026-07-28'];
+
 function renderDelivery() {
   const deliveryItems = {
     0: 'フリル15・バジル5・パクチー5・ルッコラ5', // 日
@@ -422,8 +426,11 @@ function renderDelivery() {
   };
   const ds = `${viewDate.getFullYear()}-${String(viewDate.getMonth()+1).padStart(2,'0')}-${String(viewDate.getDate()).padStart(2,'0')}`;
   const items = dateOverrides[ds] ?? deliveryItems[viewDate.getDay()];
+  const kodomoHtml = KODOMO_DATES.includes(ds)
+    ? `<div class="kodomo-banner">🍱<br>子ども食堂</div>`
+    : '';
   const el = document.getElementById('delivery-banner');
-  el.innerHTML = `<div class="delivery-banner">🎒 緑園都市配送<br><span style="font-size:13px;font-weight:400">${items}</span></div>`;
+  el.innerHTML = `<div class="delivery-row"><div class="delivery-banner">🎒 緑園都市配送<br><span style="font-size:13px;font-weight:400">${items}</span></div>${kodomoHtml}</div>`;
 }
 
 function renderAll() {

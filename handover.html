@@ -29,6 +29,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
   white-space: nowrap;
 }
 .filter-chip.active { border-color: #0891B2; background: #0891B2; color: #fff; font-weight: 700; }
+.filter-chip.done-chip.active { border-color: #888; background: #888; }
 
 .list { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
 
@@ -41,6 +42,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
   gap: 10px;
   align-items: flex-start;
 }
+.note-card.completed { opacity: 0.45; }
 .note-left { flex: 1; min-width: 0; }
 .note-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
 .note-author {
@@ -54,19 +56,25 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 .note-time { font-size: 11px; color: #aaa; }
 .note-text { font-size: 14px; color: #1a1a1a; line-height: 1.55; word-break: break-all; }
 
-.note-del {
-  flex-shrink: 0;
+.note-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.note-done, .note-del {
   width: 28px; height: 28px;
   border-radius: 50%;
   background: #f0f0ee;
   color: #aaa;
   border: none;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   line-height: 1;
 }
-.note-del:active { background: #FFE5E5; color: #E8401C; }
+.note-done:active { background: #E0F5E0; color: #16a34a; }
+.note-del:active  { background: #FFE5E5; color: #E8401C; }
+
+.completed-divider {
+  text-align: center; font-size: 11px; color: #bbb;
+  padding: 6px 0 2px; letter-spacing: 0.05em;
+}
 
 .empty { text-align: center; padding: 3rem 1rem; color: #bbb; font-size: 14px; }
 
@@ -97,7 +105,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 }
 .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 1rem; }
 
-/* Chips (author / category) */
+/* Chips */
 .chip-label { font-size: 12px; color: #888; margin-bottom: 6px; }
 .chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .chip-btn {
@@ -124,8 +132,10 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 .btn-post:active { opacity: 0.8; }
 .btn-cancel { font-size: 14px; padding: 12px 16px; background: #f0f0ee; color: #555; border: none; border-radius: 12px; cursor: pointer; }
 
-/* Delete confirm modal */
-.del-confirm-text { font-size: 14px; color: #555; margin-bottom: 1.2rem; line-height: 1.5; }
+/* Confirm modals */
+.confirm-text { font-size: 14px; color: #555; margin-bottom: 1.2rem; line-height: 1.5; }
+.btn-done-ok { flex: 1; font-size: 15px; font-weight: 700; padding: 12px; background: #16a34a; color: #fff; border: none; border-radius: 12px; cursor: pointer; }
+.btn-done-ok:active { opacity: 0.8; }
 .btn-del-ok { flex: 1; font-size: 15px; font-weight: 700; padding: 12px; background: #E8401C; color: #fff; border: none; border-radius: 12px; cursor: pointer; }
 .btn-del-ok:active { opacity: 0.8; }
 </style>
@@ -139,10 +149,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 </div>
 
 <div class="filter-bar" id="filter-bar"></div>
-
-<div class="list" id="list">
-  <div class="empty">読み込み中...</div>
-</div>
+<div class="list" id="list"><div class="empty">読み込み中...</div></div>
 
 <button class="fab" onclick="openAdd()">＋</button>
 
@@ -163,11 +170,23 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
   </div>
 </div>
 
+<!-- 終了確認モーダル -->
+<div class="modal-overlay" id="done-modal" onclick="handleOverlayClick(event,'done-modal')">
+  <div class="modal">
+    <div class="modal-title">終了しますか？</div>
+    <div class="confirm-text">終わった引き継ぎとして記録します。<br>２ヶ月後に自動で消えます。</div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('done-modal')">キャンセル</button>
+      <button class="btn-done-ok" onclick="confirmDone()">終了</button>
+    </div>
+  </div>
+</div>
+
 <!-- 削除確認モーダル -->
 <div class="modal-overlay" id="del-modal" onclick="handleOverlayClick(event,'del-modal')">
   <div class="modal">
     <div class="modal-title">削除の確認</div>
-    <div class="del-confirm-text">終了で間違いないですか？</div>
+    <div class="confirm-text">終了で間違いないですか？</div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('del-modal')">キャンセル</button>
       <button class="btn-del-ok" onclick="confirmDelete()">OK</button>
@@ -196,17 +215,20 @@ const CAT_COLORS = {
 let selectedAuthor = '';
 let selectedPostCat = 'その他';
 let activeFilter = 'all';
-let deleteTargetId = null;
+let actionTargetId = null;
 let messages = [];
 
 // フィルターバー
 function renderFilterBar() {
   const bar = document.getElementById('filter-bar');
-  const all = `<button class="filter-chip ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">すべて</button>`;
-  const cats = CATEGORIES.map(c =>
-    `<button class="filter-chip ${activeFilter===c?'active':''}" onclick="setFilter('${c}')">${c}</button>`
+  const chips = [
+    { key: 'all',  label: 'すべて', cls: '' },
+    ...CATEGORIES.map(c => ({ key: c, label: c, cls: '' })),
+    { key: 'done', label: '終了', cls: 'done-chip' },
+  ];
+  bar.innerHTML = chips.map(c =>
+    `<button class="filter-chip ${c.cls} ${activeFilter===c.key?'active':''}" onclick="setFilter('${c.key}')">${c.label}</button>`
   ).join('');
-  bar.innerHTML = all + cats;
 }
 
 function setFilter(cat) {
@@ -231,38 +253,77 @@ function renderCatChips() {
 }
 function selectPostCat(c) { selectedPostCat = c; renderCatChips(); }
 
-// メッセージ一覧描画
+function fmtTime(created_at) {
+  const dt = new Date(created_at);
+  return `${dt.getMonth()+1}月${dt.getDate()}日 ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+}
+
+function makeCard(m, isDone) {
+  const cat = m.category || 'その他';
+  const catColor = CAT_COLORS[cat] || '#999';
+  const actions = isDone
+    ? `<div class="note-actions"><button class="note-del" onclick="openDelete('${m.id}')">×</button></div>`
+    : `<div class="note-actions">
+        <button class="note-done" onclick="openDone('${m.id}')">✓</button>
+        <button class="note-del"  onclick="openDelete('${m.id}')">×</button>
+       </div>`;
+  return `<div class="note-card${isDone?' completed':''}">
+    <div class="note-left">
+      <div class="note-meta">
+        <span class="note-author">${m.author}</span>
+        <span class="note-cat" style="background:${catColor}">${cat}</span>
+        <span class="note-time">${fmtTime(m.created_at)}</span>
+      </div>
+      <div class="note-text">${m.message.replace(/\n/g,'<br>')}</div>
+    </div>
+    ${actions}
+  </div>`;
+}
+
 function renderList() {
   const list = document.getElementById('list');
-  const filtered = activeFilter === 'all' ? messages : messages.filter(m => m.category === activeFilter);
-  if (!filtered.length) {
-    list.innerHTML = '<div class="empty">引き継ぎはありません</div>';
+  const active    = messages.filter(m => !m.completed_at);
+  const completed = messages.filter(m =>  m.completed_at);
+
+  if (activeFilter === 'done') {
+    if (!completed.length) { list.innerHTML = '<div class="empty">終了した引き継ぎはありません</div>'; return; }
+    list.innerHTML = completed.map(m => makeCard(m, true)).join('');
     return;
   }
-  list.innerHTML = filtered.map(m => {
-    const dt = new Date(m.created_at);
-    const time = `${dt.getMonth()+1}月${dt.getDate()}日 ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-    const cat = m.category || 'その他';
-    const catColor = CAT_COLORS[cat] || '#999';
-    return `
-      <div class="note-card">
-        <div class="note-left">
-          <div class="note-meta">
-            <span class="note-author">${m.author}</span>
-            <span class="note-cat" style="background:${catColor}">${cat}</span>
-            <span class="note-time">${time}</span>
-          </div>
-          <div class="note-text">${m.message.replace(/\n/g,'<br>')}</div>
-        </div>
-        <button class="note-del" onclick="openDelete('${m.id}')">×</button>
-      </div>`;
-  }).join('');
+
+  const filtActive = activeFilter === 'all'
+    ? active
+    : active.filter(m => m.category === activeFilter);
+
+  let html = '';
+  if (!filtActive.length && (activeFilter !== 'all' || !completed.length)) {
+    html = '<div class="empty">引き継ぎはありません</div>';
+  } else {
+    html = filtActive.map(m => makeCard(m, false)).join('');
+    if (activeFilter === 'all' && completed.length) {
+      html += `<div class="completed-divider">── 終了済み ──</div>`;
+      html += completed.map(m => makeCard(m, true)).join('');
+    }
+  }
+  list.innerHTML = html;
+}
+
+async function autoDeleteOld(data) {
+  const twoMonthsAgo = new Date();
+  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+  const toDelete = data.filter(m => m.completed_at && new Date(m.completed_at) < twoMonthsAgo);
+  for (const m of toDelete) {
+    await db.from('handover').delete().eq('id', m.id);
+  }
 }
 
 async function loadMessages() {
   const { data, error } = await db.from('handover').select('*').order('created_at', {ascending: false});
   if (error) { console.error(error); return; }
-  messages = data || [];
+  await autoDeleteOld(data || []);
+  // 再取得（削除後）
+  const { data: fresh } = await db.from('handover').select('*').order('created_at', {ascending: false});
+  messages = fresh || [];
   renderList();
 }
 
@@ -281,39 +342,44 @@ async function postMessage() {
   const text = document.getElementById('msg-input').value.trim();
   if (!selectedAuthor) { alert('名前を選んでください'); return; }
   if (!text) { alert('内容を入力してください'); return; }
-
   const { error } = await db.from('handover').insert({ message: text, author: selectedAuthor, category: selectedPostCat });
   if (error) { console.error(error); alert('投稿に失敗しました'); return; }
   closeModal('add-modal');
   loadMessages();
 }
 
+// 終了
+function openDone(id) {
+  actionTargetId = id;
+  document.getElementById('done-modal').classList.add('open');
+}
+
+async function confirmDone() {
+  const { error } = await db.from('handover').update({ completed_at: new Date().toISOString() }).eq('id', actionTargetId);
+  if (error) { console.error(error); alert('更新に失敗しました'); return; }
+  closeModal('done-modal');
+  loadMessages();
+}
+
 // 削除
 function openDelete(id) {
-  deleteTargetId = id;
+  actionTargetId = id;
   document.getElementById('del-modal').classList.add('open');
 }
 
 async function confirmDelete() {
-  const { error } = await db.from('handover').delete().eq('id', deleteTargetId);
+  const { error } = await db.from('handover').delete().eq('id', actionTargetId);
   if (error) { console.error(error); alert('削除に失敗しました'); return; }
   closeModal('del-modal');
   loadMessages();
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-function handleOverlayClick(e, id) {
-  if (e.target === document.getElementById(id)) closeModal(id);
-}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function handleOverlayClick(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
 
 // リアルタイム同期
 db.channel('handover_changes')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'handover' }, () => {
-    loadMessages();
-  })
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'handover' }, () => loadMessages())
   .subscribe();
 
 renderFilterBar();

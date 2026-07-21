@@ -256,6 +256,37 @@ const INITIAL_SHIFTS = {
   '2026-07-29': {cultivation:["布川"], delivery:["前島"], other:["下田"]},
   '2026-07-30': {cultivation:["下田"], delivery:["前島"], other:["星野"]},
   '2026-07-31': {cultivation:["まき"], delivery:["かりまた"], other:["星野"]},
+  '2026-08-01': {cultivation:["星野"], delivery:["北島"], other:["かりまた"]},
+  '2026-08-02': {cultivation:["星野"], delivery:["宮本"], other:["かりまた"]},
+  '2026-08-03': {cultivation:["布川"], delivery:["宮本"], other:["かりまた"]},
+  '2026-08-04': {cultivation:["北島"], delivery:["前島"], other:["下田"]},
+  '2026-08-05': {cultivation:["布川"], delivery:["前島"], other:["下田"]},
+  '2026-08-06': {cultivation:["布川"], delivery:["北島"], other:["星野"]},
+  '2026-08-07': {cultivation:["まき"], delivery:["前島"], other:["かりまた"]},
+  '2026-08-08': {cultivation:[], delivery:["かりまた"], other:["星野"]},
+  '2026-08-09': {cultivation:["まき"], delivery:["宮本"], other:["星野"]},
+  '2026-08-10': {cultivation:["布川"], delivery:["宮本"], other:["かりまた"]},
+  '2026-08-11': {cultivation:["まき"], delivery:["前島"], other:["下田"]},
+  '2026-08-12': {cultivation:["布川"], delivery:["前島"], other:["下田"]},
+  '2026-08-13': {cultivation:["布川"], delivery:["かりまた"], other:["星野"]},
+  '2026-08-14': {cultivation:["まき"], delivery:["前島"], other:["下田"]},
+  '2026-08-15': {cultivation:["星野"], delivery:["北島"], other:["かりまた"]},
+  '2026-08-16': {cultivation:["星野"], delivery:["宮本"], other:["かりまた"]},
+  '2026-08-17': {cultivation:["布川"], delivery:["宮本"], other:["かりまた"]},
+  '2026-08-18': {cultivation:["北島"], delivery:["前島"], other:["下田"]},
+  '2026-08-19': {cultivation:["布川"], delivery:["前島"], other:["下田"]},
+  '2026-08-20': {cultivation:["布川"], delivery:["かりまた"], other:["星野"]},
+  '2026-08-21': {cultivation:["星野"], delivery:["前島"], other:["まき"]},
+  '2026-08-22': {cultivation:["かりまた"], delivery:["北島"], other:["星野"]},
+  '2026-08-23': {cultivation:["星野"], delivery:["宮本"], other:["かりまた"]},
+  '2026-08-24': {cultivation:["布川"], delivery:["宮本"], other:["かりまた"]},
+  '2026-08-25': {cultivation:["北島"], delivery:["前島"], other:["下田"]},
+  '2026-08-26': {cultivation:["布川"], delivery:["前島"], other:["下田"]},
+  '2026-08-27': {cultivation:["布川"], delivery:["かりまた"], other:["星野"]},
+  '2026-08-28': {cultivation:["かりまた"], delivery:["前島"], other:["まき"]},
+  '2026-08-29': {cultivation:["星野"], delivery:["北島"], other:["かりまた"]},
+  '2026-08-30': {cultivation:["星野"], delivery:["宮本"], other:["かりまた"]},
+  '2026-08-31': {cultivation:["星野"], delivery:["宮本"], other:["かりまた"]},
 };
 
 let shifts = {};
@@ -285,7 +316,8 @@ async function loadShifts() {
   } else {
     // Migrate all data if staff names are old format
     const jul1 = shifts['2026-07-01'];
-    const needsMigration = !jul1 ||
+    const aug1 = shifts['2026-08-01'];
+    const needsMigration = !aug1 || !jul1 ||
       JSON.stringify(jul1.cultivation) !== JSON.stringify(["布川"]) ||
       JSON.stringify(jul1.other) !== JSON.stringify(["れみ"]);
     if (needsMigration) {

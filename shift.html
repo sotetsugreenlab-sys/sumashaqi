@@ -317,9 +317,12 @@ async function loadShifts() {
     // Migrate all data if staff names are old format
     const jul1 = shifts['2026-07-01'];
     const aug1 = shifts['2026-08-01'];
+    const aug31 = shifts['2026-08-31'];
     const needsMigration = !aug1 || !jul1 ||
       JSON.stringify(jul1.cultivation) !== JSON.stringify(["布川"]) ||
-      JSON.stringify(jul1.other) !== JSON.stringify(["れみ"]);
+      JSON.stringify(jul1.other) !== JSON.stringify(["れみ"]) ||
+      JSON.stringify(aug31?.cultivation) !== JSON.stringify(["布川"]) ||
+      JSON.stringify(aug31?.other) !== JSON.stringify(["かりまた"]);
     if (needsMigration) {
       await migrateAllData();
     }

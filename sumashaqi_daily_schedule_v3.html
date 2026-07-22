@@ -278,8 +278,8 @@ const realToday = new Date();
 let viewDate = new Date(realToday);
 
 // 袋在庫 - 基準日から毎日1組減（在庫が変わったらここを更新）
-const BAG_BASE_DATE = '2026-07-07';
-const BAG_BASE_COUNT = 15;
+const BAG_BASE_DATE = '2026-07-23';
+const BAG_BASE_COUNT = 29;
 
 function renderBagCount() {
   const daysDiff = Math.round((parseDate(toDateStr(viewDate)) - parseDate(BAG_BASE_DATE)) / 86400000);

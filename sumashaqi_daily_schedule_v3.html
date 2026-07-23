@@ -190,6 +190,16 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
   </div>
 </div>
 
+<div class="calc-box">
+  <div class="calc-title">今日は播種から何日目？</div>
+  <div class="calc-row">
+    <label>播種日</label>
+    <input type="date" id="sow-days-input" />
+    <button class="btn-calc" onclick="calcDaysSinceSow()">計算</button>
+  </div>
+  <div class="calc-result" id="sow-days-result"></div>
+</div>
+
 <div class="section-title">イベント登録</div>
 <p class="sheet-note">
   イベントは
@@ -470,6 +480,19 @@ function calcFromSow(ver) {
   const sow = parseDate(val);
   document.getElementById(`sow-result-${ver}`).innerHTML =
     [chip('播種日', 0, sow)].concat(schForSow(ver).map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+}
+function calcDaysSinceSow() {
+  const val = document.getElementById('sow-days-input').value;
+  if (!val) return;
+  const sow = parseDate(val);
+  const today = parseDate(toDateStr(realToday));
+  const diff = Math.round((today - sow) / 86400000);
+  const el = document.getElementById('sow-days-result');
+  if (diff < 0) {
+    el.innerHTML = `<div class="calc-chip">播種まであと${-diff}日</div>`;
+  } else {
+    el.innerHTML = `<div class="calc-chip" style="font-size:16px;font-weight:700;color:#534AB7">${diff}日目</div>`;
+  }
 }
 function calcFromHarvest(ver) {
   const val = document.getElementById(`harvest-input-${ver}`).value;

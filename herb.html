@@ -68,6 +68,9 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .badge-ov1 { background: #D04020; color: #fff; }
 .badge-ov2 { background: #902000; color: #fff; }
 .harvest-stack { display: flex; flex-direction: column; gap: 4px; }
+.herb-bag { font-size: 12px; font-weight: 500; color: #993C1D; background: #FAECE7; border-radius: 6px; padding: 3px 8px; margin-left: auto; margin-right: 6px; }
+.herb-bag.low { color: #E24B4A; background: #FDE8E8; }
+.herb-bag strong { font-size: 15px; font-weight: 700; }
 .name-only-section { margin-top: 16px; padding-top: 12px; border-top: 1.5px solid #f0f0ed; }
 .name-only-title { font-size: 11px; color: #aaa; margin-bottom: 8px; }
 .name-only-list { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -137,7 +140,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <script>
 const HERBS = [
   {
-    name: 'バジル', href: 'basil.html', color: '#3B6D11', seeds: 10,
+    name: 'バジル', href: 'basil.html', color: '#3B6D11', seeds: 10, bagBase: { date: '2026-08-10', count: 10 },
     sowDays: [0,1,2,3,4,5,6], sowCutoff: '2026-07-16',
     sowDates: ['2026-06-09','2026-06-10','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-21','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16'],
     stages: [
@@ -158,7 +161,7 @@ const HERBS = [
     ]
   },
   {
-    name: 'ワイルドロケット', href: 'rocket.html', color: '#8B6D11', seeds: 8,
+    name: 'ワイルドロケット', href: 'rocket.html', color: '#8B6D11', seeds: 8, bagBase: { date: '2026-08-10', count: 7 },
     sowDays: [0,1,2,3,4,5,6], sowCutoff: '2026-07-16',
     sowDates: ['2026-06-09','2026-06-10','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-21','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16'],
     stages: [
@@ -168,7 +171,7 @@ const HERBS = [
     ]
   },
   {
-    name: 'パクチー', href: 'pakuchi.html', color: '#11836D', seeds: 5,
+    name: 'パクチー', href: 'pakuchi.html', color: '#11836D', seeds: 5, bagBase: { date: '2026-08-10', count: 15 },
     sowDays: [0,1,2,3,4,5,6], sowCutoff: '2026-06-28', // 6/29〜 毎日30キューブ
     sowDates: ['2026-04-23','2026-05-02','2026-05-22','2026-05-24','2026-05-25','2026-05-26','2026-05-27','2026-05-29','2026-06-01','2026-06-03','2026-06-04','2026-06-07','2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-21','2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26'],
     stages: [
@@ -200,6 +203,12 @@ const HERBS = [
     ]
   },
 ];
+
+function getBagCount(herb, date) {
+  if (!herb.bagBase) return null;
+  const diff = Math.round((parseDate(toDateStr(date)) - parseDate(herb.bagBase.date)) / 86400000);
+  return Math.max(0, herb.bagBase.count - diff);
+}
 
 function fmt(d) {
   const w = ['日','月','火','水','木','金','土'][d.getDay()];
@@ -280,10 +289,14 @@ function renderTasks() {
 
     const hasTask = harvestCards.length > 0 ||
       herb.stages.slice(1).some(s => isValidSow(herb, addDays(viewDate, -s.days)));
+    const bagCount = getBagCount(herb, viewDate);
+    const bagHtml = bagCount !== null
+      ? `<span class="herb-bag${bagCount <= 3 ? ' low' : ''}">袋 <strong>${bagCount}</strong>組</span>`
+      : '';
     html += `<div class="herb-section">
       <a class="herb-header" href="${herb.href}" style="color:${herb.color}">
         <span>${herb.name}${herb.seeds != null ? `<span class="herb-seeds">${herb.seeds}粒</span>` : ''}</span>
-        <span class="herb-arrow">›</span>
+        ${bagHtml}<span class="herb-arrow">›</span>
       </a>
       ${hasTask
         ? `<div class="stage-row"><div class="stage-cell">${harvestCellHtml}</div>${otherCells.join('')}</div>`

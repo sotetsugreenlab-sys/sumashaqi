@@ -217,8 +217,8 @@ function renderShift() {
     document.getElementById('staff-banner').innerHTML = ''; return;
   }
   const parts = [
-    ...s.cult.map(n => `<strong>${n}</strong>`),
     ...s.other.map(n => `<span style="color:#3B8A28;font-weight:600">${n}</span>`),
+    ...s.cult.map(n => `<strong>${n}</strong>`),
   ];
   document.getElementById('staff-banner').innerHTML =
     `<div class="staff-line">${parts.join('・')}</div>`;

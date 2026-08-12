@@ -346,13 +346,13 @@ function renderTasks() {
   const sow5  = addDays(viewDate, -16);
   const sow30 = addDays(viewDate, -6);
 
-  let html = `<div class="col-header">
-    ${courses.map(c => `<div class="col-label" style="background:#f0f0ee;color:#555">${c}日</div>`).join('')}
-  </div>`;
-
-  // 刈取: コースごと
-  html += `<div class="stage-row">
-    ${courses.map(c => cardCell({label:'刈取', cls:'card-刈取', days:c, sow:addDays(viewDate,-c), history:hist}, dayLabel)).join('')}
+  let html = `<div style="overflow-x:auto;padding-bottom:4px;margin-bottom:6px;">
+    <div class="col-header" style="min-width:max-content">
+      ${courses.map(c => `<div class="col-label" style="background:#f0f0ee;color:#555;min-width:115px">${c}日</div>`).join('')}
+    </div>
+    <div class="stage-row" style="min-width:max-content">
+      ${courses.map(c => `<div class="stage-cell" style="min-width:115px">${makeCard({label:'刈取', cls:'card-刈取', days:c, sow:addDays(viewDate,-c), history:hist}, dayLabel, true)}</div>`).join('')}
+    </div>
   </div>`;
 
   // 5穴（全コース共通）

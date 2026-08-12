@@ -143,30 +143,6 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 <div id="tasks"></div>
 
 <div class="calc-box">
-  <div class="calc-title">栽培日程を計算（34日目ver）</div>
-  <div class="calc-tabs">
-    <button class="calc-tab active" id="tab-sow-34" onclick="switchTab('sow','34')">播種日 → 各日程</button>
-    <button class="calc-tab" id="tab-harvest-34" onclick="switchTab('harvest','34')">刈取日 → 播種日</button>
-  </div>
-  <div id="panel-sow-34">
-    <div class="calc-row">
-      <label>播種日</label>
-      <input type="date" id="sow-input-34" />
-      <button class="btn-calc" onclick="calcFromSow('34')">計算</button>
-    </div>
-    <div class="calc-result" id="sow-result-34"></div>
-  </div>
-  <div id="panel-harvest-34" style="display:none;">
-    <div class="calc-row">
-      <label>刈取日</label>
-      <input type="date" id="harvest-input-34" />
-      <button class="btn-calc" onclick="calcFromHarvest('34')">計算</button>
-    </div>
-    <div class="calc-result" id="harvest-result-34"></div>
-  </div>
-</div>
-
-<div class="calc-box">
   <div class="calc-title">栽培日程を計算（35日目ver）</div>
   <div class="calc-tabs">
     <button class="calc-tab active" id="tab-sow-35" onclick="switchTab('sow','35')">播種日 → 各日程</button>
@@ -187,6 +163,30 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
       <button class="btn-calc" onclick="calcFromHarvest('35')">計算</button>
     </div>
     <div class="calc-result" id="harvest-result-35"></div>
+  </div>
+</div>
+
+<div class="calc-box">
+  <div class="calc-title">栽培日程を計算（36日目ver）</div>
+  <div class="calc-tabs">
+    <button class="calc-tab active" id="tab-sow-36" onclick="switchTab('sow','36')">播種日 → 各日程</button>
+    <button class="calc-tab" id="tab-harvest-36" onclick="switchTab('harvest','36')">刈取日 → 播種日</button>
+  </div>
+  <div id="panel-sow-36">
+    <div class="calc-row">
+      <label>播種日</label>
+      <input type="date" id="sow-input-36" />
+      <button class="btn-calc" onclick="calcFromSow('36')">計算</button>
+    </div>
+    <div class="calc-result" id="sow-result-36"></div>
+  </div>
+  <div id="panel-harvest-36" style="display:none;">
+    <div class="calc-row">
+      <label>刈取日</label>
+      <input type="date" id="harvest-input-36" />
+      <button class="btn-calc" onclick="calcFromHarvest('36')">計算</button>
+    </div>
+    <div class="calc-result" id="harvest-result-36"></div>
   </div>
 </div>
 
@@ -255,8 +255,8 @@ loadLiquidStock();
 const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-// 33日コース: 播種(0日)→30穴(5日)→5穴(15日)→刈取(33日)
-// 34日コース: 播種(0日)→30穴(5日)→5穴(15日)→刈取(34日)
+// 35日コース: 播種(0日)→30穴(6日)→5穴(16日)→刈取(35日)
+// 36日コース: 播種(0日)→30穴(7日)→5穴(17日)→刈取(36日)
 
 // 液肥管理
 const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
@@ -357,38 +357,38 @@ function renderTasks() {
   const isToday = isSameDay(viewDate, realToday);
   const dayLabel = isToday ? '今日の' : 'この日の';
 
-  const sowH34   = addDays(viewDate, -34);
   const sowH35   = addDays(viewDate, -35);
-  const sow5_34  = addDays(viewDate, -15);
+  const sowH36   = addDays(viewDate, -36);
   const sow5_35  = addDays(viewDate, -16);
-  const sow30_34 = addDays(viewDate, -5);
+  const sow5_36  = addDays(viewDate, -17);
   const sow30_35 = addDays(viewDate, -6);
-  const hist34   = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
-  const hist35   = [{label:'30穴',daysFromSow:5},{label:'5穴',daysFromSow:15}];
-  const hist5_34 = [{label:'30穴',daysFromSow:5}];
-  const hist5_35 = [{label:'30穴',daysFromSow:5}];
+  const sow30_36 = addDays(viewDate, -7);
+  const hist35   = [{label:'30穴',daysFromSow:6},{label:'5穴',daysFromSow:16}];
+  const hist36   = [{label:'30穴',daysFromSow:7},{label:'5穴',daysFromSow:17}];
+  const hist5_35 = [{label:'30穴',daysFromSow:6}];
+  const hist5_36 = [{label:'30穴',daysFromSow:7}];
 
   let html = `<div class="col-header">
-    <div class="col-label col-label-old">34日コース</div>
-    <div class="col-label col-label-new">35日コース</div>
+    <div class="col-label col-label-old">35日コース</div>
+    <div class="col-label col-label-new">36日コース</div>
   </div>`;
 
   // 刈取
   html += `<div class="stage-row">
-    ${cardCell({label:'刈取', cls:'card-刈取', days:34, sow:sowH34, history:hist34}, dayLabel)}
     ${cardCell({label:'刈取', cls:'card-刈取', days:35, sow:sowH35, history:hist35}, dayLabel)}
+    ${cardCell({label:'刈取', cls:'card-刈取', days:36, sow:sowH36, history:hist36}, dayLabel)}
   </div>`;
 
-  // 5穴（35日コースは1日早い播種）
+  // 5穴
   html += `<div class="stage-row">
-    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow5_34, history:hist5_34}, dayLabel)}
-    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:15, sow:sow5_35, history:hist5_35}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:16, sow:sow5_35, history:hist5_35}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:17, sow:sow5_36, history:hist5_36}, dayLabel)}
   </div>`;
 
-  // 30穴（35日コースは1日早い播種）
+  // 30穴
   html += `<div class="stage-row">
-    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30_34, history:[]}, dayLabel)}
-    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:5, sow:sow30_35, history:[]}, dayLabel)}
+    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:6, sow:sow30_35, history:[]}, dayLabel)}
+    ${cardCell({label:'30穴へ移植', cls:'card-30穴', days:7, sow:sow30_36, history:[]}, dayLabel)}
   </div>`;
 
   document.getElementById('tasks').innerHTML = html;
@@ -469,8 +469,8 @@ function switchTab(tab, ver) {
 function schForSow(ver) {
   const harvestDay = parseInt(ver);
   return [
-    { label: '30穴', days: 5  },
-    { label: '5穴',  days: 15 },
+    { label: '30穴', days: harvestDay - 29 },
+    { label: '5穴',  days: harvestDay - 19 },
     { label: '刈取', days: harvestDay },
   ];
 }
@@ -502,10 +502,10 @@ function calcFromHarvest(ver) {
   document.getElementById(`harvest-result-${ver}`).innerHTML =
     [chip('播種日', 0, sow)].concat(schForSow(ver).map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
 }
-document.getElementById('sow-input-34').value = toDateStr(realToday);
-document.getElementById('harvest-input-34').value = toDateStr(realToday);
 document.getElementById('sow-input-35').value = toDateStr(realToday);
 document.getElementById('harvest-input-35').value = toDateStr(realToday);
+document.getElementById('sow-input-36').value = toDateStr(realToday);
+document.getElementById('harvest-input-36').value = toDateStr(realToday);
 
 // イベント読み込み
 let cachedEvents = null;

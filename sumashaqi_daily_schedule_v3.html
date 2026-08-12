@@ -420,9 +420,17 @@ function renderDelivery() {
     6: 'フリル20',                                 // 土
   };
   const dateOverrides = {
+    '2026-07-02': 'フリル30・バジル5',
+    '2026-07-03': 'フリル20・バジル20・ルッコラ20・パクチー10',
     '2026-07-08': 'フリル30',
     '2026-07-09': 'フリル30',
     '2026-07-10': 'フリル20',
+    '2026-07-26': 'フリル15',
+    '2026-07-27': 'フリル25',
+    '2026-07-28': 'フリル15',
+    '2026-07-29': 'フリル30',
+    '2026-07-30': 'フリル30',
+    '2026-07-31': 'フリル20',
   };
   const ds = `${viewDate.getFullYear()}-${String(viewDate.getMonth()+1).padStart(2,'0')}-${String(viewDate.getDate()).padStart(2,'0')}`;
   const items = dateOverrides[ds] ?? deliveryItems[viewDate.getDay()];

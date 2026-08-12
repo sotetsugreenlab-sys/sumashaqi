@@ -304,15 +304,13 @@ function renderTasks() {
     const harvestCards = [];
     const harvestSeenSow = new Set();
     harvestDayValues.forEach(hDays => {
-      for (let offset = -2; offset <= 2; offset++) {
-        const sow = addDays(viewDate, -(hDays + offset));
-        const sowStr = toDateStr(sow);
-        if (harvestSeenSow.has(sowStr) || !isValidSow(herb, sow)) continue;
-        const appStages = getStagesForSow(herb, sow);
-        if (appStages[0].days === hDays) {
-          harvestSeenSow.add(sowStr);
-          harvestCards.push(makeCompactCardHarvest(appStages[0], sow, offset));
-        }
+      const sow = addDays(viewDate, -hDays);
+      const sowStr = toDateStr(sow);
+      if (harvestSeenSow.has(sowStr) || !isValidSow(herb, sow)) return;
+      const appStages = getStagesForSow(herb, sow);
+      if (appStages[0].days === hDays) {
+        harvestSeenSow.add(sowStr);
+        harvestCards.push(makeCompactCard(appStages[0], sow));
       }
     });
     const harvestCellHtml = harvestCards.length > 0

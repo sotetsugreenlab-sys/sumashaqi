@@ -94,6 +94,9 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .chip-label { font-size: 11px; color: #666; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
 .chip-day { font-size: 11px; color: #aaa; }
 .chip-val { font-weight: 500; font-size: 14px; color: #1a1a1a; }
+.calc-group { margin-bottom: 12px; }
+.calc-group-label { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 0.05em; margin-bottom: 6px; }
+.calc-group-label.new { color: #534AB7; }
 </style>
 </head>
 <body>
@@ -125,7 +128,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
       <input type="date" id="sow-input" />
       <button class="btn-calc" onclick="calcFromSow()">計算</button>
     </div>
-    <div class="calc-result" id="sow-result"></div>
+    <div id="sow-result"></div>
   </div>
   <div id="panel-harvest" style="display:none;">
     <div class="calc-row">
@@ -133,7 +136,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
       <input type="date" id="harvest-input" />
       <button class="btn-calc" onclick="calcFromHarvest()">計算</button>
     </div>
-    <div class="calc-result" id="harvest-result"></div>
+    <div id="harvest-result"></div>
   </div>
 </div>
 
@@ -425,25 +428,46 @@ function chip(label, days, date) {
   return `<div class="calc-chip"><div class="chip-label">${label} <span class="chip-day">${dayStr}</span></div><div class="chip-val">${fmtMD(date)}</div></div>`;
 }
 
+function scheduleGroup(labelText, isNew, stages, sow) {
+  const chips = [chip('播種', 0, sow)]
+    .concat([...stages].reverse().map(s => chip(s.label, s.days, addDays(sow, s.days))))
+    .join('');
+  return `<div class="calc-group">
+    <div class="calc-group-label${isNew ? ' new' : ''}">${labelText}</div>
+    <div class="calc-result">${chips}</div>
+  </div>`;
+}
+
 function calcFromSow() {
   const val = document.getElementById('sow-input').value;
   if (!val) return;
   const sow = parseDate(val);
   const herb = HERBS[calcHerbIdx];
-  const stages = [...herb.stages].reverse();
-  document.getElementById('sow-result').innerHTML =
-    [chip('播種', 0, sow)].concat(stages.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+  let html = '';
+  if (herb.stages2) {
+    html += scheduleGroup('従来スケジュール', false, herb.stages, sow);
+    html += scheduleGroup('新スケジュール', true, herb.stages2, sow);
+  } else {
+    html = scheduleGroup('栽培スケジュール', false, herb.stages, sow);
+  }
+  document.getElementById('sow-result').innerHTML = html;
 }
 
 function calcFromHarvest() {
   const val = document.getElementById('harvest-input').value;
   if (!val) return;
   const herb = HERBS[calcHerbIdx];
-  const harvestDays = herb.stages[0].days;
-  const sow = addDays(parseDate(val), -harvestDays);
-  const stages = [...herb.stages].reverse();
-  document.getElementById('harvest-result').innerHTML =
-    [chip('播種', 0, sow)].concat(stages.map(s => chip(s.label, s.days, addDays(sow, s.days)))).join('');
+  let html = '';
+  if (herb.stages2) {
+    const sow1 = addDays(parseDate(val), -herb.stages[0].days);
+    const sow2 = addDays(parseDate(val), -herb.stages2[0].days);
+    html += scheduleGroup('従来スケジュール', false, herb.stages, sow1);
+    html += scheduleGroup('新スケジュール', true, herb.stages2, sow2);
+  } else {
+    const sow = addDays(parseDate(val), -herb.stages[0].days);
+    html = scheduleGroup('栽培スケジュール', false, herb.stages, sow);
+  }
+  document.getElementById('harvest-result').innerHTML = html;
 }
 
 document.getElementById('sow-input').value = toDateStr(realToday);

@@ -145,8 +145,14 @@ const HERBS = [
     sowDates: ['2026-06-09','2026-06-10','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-21','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16'],
     stages: [
       { label: '収穫',       days: 35, cls: 'card-harvest' },
-      { label: '6穴へ移植',  days: 17, cls: 'card-green'   },
+      { label: '8穴へ移植',  days: 17, cls: 'card-green'   },
       { label: '30穴へ移植', days: 9,  cls: 'card-30'      },
+    ],
+    stagesNewFrom: '2026-08-11',
+    stages2: [
+      { label: '収穫',       days: 38, cls: 'card-harvest' },
+      { label: '8穴へ移植',  days: 21, cls: 'card-green'   },
+      { label: '30穴へ移植', days: 12, cls: 'card-30'      },
     ]
   },
   {
@@ -166,8 +172,14 @@ const HERBS = [
     sowDates: ['2026-06-09','2026-06-10','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-21','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16'],
     stages: [
       { label: '収穫',       days: 34, cls: 'card-harvest' },
-      { label: '6穴へ移植',  days: 20, cls: 'card-green'   },
+      { label: '8穴へ移植',  days: 20, cls: 'card-green'   },
       { label: '30穴へ移植', days: 9,  cls: 'card-30'      },
+    ],
+    stagesNewFrom: '2026-08-11',
+    stages2: [
+      { label: '収穫',       days: 39, cls: 'card-harvest' },
+      { label: '8穴へ移植',  days: 24, cls: 'card-green'   },
+      { label: '30穴へ移植', days: 12, cls: 'card-30'      },
     ]
   },
   {
@@ -178,6 +190,12 @@ const HERBS = [
       { label: '収穫',             days: 32, cls: 'card-harvest' },
       { label: 'LED高い場所へ移動', days: 20, cls: 'card-led'    },
       { label: '30穴へ移植',       days: 9,  cls: 'card-30'      },
+    ],
+    stagesNewFrom: '2026-08-11',
+    stages2: [
+      { label: '収穫',       days: 39, cls: 'card-harvest' },
+      { label: '8穴へ移植',  days: 24, cls: 'card-green'   },
+      { label: '30穴へ移植', days: 12, cls: 'card-30'      },
     ]
   },
   {
@@ -203,6 +221,13 @@ const HERBS = [
     ]
   },
 ];
+
+function getStagesForSow(herb, sow) {
+  if (herb.stagesNewFrom && herb.stages2 && toDateStr(sow) >= herb.stagesNewFrom) {
+    return herb.stages2;
+  }
+  return herb.stages;
+}
 
 function getBagCount(herb, date) {
   if (!herb.bagBase) return null;
@@ -269,26 +294,57 @@ function renderTasks() {
 
   activeHerbs.forEach(herb => {
     const sowToday = isValidSow(herb, viewDate);
-    const harvestStage = herb.stages[0];
+    const allStageSets = [herb.stages, ...(herb.stages2 ? [herb.stages2] : [])];
 
+    // 収穫カード：旧・新どちらのharvest日数も確認
+    const harvestDayValues = [...new Set(allStageSets.map(s => s[0].days))];
     const harvestCards = [];
-    for (let offset = -2; offset <= 2; offset++) {
-      const sow = addDays(viewDate, -(harvestStage.days + offset));
-      if (isValidSow(herb, sow)) harvestCards.push(makeCompactCardHarvest(harvestStage, sow, offset));
-    }
+    const harvestSeenSow = new Set();
+    harvestDayValues.forEach(hDays => {
+      for (let offset = -2; offset <= 2; offset++) {
+        const sow = addDays(viewDate, -(hDays + offset));
+        const sowStr = toDateStr(sow);
+        if (harvestSeenSow.has(sowStr) || !isValidSow(herb, sow)) continue;
+        const appStages = getStagesForSow(herb, sow);
+        if (appStages[0].days === hDays) {
+          harvestSeenSow.add(sowStr);
+          harvestCards.push(makeCompactCardHarvest(appStages[0], sow, offset));
+        }
+      }
+    });
     const harvestCellHtml = harvestCards.length > 0
       ? `<div class="harvest-stack">${harvestCards.join('')}</div>`
       : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
 
-    const otherCells = herb.stages.slice(1).map(stage => {
-      const sow = addDays(viewDate, -stage.days);
-      return `<div class="stage-cell">${isValidSow(herb, sow)
-        ? makeCompactCard(stage, sow)
-        : '<div class="card-empty"><span class="card-empty-text">−</span></div>'}</div>`;
-    });
+    // その他セル：30穴グループ・非30穴グループに分け、両スケジュールをスタック表示
+    const makePosCell = (is30ana) => {
+      const cards = [];
+      const seenSow = new Set();
+      allStageSets.forEach(stageSet => {
+        stageSet.slice(1).filter(s => s.label.includes('30穴') === is30ana).forEach(stage => {
+          const sow = addDays(viewDate, -stage.days);
+          const sowStr = toDateStr(sow);
+          if (seenSow.has(sowStr) || !isValidSow(herb, sow)) return;
+          const appStages = getStagesForSow(herb, sow);
+          const match = appStages.slice(1).find(s => s.days === stage.days);
+          if (match) { seenSow.add(sowStr); cards.push(makeCompactCard(match, sow)); }
+        });
+      });
+      const inner = cards.length > 0
+        ? `<div class="harvest-stack">${cards.join('')}</div>`
+        : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
+      return `<div class="stage-cell">${inner}</div>`;
+    };
+    const otherCells = [makePosCell(false), makePosCell(true)];
 
     const hasTask = harvestCards.length > 0 ||
-      herb.stages.slice(1).some(s => isValidSow(herb, addDays(viewDate, -s.days)));
+      allStageSets.some(stageSet =>
+        stageSet.slice(1).some(s => {
+          const sow = addDays(viewDate, -s.days);
+          if (!isValidSow(herb, sow)) return false;
+          return getStagesForSow(herb, sow).slice(1).some(as => as.days === s.days);
+        })
+      );
     const bagCount = getBagCount(herb, viewDate);
     const bagHtml = bagCount !== null
       ? `<span class="herb-bag${bagCount <= 3 ? ' low' : ''}">袋 <strong>${bagCount}</strong>組</span>`

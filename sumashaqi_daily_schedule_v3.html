@@ -103,6 +103,8 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .sync-status { font-size: 12px; color: #aaa; margin-top: 6px; }
 .sync-status.ok { color: #3B6D11; }
 .sync-status.err { color: #E24B4A; }
+.staff-line { font-size: 13px; color: #666; margin-top: 5px; }
+.staff-line strong { color: #1a1a1a; font-weight: 600; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -117,6 +119,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
   </div>
   <div class="date-sub">の作業内容</div>
   <div id="back-today-wrap"></div>
+  <div id="staff-banner"></div>
   <div class="ekihi-line" id="ekihi-line" style="display:none"></div>
   <div class="bag-bar">
     <span class="bag-label">袋在庫</span>
@@ -199,6 +202,21 @@ const db = supabase.createClient(
 );
 
 let liquidAmount = 0;
+let shiftsCache = {};
+
+async function loadShifts() {
+  const { data, error } = await db.from('shifts').select('date,cultivation');
+  if (error) { console.error(error); return; }
+  (data || []).forEach(r => { shiftsCache[r.date] = r.cultivation || []; });
+  renderShift();
+}
+
+function renderShift() {
+  const staff = shiftsCache[toDateStr(viewDate)] || [];
+  document.getElementById('staff-banner').innerHTML = staff.length > 0
+    ? `<div class="staff-line">栽培：${staff.map(s => `<strong>${s}</strong>`).join('・')}</div>`
+    : '';
+}
 
 async function loadLiquidStock() {
   const { data, error } = await db.from('liquid_log').select('delta');
@@ -417,6 +435,7 @@ function renderDelivery() {
 
 function renderAll() {
   renderHeader();
+  renderShift();
   renderEkihi();
   renderDelivery();
   renderTasks();
@@ -533,6 +552,7 @@ async function loadEvents() {
 
 renderAll();
 loadEvents();
+loadShifts();
 </script>
 </body>
 </html>

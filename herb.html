@@ -97,6 +97,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .calc-group { margin-bottom: 12px; }
 .calc-group-label { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 0.05em; margin-bottom: 6px; }
 .calc-group-label.new { color: #534AB7; }
+.calc-group-note { font-size: 10px; font-weight: 500; color: #999; margin-left: 6px; letter-spacing: 0; }
 </style>
 </head>
 <body>
@@ -431,7 +432,7 @@ function scheduleGroup(labelText, isNew, stages, sow) {
     .concat([...stages].reverse().map(s => chip(s.label, s.days, addDays(sow, s.days))))
     .join('');
   return `<div class="calc-group">
-    <div class="calc-group-label${isNew ? ' new' : ''}">${labelText}</div>
+    <div class="calc-group-label${isNew ? ' new' : ''}">${labelText}${isNew ? '<span class="calc-group-note">※2026年8月12日から</span>' : ''}</div>
     <div class="calc-result">${chips}</div>
   </div>`;
 }

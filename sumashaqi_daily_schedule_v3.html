@@ -205,9 +205,9 @@ let liquidAmount = 0;
 let shiftsCache = {};
 
 async function loadShifts() {
-  const { data, error } = await db.from('shifts').select('date,cultivation');
+  const { data, error } = await db.from('shifts').select('shift_date,cultivation_staff');
   if (error) { console.error(error); return; }
-  (data || []).forEach(r => { shiftsCache[r.date] = r.cultivation || []; });
+  (data || []).forEach(r => { shiftsCache[r.shift_date] = r.cultivation_staff || []; });
   renderShift();
 }
 

@@ -371,7 +371,7 @@ function renderTasks() {
   const sow30 = addDays(viewDate, -6);
 
   let html = `<div class="col-header">
-    ${courses.map(c => `<div class="col-label" style="background:#f0f0ee;color:#555">${c}日</div>`).join('')}
+    ${courses.map(c => `<div class="col-label" style="background:#f0f0ee;color:#555">${c}日目刈取</div>`).join('')}
   </div>
   <div class="stage-row">
     ${courses.map(c => cardCell({label:'刈取', cls:'card-刈取', days:c, sow:addDays(viewDate,-c), history:hist}, dayLabel)).join('')}

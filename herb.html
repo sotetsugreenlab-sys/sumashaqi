@@ -341,6 +341,12 @@ async function saveEdit(noteId, sowKey) {
   if (item) item.note = text;
   renderTasks();
 }
+async function deleteNote(noteId, sowKey) {
+  if (!confirm('このメモを削除しますか？')) return;
+  await db.from('lot_notes').delete().eq('id', noteId);
+  if (lotNotes[sowKey]) lotNotes[sowKey] = lotNotes[sowKey].filter(n => n.id !== noteId);
+  renderTasks();
+}
 function herbNotesHtml(herbName, sowDateStr) {
   const key = herbName + ':' + sowDateStr;
   const notes = lotNotes[key] || [];
@@ -348,6 +354,7 @@ function herbNotesHtml(herbName, sowDateStr) {
   const items = notes.map(n => `
     <div class="card-note-item">📝 ${n.note}
       <button class="btn-note-edit" onclick="startEdit(${n.id},'${key}')">編集</button>
+      <button class="btn-note-edit" onclick="deleteNote(${n.id},'${key}')" style="color:#E24B4A">削除</button>
     </div>
     <div class="note-input-wrap" id="ew-${n.id}" style="display:none">
       <input class="note-input" id="ei-${n.id}" onkeydown="if(event.key==='Enter')saveEdit(${n.id},'${key}')">

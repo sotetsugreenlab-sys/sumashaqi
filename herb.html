@@ -8,6 +8,7 @@
 <link rel="icon" href="Saibai%20Cat.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ハーブ">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
@@ -150,6 +151,11 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 </div>
 
 <script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
 const HERBS = [
   {
     name: 'バジル', href: 'basil.html', color: '#3B6D11', seeds: 10, bagBase: { date: '2026-08-14', count: 11 },

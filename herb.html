@@ -72,6 +72,8 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .btn-note-save { font-size: 11px; padding: 4px 10px; background: #534AB7; color: #fff; border: none; border-radius: 8px; cursor: pointer; flex-shrink: 0; }
 .btn-note-cancel { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; }
 .btn-note-edit { font-size: 10px; color: #aaa; background: none; border: none; cursor: pointer; margin-left: 4px; text-decoration: underline; }
+.note-delete-confirm { display: none; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.note-delete-label { font-size: 11px; color: #E24B4A; }
 .harvest-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 6px; margin-left: 3px; display: inline-block; vertical-align: middle; }
 .badge-w2  { background: #F5D8A0; color: #7A4F00; }
 .badge-w1  { background: #E09060; color: #fff; }
@@ -341,8 +343,13 @@ async function saveEdit(noteId, sowKey) {
   if (item) item.note = text;
   renderTasks();
 }
-async function deleteNote(noteId, sowKey) {
-  if (!confirm('このメモを削除しますか？')) return;
+function showDeleteConfirm(noteId) {
+  document.getElementById('dc-' + noteId).style.display = 'flex';
+}
+function hideDeleteConfirm(noteId) {
+  document.getElementById('dc-' + noteId).style.display = 'none';
+}
+async function confirmDelete(noteId, sowKey) {
   await db.from('lot_notes').delete().eq('id', noteId);
   if (lotNotes[sowKey]) lotNotes[sowKey] = lotNotes[sowKey].filter(n => n.id !== noteId);
   renderTasks();
@@ -354,7 +361,12 @@ function herbNotesHtml(herbName, sowDateStr) {
   const items = notes.map(n => `
     <div class="card-note-item">📝 ${n.note}
       <button class="btn-note-edit" onclick="startEdit(${n.id},'${key}')">編集</button>
-      <button class="btn-note-edit" onclick="deleteNote(${n.id},'${key}')" style="color:#E24B4A">削除</button>
+      <button class="btn-note-edit" onclick="showDeleteConfirm(${n.id})" style="color:#E24B4A">削除</button>
+    </div>
+    <div class="note-delete-confirm" id="dc-${n.id}" style="display:none">
+      <span class="note-delete-label">本当に削除しますか？</span>
+      <button class="btn-note-save" style="background:#E24B4A" onclick="confirmDelete(${n.id},'${key}')">はい</button>
+      <button class="btn-note-cancel" onclick="hideDeleteConfirm(${n.id})">いいえ</button>
     </div>
     <div class="note-input-wrap" id="ew-${n.id}" style="display:none">
       <input class="note-input" id="ei-${n.id}" onkeydown="if(event.key==='Enter')saveEdit(${n.id},'${key}')">

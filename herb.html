@@ -289,7 +289,13 @@ function renderHeader() {
   document.querySelector('.header').style.background = sowTrayBg(viewDate);
 }
 
-const TRAY_COLORS = ['#C8DBA8','#DDBCC8','#D8D4A0','#E8E0CC','#A8C0CC'];
+const TRAY_COLORS = [
+  'rgba(160, 210, 100, 0.35)', // 黄緑
+  'rgba(230, 160, 185, 0.35)', // ピンク
+  'rgba(240, 220, 100, 0.35)', // 黄色
+  'rgba(235, 220, 175, 0.35)', // クリーム
+  'rgba(130, 185, 225, 0.35)', // 青
+];
 const TRAY_REF = new Date('2026-08-04T00:00:00');
 function sowTrayBg(sow) {
   const diff = Math.round((sow - TRAY_REF) / 86400000);

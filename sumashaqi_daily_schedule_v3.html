@@ -324,8 +324,22 @@ function renderHeader() {
     : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
 }
 
+const TRAY_COLORS = [
+  '#CBE8A2', // 黄緑
+  '#F5C8D6', // ピンク
+  '#FAF0A8', // 黄色
+  '#F5EDCE', // クリーム
+  '#B8D8F0', // 青
+];
+const TRAY_REF = new Date('2026-08-04T00:00:00');
+function sowTrayBg(sow) {
+  const diff = Math.round((sow - TRAY_REF) / 86400000);
+  return TRAY_COLORS[((diff % 5) + 5) % 5];
+}
+
 function makeCard(t, dayLabel, compact) {
   const cls = compact ? `card ${t.cls} compact` : `card ${t.cls}`;
+  const bg = sowTrayBg(t.sow);
   let histHtml = '';
   if (t.history.length > 0) {
     histHtml = '<div class="history">';
@@ -337,14 +351,14 @@ function makeCard(t, dayLabel, compact) {
     histHtml += '</div>';
   }
   if (compact) {
-    return `<div class="${cls}">
+    return `<div class="${cls}" style="background:${bg}">
       <div class="card-task">${t.label}</div>
       <div class="card-sow">${fmtShort(t.sow)}播種</div>
       <div class="card-sub">${t.days}日目</div>
       ${histHtml}
     </div>`;
   }
-  return `<div class="${cls}">
+  return `<div class="${cls}" style="background:${bg}">
     <div class="card-top">
       <div>
         <div class="card-task">${dayLabel}${t.label}</div>

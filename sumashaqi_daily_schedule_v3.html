@@ -105,6 +105,14 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .sync-status.err { color: #E24B4A; }
 .staff-line { font-size: 13px; color: #666; margin-top: 5px; }
 .staff-line strong { color: #1a1a1a; font-weight: 600; }
+.card-notes { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(0,0,0,0.07); }
+.card-note-item { font-size: 11px; color: #555; line-height: 1.5; margin-bottom: 2px; }
+.btn-note-add { font-size: 10px; color: #aaa; background: none; border: 1px dashed #ccc; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-top: 3px; }
+.note-input-wrap { display: none; align-items: center; gap: 4px; margin-top: 5px; }
+.note-input-wrap.open { display: flex; }
+.note-input { flex: 1; min-width: 0; font-size: 12px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
+.btn-note-save { font-size: 11px; padding: 4px 10px; background: #534AB7; color: #fff; border: none; border-radius: 8px; cursor: pointer; flex-shrink: 0; }
+.btn-note-cancel { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -324,6 +332,62 @@ function renderHeader() {
     : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
 }
 
+let lotNotes = {};
+async function loadLotNotes() {
+  const { data } = await db.from('lot_notes').select('sow_date,note').eq('crop', 'sumashaqi');
+  lotNotes = {};
+  (data || []).forEach(r => {
+    if (!lotNotes[r.sow_date]) lotNotes[r.sow_date] = [];
+    lotNotes[r.sow_date].push(r.note);
+  });
+  renderTasks();
+}
+function openNote(id) {
+  const el = document.getElementById(id);
+  el.classList.add('open');
+  document.getElementById(id + '-t').focus();
+}
+function closeNote(id) {
+  document.getElementById(id).classList.remove('open');
+}
+async function submitNote(crop, sowDate) {
+  const id = 'ni-' + sowDate;
+  const input = document.getElementById(id + '-t');
+  const text = input.value.trim();
+  if (!text) return;
+  await db.from('lot_notes').insert({ crop, sow_date: sowDate, note: text });
+  if (!lotNotes[sowDate]) lotNotes[sowDate] = [];
+  lotNotes[sowDate].push(text);
+  input.value = '';
+  closeNote(id);
+  renderTasks();
+}
+function notesHtml(sowDateStr) {
+  const notes = lotNotes[sowDateStr] || [];
+  const id = 'ni-' + sowDateStr;
+  const items = notes.map(n => `<div class="card-note-item">📝 ${n}</div>`).join('');
+  return `<div class="card-notes">
+    ${items}
+    <div id="${id}" class="note-input-wrap">
+      <input class="note-input" id="${id}-t" placeholder="メモを入力…" onkeydown="if(event.key==='Enter')submitNote('sumashaqi','${sowDateStr}')">
+      <button class="btn-note-save" onclick="submitNote('sumashaqi','${sowDateStr}')">保存</button>
+      <button class="btn-note-cancel" onclick="closeNote('${id}')">✕</button>
+    </div>
+    <button class="btn-note-add" onclick="openNote('${id}')">＋ メモ</button>
+  </div>`;
+}
+
+db.channel('lot_notes_sumashaqi')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lot_notes' }, payload => {
+    if (payload.new.crop === 'sumashaqi') {
+      const d = payload.new.sow_date;
+      if (!lotNotes[d]) lotNotes[d] = [];
+      lotNotes[d].push(payload.new.note);
+      renderTasks();
+    }
+  })
+  .subscribe();
+
 const TRAY_COLORS = [
   '#CBE8A2', // 黄緑
   '#F5C8D6', // ピンク
@@ -350,12 +414,14 @@ function makeCard(t, dayLabel, compact) {
     });
     histHtml += '</div>';
   }
+  const sowStr = toDateStr(t.sow);
   if (compact) {
     return `<div class="${cls}" style="background:${bg}">
       <div class="card-task">${t.label}</div>
       <div class="card-sow">${fmtShort(t.sow)}播種</div>
       <div class="card-sub">${t.days}日目</div>
       ${histHtml}
+      ${notesHtml(sowStr)}
     </div>`;
   }
   return `<div class="${cls}" style="background:${bg}">
@@ -367,6 +433,7 @@ function makeCard(t, dayLabel, compact) {
       <div class="card-sub">播種から${t.days}日目</div>
     </div>
     ${histHtml}
+    ${notesHtml(sowStr)}
   </div>`;
 }
 
@@ -581,6 +648,7 @@ async function loadEvents() {
 renderAll();
 loadEvents();
 loadShifts();
+loadLotNotes();
 </script>
 </body>
 </html>

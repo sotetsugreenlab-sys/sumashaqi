@@ -62,6 +62,14 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .card-harvest-w1  .card-task { color: #B5603A; }
 .card-harvest-ov1 .card-task { color: #993C1D; }
 .card-harvest-ov2 .card-task { color: #7A1A00; }
+.card-notes { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(0,0,0,0.07); }
+.card-note-item { font-size: 11px; color: #555; line-height: 1.5; margin-bottom: 2px; }
+.btn-note-add { font-size: 10px; color: #aaa; background: none; border: 1px dashed #ccc; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-top: 3px; }
+.note-input-wrap { display: none; align-items: center; gap: 4px; margin-top: 5px; }
+.note-input-wrap.open { display: flex; }
+.note-input { flex: 1; min-width: 0; font-size: 12px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
+.btn-note-save { font-size: 11px; padding: 4px 10px; background: #534AB7; color: #fff; border: none; border-radius: 8px; cursor: pointer; flex-shrink: 0; }
+.btn-note-cancel { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; }
 .harvest-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 6px; margin-left: 3px; display: inline-block; vertical-align: middle; }
 .badge-w2  { background: #F5D8A0; color: #7A4F00; }
 .badge-w1  { background: #E09060; color: #fff; }
@@ -271,11 +279,74 @@ function renderHeader() {
     ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
 }
 
-function makeCompactCard(stage, sow) {
+let lotNotes = {};
+async function loadLotNotes() {
+  const cropNames = HERBS.filter(h => !h.nameOnly).map(h => h.name);
+  const { data } = await db.from('lot_notes').select('crop,sow_date,note').in('crop', cropNames);
+  lotNotes = {};
+  (data || []).forEach(r => {
+    const key = r.crop + ':' + r.sow_date;
+    if (!lotNotes[key]) lotNotes[key] = [];
+    lotNotes[key].push(r.note);
+  });
+  renderTasks();
+}
+function openNote(id) {
+  const el = document.getElementById(id);
+  el.classList.add('open');
+  document.getElementById(id + '-t').focus();
+}
+function closeNote(id) {
+  document.getElementById(id).classList.remove('open');
+}
+async function submitNote(crop, sowDate) {
+  const id = 'ni-' + crop + '-' + sowDate;
+  const input = document.getElementById(id + '-t');
+  const text = input.value.trim();
+  if (!text) return;
+  await db.from('lot_notes').insert({ crop, sow_date: sowDate, note: text });
+  const key = crop + ':' + sowDate;
+  if (!lotNotes[key]) lotNotes[key] = [];
+  lotNotes[key].push(text);
+  input.value = '';
+  closeNote(id);
+  renderTasks();
+}
+function herbNotesHtml(herbName, sowDateStr) {
+  const key = herbName + ':' + sowDateStr;
+  const notes = lotNotes[key] || [];
+  const id = 'ni-' + herbName + '-' + sowDateStr;
+  const items = notes.map(n => `<div class="card-note-item">📝 ${n}</div>`).join('');
+  return `<div class="card-notes">
+    ${items}
+    <div id="${id}" class="note-input-wrap">
+      <input class="note-input" id="${id}-t" placeholder="メモを入力…" onkeydown="if(event.key==='Enter')submitNote('${herbName}','${sowDateStr}')">
+      <button class="btn-note-save" onclick="submitNote('${herbName}','${sowDateStr}')">保存</button>
+      <button class="btn-note-cancel" onclick="closeNote('${id}')">✕</button>
+    </div>
+    <button class="btn-note-add" onclick="openNote('${id}')">＋ メモ</button>
+  </div>`;
+}
+
+db.channel('lot_notes_herb')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lot_notes' }, payload => {
+    const n = payload.new;
+    const cropNames = HERBS.filter(h => !h.nameOnly).map(h => h.name);
+    if (cropNames.includes(n.crop)) {
+      const key = n.crop + ':' + n.sow_date;
+      if (!lotNotes[key]) lotNotes[key] = [];
+      lotNotes[key].push(n.note);
+      renderTasks();
+    }
+  })
+  .subscribe();
+
+function makeCompactCard(stage, sow, herbName) {
   return `<div class="card ${stage.cls}">
     <div class="card-task">${stage.label}</div>
     <div class="card-sow">${fmtShort(sow)}播種</div>
     <div class="card-sub">${stage.days}日目</div>
+    ${herbName ? herbNotesHtml(herbName, toDateStr(sow)) : ''}
   </div>`;
 }
 
@@ -311,7 +382,7 @@ function renderTasks() {
       const appStages = getStagesForSow(herb, sow);
       if (appStages[0].days === hDays) {
         harvestSeenSow.add(sowStr);
-        harvestCards.push(makeCompactCard(appStages[0], sow));
+        harvestCards.push(makeCompactCard(appStages[0], sow, herb.name));
       }
     });
     const harvestCellHtml = harvestCards.length > 0
@@ -329,7 +400,7 @@ function renderTasks() {
           if (seenSow.has(sowStr) || !isValidSow(herb, sow)) return;
           const appStages = getStagesForSow(herb, sow);
           const match = appStages.slice(1).find(s => s.days === stage.days);
-          if (match) { seenSow.add(sowStr); cards.push(makeCompactCard(match, sow)); }
+          if (match) { seenSow.add(sowStr); cards.push(makeCompactCard(match, sow, herb.name)); }
         });
       });
       const inner = cards.length > 0
@@ -474,6 +545,7 @@ document.getElementById('harvest-input').value = toDateStr(realToday);
 
 initHerbTabs();
 renderAll();
+loadLotNotes();
 </script>
 </body>
 </html>

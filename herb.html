@@ -71,6 +71,7 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .note-input { flex: 1; min-width: 0; font-size: 12px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
 .btn-note-save { font-size: 11px; padding: 4px 10px; background: #534AB7; color: #fff; border: none; border-radius: 8px; cursor: pointer; flex-shrink: 0; }
 .btn-note-cancel { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; }
+.btn-note-edit { font-size: 10px; color: #aaa; background: none; border: none; cursor: pointer; margin-left: 4px; text-decoration: underline; }
 .harvest-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 6px; margin-left: 3px; display: inline-block; vertical-align: middle; }
 .badge-w2  { background: #F5D8A0; color: #7A4F00; }
 .badge-w1  { background: #E09060; color: #fff; }
@@ -288,12 +289,12 @@ function renderHeader() {
 let lotNotes = {};
 async function loadLotNotes() {
   const cropNames = HERBS.filter(h => !h.nameOnly).map(h => h.name);
-  const { data } = await db.from('lot_notes').select('crop,sow_date,note').in('crop', cropNames);
+  const { data } = await db.from('lot_notes').select('id,crop,sow_date,note').in('crop', cropNames);
   lotNotes = {};
   (data || []).forEach(r => {
     const key = r.crop + ':' + r.sow_date;
     if (!lotNotes[key]) lotNotes[key] = [];
-    lotNotes[key].push(r.note);
+    lotNotes[key].push({ id: r.id, note: r.note });
   });
   renderTasks();
 }
@@ -310,19 +311,49 @@ async function submitNote(crop, sowDate) {
   const input = document.getElementById(id + '-t');
   const text = input.value.trim();
   if (!text) return;
-  await db.from('lot_notes').insert({ crop, sow_date: sowDate, note: text });
+  const { data } = await db.from('lot_notes').insert({ crop, sow_date: sowDate, note: text }).select('id');
   const key = crop + ':' + sowDate;
   if (!lotNotes[key]) lotNotes[key] = [];
-  lotNotes[key].push(text);
+  lotNotes[key].push({ id: data?.[0]?.id, note: text });
   input.value = '';
   closeNote(id);
+  renderTasks();
+}
+function startEdit(noteId, sowKey) {
+  const notes = lotNotes[sowKey] || [];
+  const note = notes.find(n => n.id === noteId);
+  if (!note) return;
+  document.getElementById('ew-' + noteId).style.display = 'flex';
+  const input = document.getElementById('ei-' + noteId);
+  input.value = note.note;
+  input.focus();
+}
+function cancelEdit(noteId) {
+  document.getElementById('ew-' + noteId).style.display = 'none';
+}
+async function saveEdit(noteId, sowKey) {
+  const input = document.getElementById('ei-' + noteId);
+  const text = input.value.trim();
+  if (!text) return;
+  await db.from('lot_notes').update({ note: text }).eq('id', noteId);
+  const notes = lotNotes[sowKey] || [];
+  const item = notes.find(n => n.id === noteId);
+  if (item) item.note = text;
   renderTasks();
 }
 function herbNotesHtml(herbName, sowDateStr) {
   const key = herbName + ':' + sowDateStr;
   const notes = lotNotes[key] || [];
   const id = 'ni-' + herbName + '-' + sowDateStr;
-  const items = notes.map(n => `<div class="card-note-item">📝 ${n}</div>`).join('');
+  const items = notes.map(n => `
+    <div class="card-note-item">📝 ${n.note}
+      <button class="btn-note-edit" onclick="startEdit(${n.id},'${key}')">編集</button>
+    </div>
+    <div class="note-input-wrap" id="ew-${n.id}" style="display:none">
+      <input class="note-input" id="ei-${n.id}" onkeydown="if(event.key==='Enter')saveEdit(${n.id},'${key}')">
+      <button class="btn-note-save" onclick="saveEdit(${n.id},'${key}')">保存</button>
+      <button class="btn-note-cancel" onclick="cancelEdit(${n.id})">✕</button>
+    </div>`).join('');
   return `<div class="card-notes">
     ${items}
     <div id="${id}" class="note-input-wrap">
@@ -335,13 +366,15 @@ function herbNotesHtml(herbName, sowDateStr) {
 }
 
 db.channel('lot_notes_herb')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lot_notes' }, payload => {
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'lot_notes' }, payload => {
     const n = payload.new;
     const cropNames = HERBS.filter(h => !h.nameOnly).map(h => h.name);
-    if (cropNames.includes(n.crop)) {
+    if (n && cropNames.includes(n.crop)) {
       const key = n.crop + ':' + n.sow_date;
       if (!lotNotes[key]) lotNotes[key] = [];
-      lotNotes[key].push(n.note);
+      const existing = lotNotes[key].find(r => r.id === n.id);
+      if (existing) existing.note = n.note;
+      else lotNotes[key].push({ id: n.id, note: n.note });
       renderTasks();
     }
   })

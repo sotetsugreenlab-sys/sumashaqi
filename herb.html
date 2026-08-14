@@ -296,7 +296,7 @@ const TRAY_COLORS = [
   'rgba(235, 220, 175, 0.35)', // クリーム
   'rgba(130, 185, 225, 0.35)', // 青
 ];
-const TRAY_REF = new Date('2026-08-04T00:00:00');
+const TRAY_REF = new Date('2026-08-15T00:00:00');
 function sowTrayBg(sow) {
   const diff = Math.round((sow - TRAY_REF) / 86400000);
   return TRAY_COLORS[((diff % 5) + 5) % 5];

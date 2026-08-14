@@ -288,6 +288,13 @@ function renderHeader() {
     ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
 }
 
+const TRAY_COLORS = ['#CBE8A2','#F5C8D6','#FAF0A8','#FAF8F0','#B8D8F0'];
+const TRAY_REF = new Date('2026-08-04T00:00:00');
+function sowTrayBg(sow) {
+  const diff = Math.round((sow - TRAY_REF) / 86400000);
+  return TRAY_COLORS[((diff % 5) + 5) % 5];
+}
+
 let lotNotes = {};
 async function loadLotNotes() {
   const cropNames = HERBS.filter(h => !h.nameOnly).map(h => h.name);
@@ -400,7 +407,7 @@ db.channel('lot_notes_herb')
   .subscribe();
 
 function makeCompactCard(stage, sow, herbName) {
-  return `<div class="card ${stage.cls}">
+  return `<div class="card ${stage.cls}" style="background:${sowTrayBg(sow)}">
     <div class="card-task">${stage.label}</div>
     <div class="card-sow">${fmtShort(sow)}播種</div>
     <div class="card-sub">${stage.days}日目</div>

@@ -217,10 +217,10 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
     </div>
 
     <div id="goto-cultivation" style="display:none; margin-top:12px;">
-      <a id="goto-cultivation-link" href="#" target="_blank"
-        style="display:block;text-align:center;padding:11px;background:#f0eeff;color:#534AB7;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;">
+      <button id="goto-cultivation-link" onclick="gotoHarvest()"
+        style="width:100%;text-align:center;padding:11px;background:#f0eeff;color:#534AB7;border-radius:12px;font-size:14px;font-weight:700;border:none;cursor:pointer;">
         🌱 刈取日（33日目）で見る
-      </a>
+      </button>
     </div>
 
     <div class="delete-zone" id="delete-zone" style="display:none">
@@ -315,6 +315,11 @@ function renderReflectorRow(rowNum) {
   document.getElementById(`ref-row-${rowNum}`).innerHTML = html;
 }
 
+function gotoHarvest() {
+  const url = document.getElementById('goto-cultivation-link').dataset.url;
+  if (url) window.location.href = url;
+}
+
 async function toggleReflector(rowNum, batch) {
   const key = `${currentShelf}-${rowNum}-${batch}`;
   const newVal = !reflectors[key];
@@ -406,7 +411,7 @@ function openEdit(id) {
     const harvestDate = new Date(lot.sow_date + 'T00:00:00');
     harvestDate.setDate(harvestDate.getDate() + 32);
     const y = harvestDate.getFullYear(), m = String(harvestDate.getMonth()+1).padStart(2,'0'), d = String(harvestDate.getDate()).padStart(2,'0');
-    document.getElementById('goto-cultivation-link').href = `sumashaqi_daily_schedule_v3.html?date=${y}-${m}-${d}`;
+    document.getElementById('goto-cultivation-link').dataset.url = `sumashaqi_daily_schedule_v3.html?date=${y}-${m}-${d}`;
   }
   renderCropChips();
   renderSpanChips();

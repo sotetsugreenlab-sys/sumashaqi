@@ -26,6 +26,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
 
 .row-labels { flex-shrink: 0; width: 34px; }
 .row-label-spacer { height: 26px; }
+.row-label-ref { height: 28px; margin-bottom: 4px; }
 .row-label { display: flex; align-items: center; justify-content: center; height: 72px; font-size: 11px; color: #888; font-weight: 700; margin-bottom: 4px; }
 
 .grid-scroll { overflow-x: auto; flex: 1; -webkit-overflow-scrolling: touch; }
@@ -155,10 +156,13 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
   <div class="shelf-grid-outer">
     <div class="row-labels">
       <div class="row-label-spacer"></div>
-      <div class="row-label-spacer"></div>
+      <div class="row-label-ref"></div>
       <div class="row-label">4段</div>
+      <div class="row-label-ref"></div>
       <div class="row-label">3段</div>
+      <div class="row-label-ref"></div>
       <div class="row-label">2段</div>
+      <div class="row-label-ref"></div>
       <div class="row-label">1段</div>
     </div>
     <div class="grid-scroll">
@@ -170,10 +174,13 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
         <div class="batch-label batch-a">5a</div><div class="batch-label batch-b">5b</div>
         <div class="batch-label batch-a">6a</div><div class="batch-label batch-b">6b</div>
       </div>
-      <div class="reflector-row" id="reflector-row"></div>
+      <div class="reflector-row" id="ref-row-4"></div>
       <div class="row-grid" id="row-4"></div>
+      <div class="reflector-row" id="ref-row-3"></div>
       <div class="row-grid" id="row-3"></div>
+      <div class="reflector-row" id="ref-row-2"></div>
       <div class="row-grid" id="row-2"></div>
+      <div class="reflector-row" id="ref-row-1"></div>
       <div class="row-grid" id="row-1"></div>
     </div>
   </div>
@@ -271,9 +278,9 @@ async function init() {
   ]);
   lots = lotsRes.data || [];
   reflectors = {};
-  (refRes.data || []).forEach(r => { reflectors[`${r.shelf}-${r.batch}`] = r.has_reflector; });
+  (refRes.data || []).forEach(r => { reflectors[`${r.shelf}-${r.row_num}-${r.batch}`] = r.has_reflector; });
   renderGrid();
-  renderReflectorRow();
+  renderAllReflectorRows();
 }
 
 function switchShelf(n) {
@@ -281,30 +288,34 @@ function switchShelf(n) {
   document.getElementById('tab-1').classList.toggle('active', n === 1);
   document.getElementById('tab-2').classList.toggle('active', n === 2);
   renderGrid();
-  renderReflectorRow();
+  renderAllReflectorRows();
 }
 
-function renderReflectorRow() {
+function renderAllReflectorRows() {
+  for (let r = 1; r <= 4; r++) renderReflectorRow(r);
+}
+
+function renderReflectorRow(rowNum) {
   let html = '';
   for (let b = 1; b <= 6; b++) {
-    const on = !!reflectors[`${currentShelf}-${b}`];
+    const on = !!reflectors[`${currentShelf}-${rowNum}-${b}`];
     html += `<button class="reflector-btn ${on ? 'reflector-on' : 'reflector-off'}"
       style="grid-column:${(b-1)*2+1}/span 2"
-      onclick="toggleReflector(${b})">
-      ${on ? '💡反射板' : '反射板なし'}
+      onclick="toggleReflector(${rowNum},${b})">
+      ${on ? '💡' : '－'}
     </button>`;
   }
-  document.getElementById('reflector-row').innerHTML = html;
+  document.getElementById(`ref-row-${rowNum}`).innerHTML = html;
 }
 
-async function toggleReflector(batch) {
-  const key = `${currentShelf}-${batch}`;
+async function toggleReflector(rowNum, batch) {
+  const key = `${currentShelf}-${rowNum}-${batch}`;
   const newVal = !reflectors[key];
   reflectors[key] = newVal;
-  renderReflectorRow();
+  renderReflectorRow(rowNum);
   await db.from('shelf_reflectors').upsert(
-    { shelf: currentShelf, batch, has_reflector: newVal },
-    { onConflict: 'shelf,batch' }
+    { shelf: currentShelf, row_num: rowNum, batch, has_reflector: newVal },
+    { onConflict: 'shelf,row_num,batch' }
   );
 }
 

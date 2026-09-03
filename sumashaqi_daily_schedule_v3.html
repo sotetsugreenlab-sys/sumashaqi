@@ -303,7 +303,8 @@ function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
 
 // 表示日（ナビゲーションで変わる）
 const realToday = new Date();
-let viewDate = new Date(realToday);
+const _urlDate = new URLSearchParams(location.search).get('date');
+let viewDate = _urlDate ? new Date(_urlDate + 'T00:00:00') : new Date(realToday);
 
 // 袋在庫 - 基準日から毎日1組減（在庫が変わったらここを更新）
 const BAG_BASE_DATE = '2026-09-02';

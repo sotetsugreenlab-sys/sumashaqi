@@ -46,6 +46,26 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
 .batch-a { border-left: 2px solid #d0d0d0; color: #888; }
 .batch-b { border-right: 1px solid #e8e8e8; color: #bbb; }
 
+.reflector-row {
+  display: grid;
+  grid-template-columns: repeat(12, 44px);
+  margin-bottom: 6px;
+}
+.reflector-btn {
+  grid-column: span 2;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1.5px solid;
+  margin: 0 2px;
+  text-align: center;
+  transition: background 0.15s;
+}
+.reflector-on  { background: rgba(255,220,50,0.35); border-color: #d4a020; color: #a07010; }
+.reflector-off { background: #f0f0f0; border-color: #ddd; color: #bbb; }
+
 .row-grid {
   display: grid;
   grid-template-columns: repeat(12, 44px);
@@ -135,6 +155,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
   <div class="shelf-grid-outer">
     <div class="row-labels">
       <div class="row-label-spacer"></div>
+      <div class="row-label-spacer"></div>
       <div class="row-label">4段</div>
       <div class="row-label">3段</div>
       <div class="row-label">2段</div>
@@ -149,6 +170,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
         <div class="batch-label batch-a">5a</div><div class="batch-label batch-b">5b</div>
         <div class="batch-label batch-a">6a</div><div class="batch-label batch-b">6b</div>
       </div>
+      <div class="reflector-row" id="reflector-row"></div>
       <div class="row-grid" id="row-4"></div>
       <div class="row-grid" id="row-3"></div>
       <div class="row-grid" id="row-2"></div>
@@ -235,6 +257,7 @@ function trayStyle(crop, sowDate) {
 
 let currentShelf = 1;
 let lots = [];
+let reflectors = {}; // key: "shelf-batch" → boolean
 let modalMode = 'add';
 let addCtx = {};
 let editId = null;
@@ -242,9 +265,15 @@ let selCrop = '';
 let selSpan = 2;
 
 async function init() {
-  const { data } = await db.from('shelf_lots').select('*');
-  lots = data || [];
+  const [lotsRes, refRes] = await Promise.all([
+    db.from('shelf_lots').select('*'),
+    db.from('shelf_reflectors').select('*'),
+  ]);
+  lots = lotsRes.data || [];
+  reflectors = {};
+  (refRes.data || []).forEach(r => { reflectors[`${r.shelf}-${r.batch}`] = r.has_reflector; });
   renderGrid();
+  renderReflectorRow();
 }
 
 function switchShelf(n) {
@@ -252,6 +281,31 @@ function switchShelf(n) {
   document.getElementById('tab-1').classList.toggle('active', n === 1);
   document.getElementById('tab-2').classList.toggle('active', n === 2);
   renderGrid();
+  renderReflectorRow();
+}
+
+function renderReflectorRow() {
+  let html = '';
+  for (let b = 1; b <= 6; b++) {
+    const on = !!reflectors[`${currentShelf}-${b}`];
+    html += `<button class="reflector-btn ${on ? 'reflector-on' : 'reflector-off'}"
+      style="grid-column:${(b-1)*2+1}/span 2"
+      onclick="toggleReflector(${b})">
+      ${on ? '💡反射板' : '反射板なし'}
+    </button>`;
+  }
+  document.getElementById('reflector-row').innerHTML = html;
+}
+
+async function toggleReflector(batch) {
+  const key = `${currentShelf}-${batch}`;
+  const newVal = !reflectors[key];
+  reflectors[key] = newVal;
+  renderReflectorRow();
+  await db.from('shelf_reflectors').upsert(
+    { shelf: currentShelf, batch, has_reflector: newVal },
+    { onConflict: 'shelf,batch' }
+  );
 }
 
 function renderGrid() {

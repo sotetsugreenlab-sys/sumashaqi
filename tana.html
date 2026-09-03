@@ -302,7 +302,7 @@ function renderReflectorRow(rowNum) {
     html += `<button class="reflector-btn ${on ? 'reflector-on' : 'reflector-off'}"
       style="grid-column:${(b-1)*2+1}/span 2"
       onclick="toggleReflector(${rowNum},${b})">
-      ${on ? '💡' : '－'}
+      ${on ? '反射板あり' : '－'}
     </button>`;
   }
   document.getElementById(`ref-row-${rowNum}`).innerHTML = html;

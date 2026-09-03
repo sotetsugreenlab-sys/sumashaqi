@@ -267,7 +267,7 @@ function buildRow(row) {
         style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${st.bd}"
         onclick="openEdit(${lot.id})">
         <div class="lot-crop">${esc(lot.crop)}</div>
-        <div class="lot-date">${lot.sow_date || ''}</div>
+        <div class="lot-date">${fmtDate(lot.sow_date)}</div>
         ${lot.note ? `<div class="lot-note">📝 ${esc(lot.note)}</div>` : ''}
       </div>`;
     } else {
@@ -275,6 +275,12 @@ function buildRow(row) {
     }
   }
   return html;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const m = d.match(/\d{4}-(\d{1,2})-(\d{1,2})/);
+  return m ? `${parseInt(m[1])}/${parseInt(m[2])}` : d;
 }
 
 function esc(s) {

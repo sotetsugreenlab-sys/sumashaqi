@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>棚管理</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="棚管理">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
+
+.top-bar { display: flex; align-items: center; padding: 14px 16px 8px; gap: 10px; }
+.back-btn { font-size: 13px; color: #666; text-decoration: none; }
+.page-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+
+.shelf-tabs { display: flex; gap: 8px; padding: 0 16px 14px; }
+.shelf-tab { padding: 7px 24px; border-radius: 20px; border: 2px solid #ddd; background: #fff; font-size: 14px; font-weight: 600; color: #999; cursor: pointer; }
+.shelf-tab.active { border-color: #534AB7; color: #534AB7; background: #f0eeff; }
+
+.grid-wrap { padding: 0 12px 32px; }
+.shelf-grid-outer { display: flex; align-items: flex-start; }
+
+.row-labels { flex-shrink: 0; width: 34px; }
+.row-label-spacer { height: 26px; }
+.row-label { display: flex; align-items: center; justify-content: center; height: 72px; font-size: 11px; color: #888; font-weight: 700; margin-bottom: 4px; }
+
+.grid-scroll { overflow-x: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+
+.batch-header-row {
+  display: grid;
+  grid-template-columns: repeat(12, 44px);
+  margin-bottom: 4px;
+}
+.batch-label {
+  grid-column: span 2;
+  text-align: center;
+  font-size: 10px;
+  color: #aaa;
+  font-weight: 700;
+  padding: 4px 0 4px;
+  border-right: 1px solid #e8e8e8;
+  letter-spacing: 0.02em;
+}
+.batch-label:last-child { border-right: none; }
+
+.row-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 44px);
+  height: 72px;
+  margin-bottom: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent calc(88px - 1px),
+    #ececec calc(88px - 1px),
+    #ececec 88px
+  );
+  background-size: 88px 100%;
+}
+
+.cell-empty {
+  background: rgba(255,255,255,0.7);
+  border: 1.5px dashed #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ddd;
+  font-size: 16px;
+  transition: background 0.12s, border-color 0.12s;
+}
+.cell-empty:active { background: #f0eeff; border-color: #534AB7; }
+
+.cell-lot {
+  border-radius: 6px;
+  padding: 5px 7px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  margin: 2px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.lot-crop { font-size: 11px; font-weight: 700; color: #1a1a1a; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lot-date { font-size: 10px; color: #555; margin-top: 1px; }
+.lot-note { font-size: 9px; color: #C0392B; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
+.modal-overlay.hidden { display: none; }
+.modal { background: #fff; border-radius: 20px 20px 0 0; padding: 20px 20px 44px; width: 100%; max-width: 500px; max-height: 88vh; overflow-y: auto; }
+.modal-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; color: #1a1a1a; }
+
+.modal-section { margin-top: 14px; }
+.modal-label { font-size: 11px; color: #999; font-weight: 700; margin-bottom: 7px; letter-spacing: 0.04em; }
+.chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 5px 12px; border-radius: 16px; border: 1.5px solid #ddd; background: #f8f8f8; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.chip.active { border-color: #534AB7; background: #f0eeff; color: #534AB7; font-weight: 700; }
+
+.modal-input { width: 100%; padding: 10px 12px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 14px; background: #fafafa; }
+.modal-input:focus { outline: none; border-color: #534AB7; background: #fff; }
+
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.btn-save { flex: 1; padding: 13px; background: #534AB7; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.btn-cancel { padding: 13px 16px; background: #f0f0f0; border: none; border-radius: 12px; font-size: 15px; color: #666; cursor: pointer; }
+
+.delete-zone { margin-top: 14px; }
+.btn-delete { width: 100%; padding: 10px; background: none; border: 1.5px solid #E24B4A; border-radius: 10px; font-size: 13px; color: #E24B4A; cursor: pointer; }
+.delete-confirm-inline { display: none; align-items: center; gap: 8px; margin-top: 8px; padding: 10px 12px; background: #fff5f5; border-radius: 10px; border: 1px solid #fcc; }
+.delete-confirm-inline.show { display: flex; }
+.dc-text { font-size: 12px; color: #E24B4A; flex: 1; }
+.btn-dc-yes { padding: 6px 14px; background: #E24B4A; color: #fff; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; }
+.btn-dc-no { padding: 6px 8px; background: none; border: none; font-size: 12px; color: #aaa; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-btn" href="index.html">← トップ</a>
+  <div class="page-title">🗄️ 棚管理</div>
+</div>
+
+<div class="shelf-tabs">
+  <button class="shelf-tab active" id="tab-1" onclick="switchShelf(1)">棚1</button>
+  <button class="shelf-tab" id="tab-2" onclick="switchShelf(2)">棚2</button>
+</div>
+
+<div class="grid-wrap">
+  <div class="shelf-grid-outer">
+    <div class="row-labels">
+      <div class="row-label-spacer"></div>
+      <div class="row-label">1段</div>
+      <div class="row-label">2段</div>
+      <div class="row-label">3段</div>
+      <div class="row-label">4段</div>
+    </div>
+    <div class="grid-scroll">
+      <div class="batch-header-row">
+        <div class="batch-label">B1</div>
+        <div class="batch-label">B2</div>
+        <div class="batch-label">B3</div>
+        <div class="batch-label">B4</div>
+        <div class="batch-label">B5</div>
+        <div class="batch-label">B6</div>
+      </div>
+      <div class="row-grid" id="row-1"></div>
+      <div class="row-grid" id="row-2"></div>
+      <div class="row-grid" id="row-3"></div>
+      <div class="row-grid" id="row-4"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="onOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-title" id="modal-title">ロットを追加</div>
+
+    <div class="modal-section">
+      <div class="modal-label">作物名</div>
+      <div class="chip-group" id="crop-chips"></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-label">播種日</div>
+      <input type="date" class="modal-input" id="sow-date-input">
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-label">バッチ数</div>
+      <div class="chip-group" id="span-chips"></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-label">メモ（任意）</div>
+      <input type="text" class="modal-input" id="note-input" placeholder="例：発芽不良">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveLot()">保存</button>
+    </div>
+
+    <div class="delete-zone" id="delete-zone" style="display:none">
+      <button class="btn-delete" onclick="showDeleteConfirm()">このロットを削除</button>
+      <div class="delete-confirm-inline" id="delete-confirm">
+        <span class="dc-text">本当に削除しますか？</span>
+        <button class="btn-dc-yes" onclick="deleteLot()">削除</button>
+        <button class="btn-dc-no" onclick="hideDeleteConfirm()">いいえ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+const CROPS = ['スマシャキ','バジル','ワイルドロケット','パクチー','その他'];
+const SPANS = [
+  { label: '0.5', val: 1 },
+  { label: '1',   val: 2 },
+  { label: '1.5', val: 3 },
+  { label: '2',   val: 4 },
+  { label: '2.5', val: 5 },
+  { label: '3',   val: 6 },
+];
+const CROP_STYLE = {
+  'スマシャキ':     { bg: 'rgba(83,74,183,0.15)',  bd: '#534AB7' },
+  'バジル':         { bg: 'rgba(59,109,17,0.17)',   bd: '#3B6D11' },
+  'ワイルドロケット':{ bg: 'rgba(100,160,40,0.18)', bd: '#64A028' },
+  'パクチー':       { bg: 'rgba(20,160,140,0.18)',  bd: '#14A08C' },
+  'その他':         { bg: 'rgba(100,100,100,0.1)',  bd: '#bbb' },
+};
+
+let currentShelf = 1;
+let lots = [];
+let modalMode = 'add';
+let addCtx = {};
+let editId = null;
+let selCrop = '';
+let selSpan = 2;
+
+async function init() {
+  const { data } = await db.from('shelf_lots').select('*');
+  lots = data || [];
+  renderGrid();
+}
+
+function switchShelf(n) {
+  currentShelf = n;
+  document.getElementById('tab-1').classList.toggle('active', n === 1);
+  document.getElementById('tab-2').classList.toggle('active', n === 2);
+  renderGrid();
+}
+
+function renderGrid() {
+  for (let r = 1; r <= 4; r++) {
+    document.getElementById('row-' + r).innerHTML = buildRow(r);
+  }
+}
+
+function buildRow(row) {
+  const rowLots = lots.filter(l => l.shelf === currentShelf && l.row_num === row)
+    .sort((a, b) => a.col_start - b.col_start);
+  const skip = new Set();
+  let html = '';
+
+  for (let c = 1; c <= 12; c++) {
+    if (skip.has(c)) continue;
+    const lot = rowLots.find(l => l.col_start === c);
+    if (lot) {
+      for (let s = c + 1; s < c + lot.col_span; s++) skip.add(s);
+      const st = CROP_STYLE[lot.crop] || CROP_STYLE['その他'];
+      html += `<div class="cell-lot"
+        style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${st.bd}"
+        onclick="openEdit(${lot.id})">
+        <div class="lot-crop">${esc(lot.crop)}</div>
+        <div class="lot-date">${lot.sow_date || ''}</div>
+        ${lot.note ? `<div class="lot-note">📝 ${esc(lot.note)}</div>` : ''}
+      </div>`;
+    } else {
+      html += `<div class="cell-empty" style="grid-column:${c}" onclick="openAdd(${row},${c})">+</div>`;
+    }
+  }
+  return html;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---- Modal ----
+function openAdd(row, col) {
+  modalMode = 'add';
+  addCtx = { shelf: currentShelf, row, col };
+  selCrop = '';
+  selSpan = 2;
+  const batchNum = Math.ceil(col / 2);
+  const half = col % 2 === 1 ? '前半' : '後半';
+  document.getElementById('modal-title').textContent =
+    `ロットを追加（棚${currentShelf} ${row}段 B${batchNum}${half}〜）`;
+  document.getElementById('sow-date-input').value = '';
+  document.getElementById('note-input').value = '';
+  document.getElementById('delete-zone').style.display = 'none';
+  renderCropChips();
+  renderSpanChips();
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function openEdit(id) {
+  const lot = lots.find(l => l.id === id);
+  if (!lot) return;
+  modalMode = 'edit';
+  editId = id;
+  selCrop = lot.crop;
+  selSpan = lot.col_span;
+  document.getElementById('modal-title').textContent = 'ロットを編集';
+  document.getElementById('sow-date-input').value = lot.sow_date || '';
+  document.getElementById('note-input').value = lot.note || '';
+  document.getElementById('delete-zone').style.display = 'block';
+  document.getElementById('delete-confirm').classList.remove('show');
+  renderCropChips();
+  renderSpanChips();
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function onOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function renderCropChips() {
+  document.getElementById('crop-chips').innerHTML = CROPS.map(c =>
+    `<button class="chip ${selCrop===c?'active':''}" onclick="pickCrop('${c}')">${c}</button>`
+  ).join('');
+}
+function pickCrop(c) { selCrop = c; renderCropChips(); }
+
+function renderSpanChips() {
+  document.getElementById('span-chips').innerHTML = SPANS.map(s =>
+    `<button class="chip ${selSpan===s.val?'active':''}" onclick="pickSpan(${s.val})">${s.label}バッチ</button>`
+  ).join('');
+}
+function pickSpan(v) { selSpan = v; renderSpanChips(); }
+
+async function saveLot() {
+  if (!selCrop) { alert('作物名を選んでください'); return; }
+  const sowDate = document.getElementById('sow-date-input').value || null;
+  const note = document.getElementById('note-input').value.trim() || null;
+
+  if (modalMode === 'add') {
+    const { shelf, row, col } = addCtx;
+    if (col + selSpan - 1 > 12) { alert('バッチ数が棚をはみ出します'); return; }
+    const rowLots = lots.filter(l => l.shelf === shelf && l.row_num === row);
+    for (let c = col; c < col + selSpan; c++) {
+      if (rowLots.some(l => c >= l.col_start && c < l.col_start + l.col_span)) {
+        alert('選択範囲に既存のロットが重なります');
+        return;
+      }
+    }
+    const { data } = await db.from('shelf_lots').insert({
+      shelf, row_num: row, col_start: col, col_span: selSpan,
+      crop: selCrop, sow_date: sowDate, note
+    }).select();
+    if (data && data[0]) lots.push(data[0]);
+  } else {
+    await db.from('shelf_lots').update({ crop: selCrop, sow_date: sowDate, note }).eq('id', editId);
+    const idx = lots.findIndex(l => l.id === editId);
+    if (idx >= 0) Object.assign(lots[idx], { crop: selCrop, sow_date: sowDate, note });
+  }
+
+  closeModal();
+  renderGrid();
+}
+
+function showDeleteConfirm() { document.getElementById('delete-confirm').classList.add('show'); }
+function hideDeleteConfirm() { document.getElementById('delete-confirm').classList.remove('show'); }
+
+async function deleteLot() {
+  await db.from('shelf_lots').delete().eq('id', editId);
+  lots = lots.filter(l => l.id !== editId);
+  closeModal();
+  renderGrid();
+}
+
+init();
+</script>
+</body>
+</html>

@@ -216,6 +216,13 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
       <button class="btn-save" onclick="saveLot()">保存</button>
     </div>
 
+    <div id="goto-cultivation" style="display:none; margin-top:12px;">
+      <a id="goto-cultivation-link" href="#" target="_blank"
+        style="display:block;text-align:center;padding:11px;background:#f0eeff;color:#534AB7;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;">
+        🌱 刈取日（33日目）で見る
+      </a>
+    </div>
+
     <div class="delete-zone" id="delete-zone" style="display:none">
       <button class="btn-delete" onclick="showDeleteConfirm()">このロットを削除</button>
       <div class="delete-confirm-inline" id="delete-confirm">
@@ -393,6 +400,14 @@ function openEdit(id) {
   document.getElementById('delete-zone').style.display = 'block';
   document.getElementById('delete-confirm').classList.remove('show');
   document.getElementById('sow-date-section').style.display = NO_DATE_CROPS.has(lot.crop) ? 'none' : 'block';
+  const showGoto = lot.crop === 'スマシャキ' && lot.sow_date;
+  document.getElementById('goto-cultivation').style.display = showGoto ? 'block' : 'none';
+  if (showGoto) {
+    const harvestDate = new Date(lot.sow_date + 'T00:00:00');
+    harvestDate.setDate(harvestDate.getDate() + 32);
+    const y = harvestDate.getFullYear(), m = String(harvestDate.getMonth()+1).padStart(2,'0'), d = String(harvestDate.getDate()).padStart(2,'0');
+    document.getElementById('goto-cultivation-link').href = `sumashaqi_daily_schedule_v3.html?date=${y}-${m}-${d}`;
+  }
   renderCropChips();
   renderSpanChips();
   document.getElementById('modal-overlay').classList.remove('hidden');

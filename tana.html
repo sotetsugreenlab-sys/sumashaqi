@@ -36,16 +36,15 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
   margin-bottom: 4px;
 }
 .batch-label {
-  grid-column: span 2;
   text-align: center;
   font-size: 10px;
   color: #aaa;
   font-weight: 700;
-  padding: 4px 0 4px;
-  border-right: 1px solid #e8e8e8;
+  padding: 4px 0;
   letter-spacing: 0.02em;
 }
-.batch-label:last-child { border-right: none; }
+.batch-a { border-left: 2px solid #d0d0d0; color: #888; }
+.batch-b { border-right: 1px solid #e8e8e8; color: #bbb; }
 
 .row-grid {
   display: grid;
@@ -136,24 +135,24 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
   <div class="shelf-grid-outer">
     <div class="row-labels">
       <div class="row-label-spacer"></div>
-      <div class="row-label">1段</div>
-      <div class="row-label">2段</div>
-      <div class="row-label">3段</div>
       <div class="row-label">4段</div>
+      <div class="row-label">3段</div>
+      <div class="row-label">2段</div>
+      <div class="row-label">1段</div>
     </div>
     <div class="grid-scroll">
       <div class="batch-header-row">
-        <div class="batch-label">B1</div>
-        <div class="batch-label">B2</div>
-        <div class="batch-label">B3</div>
-        <div class="batch-label">B4</div>
-        <div class="batch-label">B5</div>
-        <div class="batch-label">B6</div>
+        <div class="batch-label batch-a">1a</div><div class="batch-label batch-b">1b</div>
+        <div class="batch-label batch-a">2a</div><div class="batch-label batch-b">2b</div>
+        <div class="batch-label batch-a">3a</div><div class="batch-label batch-b">3b</div>
+        <div class="batch-label batch-a">4a</div><div class="batch-label batch-b">4b</div>
+        <div class="batch-label batch-a">5a</div><div class="batch-label batch-b">5b</div>
+        <div class="batch-label batch-a">6a</div><div class="batch-label batch-b">6b</div>
       </div>
-      <div class="row-grid" id="row-1"></div>
-      <div class="row-grid" id="row-2"></div>
-      <div class="row-grid" id="row-3"></div>
       <div class="row-grid" id="row-4"></div>
+      <div class="row-grid" id="row-3"></div>
+      <div class="row-grid" id="row-2"></div>
+      <div class="row-grid" id="row-1"></div>
     </div>
   </div>
 </div>
@@ -286,9 +285,9 @@ function openAdd(row, col) {
   selCrop = '';
   selSpan = 2;
   const batchNum = Math.ceil(col / 2);
-  const half = col % 2 === 1 ? '前半' : '後半';
+  const half = col % 2 === 1 ? 'a' : 'b';
   document.getElementById('modal-title').textContent =
-    `ロットを追加（棚${currentShelf} ${row}段 B${batchNum}${half}〜）`;
+    `ロットを追加（棚${currentShelf} ${row}段 ${batchNum}${half}〜）`;
   document.getElementById('sow-date-input').value = '';
   document.getElementById('note-input').value = '';
   document.getElementById('delete-zone').style.display = 'none';

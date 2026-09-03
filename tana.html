@@ -214,15 +214,24 @@ const SPANS = [
   { label: '2.5', val: 5 },
   { label: '3',   val: 6 },
 ];
-const CROP_STYLE = {
-  'スマシャキ':     { bg: 'rgba(83,74,183,0.15)',  bd: '#534AB7' },
-  'スマシャキープ': { bg: 'rgba(83,74,183,0.07)',  bd: '#9b94d4' },
-  'バジル':         { bg: 'rgba(59,109,17,0.17)',   bd: '#3B6D11' },
-  'ワイルドロケット':{ bg: 'rgba(100,160,40,0.18)', bd: '#64A028' },
-  'パクチー':       { bg: 'rgba(20,160,140,0.18)',  bd: '#14A08C' },
-  'ハーブキープ':   { bg: 'rgba(20,160,140,0.07)',  bd: '#7bcec6' },
-  'その他':         { bg: 'rgba(100,100,100,0.1)',  bd: '#bbb' },
-};
+const TRAY_COLORS = [
+  { bg: 'rgba(160,210,100,0.45)', bd: '#8ab84a' }, // 黄緑
+  { bg: 'rgba(230,160,185,0.45)', bd: '#cc7fa0' }, // ピンク
+  { bg: 'rgba(240,220,100,0.45)', bd: '#c8b840' }, // 黄色
+  { bg: 'rgba(235,220,175,0.45)', bd: '#c0a870' }, // クリーム
+  { bg: 'rgba(130,185,225,0.45)', bd: '#5a9fc8' }, // 青
+];
+const TRAY_REF_SUMA = new Date('2026-08-04T00:00:00');
+const TRAY_REF_HERB = new Date('2026-08-15T00:00:00');
+const HERB_CROPS = new Set(['バジル','ワイルドロケット','パクチー','ハーブキープ']);
+
+function trayStyle(crop, sowDate) {
+  if (!sowDate) return { bg: 'rgba(200,200,200,0.2)', bd: '#ccc' };
+  const sow = new Date(sowDate + 'T00:00:00');
+  const ref = HERB_CROPS.has(crop) ? TRAY_REF_HERB : TRAY_REF_SUMA;
+  const diff = Math.round((sow - ref) / 86400000);
+  return TRAY_COLORS[((diff % 5) + 5) % 5];
+}
 
 let currentShelf = 1;
 let lots = [];
@@ -262,7 +271,7 @@ function buildRow(row) {
     const lot = rowLots.find(l => l.col_start === c);
     if (lot) {
       for (let s = c + 1; s < c + lot.col_span; s++) skip.add(s);
-      const st = CROP_STYLE[lot.crop] || CROP_STYLE['その他'];
+      const st = trayStyle(lot.crop, lot.sow_date);
       html += `<div class="cell-lot"
         style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${st.bd}"
         onclick="openEdit(${lot.id})">

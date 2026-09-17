@@ -343,11 +343,16 @@ function renderTable(dates, byDate) {
   }
   tbody.innerHTML = dates.map(d => {
     const dt  = new Date(d + 'T00:00:00');
+    const sow = new Date(dt); sow.setDate(sow.getDate() - 35);
     const row = byDate[d];
     const mC = row.maegari  ? `<td class="has-val c-maegari">${row.maegari}</td>`   : `<td>—</td>`;
     const sC = row.shipment ? `<td class="has-val c-shipment">${row.shipment}</td>` : `<td>—</td>`;
     const hC = row.haiki    ? `<td class="has-val c-haiki">${row.haiki}</td>`       : `<td>—</td>`;
-    return `<tr><td>${dt.getMonth()+1}/${dt.getDate()}（${DAYS[dt.getDay()]}）</td>${mC}${sC}${hC}</tr>`;
+    const dateCell = `<td style="text-align:left">
+      <div style="color:#1C201C;font-weight:600">${dt.getMonth()+1}/${dt.getDate()}（${DAYS[dt.getDay()]}）</div>
+      <div style="color:#7A7870;font-size:10px;margin-top:2px">播種 ${sow.getMonth()+1}/${sow.getDate()}</div>
+    </td>`;
+    return `<tr>${dateCell}${mC}${sC}${hC}</tr>`;
   }).join('');
 }
 

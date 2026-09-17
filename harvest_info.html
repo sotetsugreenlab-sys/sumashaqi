@@ -230,6 +230,24 @@ td.c-haiki    { color: #A84040; }
   </table>
 </div>
 
+<div style="margin-top:24px">
+  <div class="section-label" style="margin-bottom:10px">月次集計</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>月</th>
+          <th>前借り</th>
+          <th>出荷</th>
+          <th>廃棄</th>
+          <th>出荷計</th>
+        </tr>
+      </thead>
+      <tbody id="monthly-tbody"><tr class="empty-row"><td colspan="5">読み込み中...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
 <script>
 const db = supabase.createClient(
   'https://pqoexlikdviqqgdnzuud.supabase.co',
@@ -333,11 +351,48 @@ function renderTable(dates, byDate) {
   }).join('');
 }
 
+async function loadMonthly() {
+  const { data } = await db.from('lot_notes')
+    .select('sow_date,note')
+    .eq('crop', 'harvest_count')
+    .order('sow_date');
+
+  const byMonth = {}; // key: 'YYYY-MM' -> { maegari, shipment, haiki }
+  (data || []).forEach(r => {
+    const [date, course] = r.sow_date.split('_');
+    const ym = date.slice(0, 7);
+    if (!byMonth[ym]) byMonth[ym] = { maegari: 0, shipment: 0, haiki: 0 };
+    try {
+      const p = JSON.parse(r.note || '{}');
+      if (course === '34') byMonth[ym].maegari  += p.maegari  || 0;
+      if (course === '35') { byMonth[ym].shipment += p.shipment || 0; byMonth[ym].haiki += p.haiki || 0; }
+    } catch(e) {}
+  });
+
+  const months = Object.keys(byMonth).sort().reverse();
+  const tbody = document.getElementById('monthly-tbody');
+  if (!months.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">データなし</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = months.map(ym => {
+    const [y, m] = ym.split('-');
+    const r = byMonth[ym];
+    const net = r.shipment - r.haiki;
+    const mC = r.maegari  ? `<td class="has-val c-maegari">${r.maegari}</td>`   : `<td>—</td>`;
+    const sC = r.shipment ? `<td class="has-val c-shipment">${r.shipment}</td>` : `<td>—</td>`;
+    const hC = r.haiki    ? `<td class="has-val c-haiki">${r.haiki}</td>`       : `<td>—</td>`;
+    const nC = r.shipment || r.haiki ? `<td class="has-val" style="color:#1C201C">${net}</td>` : `<td>—</td>`;
+    return `<tr><td>${+y}/${+m}月</td>${mC}${sC}${hC}${nC}</tr>`;
+  }).join('');
+}
+
 db.channel('harvest_info_rt')
-  .on('postgres_changes', { event:'*', schema:'public', table:'lot_notes', filter:'crop=eq.harvest_count' }, load)
+  .on('postgres_changes', { event:'*', schema:'public', table:'lot_notes', filter:'crop=eq.harvest_count' }, () => { load(); loadMonthly(); })
   .subscribe();
 
 load();
+loadMonthly();
 </script>
 </body>
 </html>

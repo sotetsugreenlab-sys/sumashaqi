@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>フリル実績</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: #F0EDE8;
+  color: #1C201C;
+  min-height: 100vh;
+  padding: 16px 16px 48px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #555;
+  padding: 4px;
+  line-height: 1;
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.page-title { font-size: 18px; font-weight: 700; }
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  border: 1px solid #D4D0C8;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #FAFAF8;
+}
+.month-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 7px 12px;
+  font-size: 15px;
+  color: #1C201C;
+  line-height: 1;
+}
+.month-btn:active { background: #E8E4DE; }
+.month-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-left: 1px solid #D4D0C8;
+  border-right: 1px solid #D4D0C8;
+  min-width: 88px;
+  text-align: center;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tile {
+  background: #fff;
+  border: 1px solid #D4D0C8;
+  border-radius: 10px;
+  padding: 11px 12px;
+}
+.tile-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: #7A7870;
+  margin-bottom: 4px;
+}
+.tile-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.tile-unit { font-size: 11px; font-weight: 400; margin-left: 2px; color: #7A7870; }
+.tile.maegari .tile-value { color: #C47A28; }
+.tile.shipment .tile-value { color: #3D7A50; }
+.tile.haiki .tile-value { color: #A84040; }
+
+.legend {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #7A7870;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+.chart-wrap {
+  background: #fff;
+  border: 1px solid #D4D0C8;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: #7A7870;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #D4D0C8;
+  border-radius: 10px;
+  background: #fff;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  min-width: 280px;
+}
+thead th {
+  padding: 8px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #7A7870;
+  text-align: right;
+  border-bottom: 1px solid #D4D0C8;
+  background: #EEECE7;
+}
+thead th:first-child { text-align: left; }
+tbody tr:not(:last-child) td { border-bottom: 1px solid #D4D0C8; }
+td {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  text-align: right;
+  color: #1C201C;
+}
+td:first-child { text-align: left; color: #7A7870; }
+td.has-val { font-weight: 600; }
+td.c-maegari  { color: #C47A28; }
+td.c-shipment { color: #3D7A50; }
+td.c-haiki    { color: #A84040; }
+
+.empty-row td { text-align: center; color: #aaa; padding: 32px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" onclick="window.location.href='index.html'">‹</button>
+  <div class="header-inner">
+    <div class="page-title">🌾 フリル実績</div>
+    <div class="month-nav">
+      <button class="month-btn" onclick="shiftMonth(-1)">‹</button>
+      <div class="month-label" id="month-label">—</div>
+      <button class="month-btn" onclick="shiftMonth(1)">›</button>
+    </div>
+  </div>
+</div>
+
+<div class="tiles">
+  <div class="tile maegari">
+    <div class="tile-label">前借り</div>
+    <div class="tile-value" id="total-maegari">—<span class="tile-unit">株</span></div>
+  </div>
+  <div class="tile shipment">
+    <div class="tile-label">出荷</div>
+    <div class="tile-value" id="total-shipment">—<span class="tile-unit">株</span></div>
+  </div>
+  <div class="tile haiki">
+    <div class="tile-label">廃棄</div>
+    <div class="tile-value" id="total-haiki">—<span class="tile-unit">株</span></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#C47A28"></div>前借り（34日目）</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3D7A50"></div>出荷（35日目）</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#A84040"></div>廃棄（35日目）</div>
+</div>
+
+<div class="chart-wrap">
+  <div class="section-label">日別 株数</div>
+  <canvas id="chart" height="200"></canvas>
+  <div id="no-data" style="display:none;text-align:center;color:#aaa;padding:32px;font-size:13px">この月のデータはまだありません</div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>日付</th>
+        <th>前借り</th>
+        <th>出荷</th>
+        <th>廃棄</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"><tr class="empty-row"><td colspan="4">読み込み中...</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+let currentYear  = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1;
+let chart = null;
+
+const pad = n => String(n).padStart(2, '0');
+const DAYS = ['日','月','火','水','木','金','土'];
+
+function shiftMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  if (currentMonth < 1)  { currentMonth = 12; currentYear--; }
+  load();
+}
+
+async function load() {
+  document.getElementById('month-label').textContent = `${currentYear}/${pad(currentMonth)}`;
+  const prefix = `${currentYear}-${pad(currentMonth)}-`;
+  const { data } = await db.from('lot_notes')
+    .select('sow_date,note')
+    .eq('crop', 'harvest_count')
+    .like('sow_date', `${prefix}%`);
+
+  const byDate = {};
+  (data || []).forEach(r => {
+    const [date, course] = r.sow_date.split('_');
+    if (!byDate[date]) byDate[date] = { maegari: 0, shipment: 0, haiki: 0 };
+    try {
+      const p = JSON.parse(r.note || '{}');
+      if (course === '34') byDate[date].maegari = p.maegari || 0;
+      if (course === '35') { byDate[date].shipment = p.shipment || 0; byDate[date].haiki = p.haiki || 0; }
+    } catch(e) {}
+  });
+
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+  const allDates = Array.from({length: daysInMonth}, (_, i) =>
+    `${currentYear}-${pad(currentMonth)}-${pad(i + 1)}`);
+  const activeDates = allDates.filter(d => byDate[d]);
+
+  let tM = 0, tS = 0, tH = 0;
+  activeDates.forEach(d => { tM += byDate[d].maegari; tS += byDate[d].shipment; tH += byDate[d].haiki; });
+
+  document.getElementById('total-maegari').innerHTML  = `${tM}<span class="tile-unit">株</span>`;
+  document.getElementById('total-shipment').innerHTML = `${tS}<span class="tile-unit">株</span>`;
+  document.getElementById('total-haiki').innerHTML    = `${tH}<span class="tile-unit">株</span>`;
+
+  renderChart(activeDates, byDate);
+  renderTable(activeDates, byDate);
+}
+
+function renderChart(dates, byDate) {
+  const ctx = document.getElementById('chart');
+  const noData = document.getElementById('no-data');
+  if (chart) chart.destroy();
+  if (!dates.length) { ctx.style.display = 'none'; noData.style.display = ''; return; }
+  ctx.style.display = ''; noData.style.display = 'none';
+
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dates.map(d => { const p = d.split('-'); return `${+p[1]}/${+p[2]}`; }),
+      datasets: [
+        { label:'前借り', data: dates.map(d => byDate[d].maegari),  backgroundColor:'#C47A28CC', borderColor:'#C47A28', borderWidth:1, borderRadius:3 },
+        { label:'出荷',   data: dates.map(d => byDate[d].shipment), backgroundColor:'#3D7A50CC', borderColor:'#3D7A50', borderWidth:1, borderRadius:3 },
+        { label:'廃棄',   data: dates.map(d => byDate[d].haiki),    backgroundColor:'#A84040AA', borderColor:'#A84040', borderWidth:1, borderRadius:3 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y}株` } },
+      },
+      scales: {
+        x: { grid: { color: '#D4D0C880' }, ticks: { color: '#7A7870', font: { family:"'IBM Plex Mono',monospace", size:10 } } },
+        y: { beginAtZero: true, grid: { color: '#D4D0C880' }, ticks: { color: '#7A7870', font: { family:"'IBM Plex Mono',monospace", size:10 }, precision:0 } },
+      },
+    },
+  });
+}
+
+function renderTable(dates, byDate) {
+  const tbody = document.getElementById('tbody');
+  if (!dates.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="4">この月のデータはまだありません</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = dates.map(d => {
+    const dt  = new Date(d + 'T00:00:00');
+    const row = byDate[d];
+    const mC = row.maegari  ? `<td class="has-val c-maegari">${row.maegari}</td>`   : `<td>—</td>`;
+    const sC = row.shipment ? `<td class="has-val c-shipment">${row.shipment}</td>` : `<td>—</td>`;
+    const hC = row.haiki    ? `<td class="has-val c-haiki">${row.haiki}</td>`       : `<td>—</td>`;
+    return `<tr><td>${dt.getMonth()+1}/${dt.getDate()}（${DAYS[dt.getDay()]}）</td>${mC}${sC}${hC}</tr>`;
+  }).join('');
+}
+
+db.channel('harvest_info_rt')
+  .on('postgres_changes', { event:'*', schema:'public', table:'lot_notes', filter:'crop=eq.harvest_count' }, load)
+  .subscribe();
+
+load();
+</script>
+</body>
+</html>

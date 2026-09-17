@@ -58,6 +58,12 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .card.compact .hist-item, .card.compact .hist-sep { font-size: 10px; }
 .card-switched { background: #EAF3DE; border-radius: 12px; padding: 0.6rem 0.7rem; color: #3B6D11; font-size: 11px; font-weight: 500; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 64px; }
 .card-placeholder { background: #f9f9f7; border-radius: 12px; padding: 0.6rem 0.7rem; color: #bbb; font-size: 11px; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 64px; border: 1px dashed #e0e0e0; }
+.harvest-counts { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 5px; }
+.hc-row { display: flex; align-items: center; gap: 5px; font-size: 11px; }
+.hc-label { color: #888; min-width: 32px; flex-shrink: 0; }
+.hc-input { width: 54px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; padding: 3px 6px; font-size: 13px; font-weight: 600; text-align: right; background: rgba(255,255,255,0.65); color: #1a1a1a; -webkit-appearance: none; }
+.hc-input:focus { outline: none; border-color: #993C1D; background: #fff; }
+.hc-unit { color: #888; font-size: 11px; }
 .history { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-wrap: wrap; gap: 6px; }
 .hist-item { font-size: 12px; color: #666; }
 .hist-item span { font-weight: 500; color: #1a1a1a; }
@@ -443,6 +449,74 @@ db.channel('lot_notes_sumashaqi')
   })
   .subscribe();
 
+// 刈取カウント（前借り・出荷・廃棄）
+// lot_notesテーブルを流用: crop='harvest_count', sow_date='YYYY-MM-DD_34' など
+// note = JSON文字列 {"maegari":5,"shipment":0,"haiki":0}
+let harvestCounts = {}; // key: `${dateStr}_${course}` -> { id, maegari, shipment, haiki }
+let hcDebounce = {};
+
+async function loadHarvestCounts(dateStr) {
+  const { data } = await db.from('lot_notes')
+    .select('id,sow_date,note')
+    .eq('crop', 'harvest_count')
+    .like('sow_date', `${dateStr}_%`);
+  (data || []).forEach(r => {
+    try {
+      const parsed = JSON.parse(r.note || '{}');
+      harvestCounts[r.sow_date] = { id: r.id, ...parsed };
+    } catch(e) {}
+  });
+  [34, 35].forEach(c => {
+    const key = `${dateStr}_${c}`;
+    const counts = harvestCounts[key] || {};
+    ['maegari', 'shipment', 'haiki'].forEach(f => {
+      const el = document.getElementById(`hcount-${c}-${f}`);
+      if (el && document.activeElement !== el) el.value = counts[f] != null ? counts[f] : '';
+    });
+  });
+}
+
+function onHarvestInput(course, field) {
+  const dateStr = toDateStr(viewDate);
+  const key = `${dateStr}_${course}`;
+  const debKey = `${key}_${field}`;
+  clearTimeout(hcDebounce[debKey]);
+  hcDebounce[debKey] = setTimeout(async () => {
+    const el = document.getElementById(`hcount-${course}-${field}`);
+    if (!el) return;
+    const val = parseInt(el.value) || 0;
+    if (!harvestCounts[key]) harvestCounts[key] = {};
+    harvestCounts[key][field] = val;
+    const c = harvestCounts[key];
+    const note = JSON.stringify({ maegari: c.maegari || 0, shipment: c.shipment || 0, haiki: c.haiki || 0 });
+    if (c.id) {
+      await db.from('lot_notes').update({ note }).eq('id', c.id);
+    } else {
+      const { data } = await db.from('lot_notes').insert({ crop: 'harvest_count', sow_date: key, note }).select('id');
+      if (data && data[0]) harvestCounts[key].id = data[0].id;
+    }
+  }, 600);
+}
+
+db.channel('harvest_count_notes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'lot_notes',
+      filter: 'crop=eq.harvest_count' }, payload => {
+    const r = payload.new;
+    if (!r) return;
+    const dateStr = toDateStr(viewDate);
+    if (!r.sow_date.startsWith(dateStr)) return;
+    try {
+      const parsed = JSON.parse(r.note || '{}');
+      harvestCounts[r.sow_date] = { id: r.id, ...parsed };
+      const course = parseInt(r.sow_date.split('_')[1]);
+      ['maegari', 'shipment', 'haiki'].forEach(f => {
+        const el = document.getElementById(`hcount-${course}-${f}`);
+        if (el && document.activeElement !== el) el.value = parsed[f] != null ? parsed[f] : '';
+      });
+    } catch(e) {}
+  })
+  .subscribe();
+
 const TRAY_COLORS = [
   'rgba(160, 210, 100, 0.35)', // 黄緑
   'rgba(230, 160, 185, 0.35)', // ピンク
@@ -506,11 +580,26 @@ function renderTasks() {
   const sow5  = addDays(viewDate, -16);
   const sow30 = addDays(viewDate, -6);
 
+  const dateStr = toDateStr(viewDate);
+  function harvestInputsHtml(c) {
+    const counts = harvestCounts[`${dateStr}_${c}`] || { maegari: 0, shipment: 0, haiki: 0 };
+    const rows34 = [{ key: 'maegari', label: '前借り' }];
+    const rows35 = [{ key: 'shipment', label: '出荷' }, { key: 'haiki', label: '廃棄' }];
+    const rows = c === 34 ? rows34 : rows35;
+    return `<div class="harvest-counts">${rows.map(r =>
+      `<div class="hc-row">
+        <span class="hc-label">${r.label}</span>
+        <input type="number" min="0" id="hcount-${c}-${r.key}" class="hc-input" value="${counts[r.key] || ''}" placeholder="0" oninput="onHarvestInput(${c},'${r.key}')">
+        <span class="hc-unit">株</span>
+      </div>`
+    ).join('')}</div>`;
+  }
+
   let html = `<div class="col-header">
     ${courses.map(c => `<div class="col-label" style="background:#f0f0ee;color:#555">${c}日目刈取</div>`).join('')}
   </div>
   <div class="stage-row">
-    ${courses.map(c => cardCell({label:'刈取', cls:'card-刈取', days:c, sow:addDays(viewDate,-c), history:hist}, dayLabel)).join('')}
+    ${courses.map(c => `<div class="stage-cell">${makeCard({label:'刈取', cls:'card-刈取', days:c, sow:addDays(viewDate,-c), history:hist}, dayLabel, true)}${harvestInputsHtml(c)}</div>`).join('')}
   </div>`;
 
   // 5穴（全コース共通）
@@ -591,6 +680,7 @@ function renderAll() {
   renderTasks();
   renderBagCount();
   if (cachedEvents) renderBanner(cachedEvents);
+  loadHarvestCounts(toDateStr(viewDate));
 }
 
 // 計算機

@@ -223,10 +223,12 @@ td.c-haiki    { color: #A84040; }
         <th>日付</th>
         <th>前借り</th>
         <th>出荷</th>
-        <th>廃棄</th>
+        <th>廃棄(合格)</th>
+        <th>廃棄(エラー)</th>
+        <th>廃棄計</th>
       </tr>
     </thead>
-    <tbody id="tbody"><tr class="empty-row"><td colspan="4">読み込み中...</td></tr></tbody>
+    <tbody id="tbody"><tr class="empty-row"><td colspan="6">読み込み中...</td></tr></tbody>
   </table>
 </div>
 
@@ -239,8 +241,9 @@ td.c-haiki    { color: #A84040; }
           <th>月</th>
           <th>前借り</th>
           <th>出荷</th>
-          <th>廃棄</th>
-          <th>出荷計</th>
+          <th>廃棄(合格)</th>
+          <th>廃棄(エラー)</th>
+          <th>廃棄計</th>
         </tr>
       </thead>
       <tbody id="monthly-tbody"><tr class="empty-row"><td colspan="5">読み込み中...</td></tr></tbody>
@@ -279,11 +282,16 @@ async function load() {
   const byDate = {};
   (data || []).forEach(r => {
     const [date, course] = r.sow_date.split('_');
-    if (!byDate[date]) byDate[date] = { maegari: 0, shipment: 0, haiki: 0 };
+    if (!byDate[date]) byDate[date] = { maegari: 0, shipment: 0, haiki_kakaku: 0, haiki_error: 0 };
     try {
       const p = JSON.parse(r.note || '{}');
       if (course === '34') byDate[date].maegari = p.maegari || 0;
-      if (course === '35') { byDate[date].shipment = p.shipment || 0; byDate[date].haiki = p.haiki || 0; }
+      if (course === '35') {
+        byDate[date].shipment     = p.shipment     || 0;
+        // 旧データ(haiki)と新データ(haiki_kakaku/haiki_error)の両方に対応
+        byDate[date].haiki_kakaku = p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
+        byDate[date].haiki_error  = p.haiki_error  || 0;
+      }
     } catch(e) {}
   });
 
@@ -292,12 +300,17 @@ async function load() {
     `${currentYear}-${pad(currentMonth)}-${pad(i + 1)}`);
   const activeDates = allDates.filter(d => byDate[d]);
 
-  let tM = 0, tS = 0, tH = 0;
-  activeDates.forEach(d => { tM += byDate[d].maegari; tS += byDate[d].shipment; tH += byDate[d].haiki; });
+  let tM = 0, tS = 0, tKK = 0, tER = 0;
+  activeDates.forEach(d => {
+    tM  += byDate[d].maegari;
+    tS  += byDate[d].shipment;
+    tKK += byDate[d].haiki_kakaku;
+    tER += byDate[d].haiki_error;
+  });
 
   document.getElementById('total-maegari').innerHTML  = `${tM}<span class="tile-unit">株</span>`;
   document.getElementById('total-shipment').innerHTML = `${tS}<span class="tile-unit">株</span>`;
-  document.getElementById('total-haiki').innerHTML    = `${tH}<span class="tile-unit">株</span>`;
+  document.getElementById('total-haiki').innerHTML    = `${tKK + tER}<span class="tile-unit">株</span><div style="font-size:10px;font-weight:400;color:#7A7870;margin-top:2px">合格${tKK} / エラー${tER}</div>`;
 
   renderChart(activeDates, byDate);
   renderTable(activeDates, byDate);
@@ -317,7 +330,8 @@ function renderChart(dates, byDate) {
       datasets: [
         { label:'前借り', data: dates.map(d => byDate[d].maegari),  backgroundColor:'#C47A28CC', borderColor:'#C47A28', borderWidth:1, borderRadius:3 },
         { label:'出荷',   data: dates.map(d => byDate[d].shipment), backgroundColor:'#3D7A50CC', borderColor:'#3D7A50', borderWidth:1, borderRadius:3 },
-        { label:'廃棄',   data: dates.map(d => byDate[d].haiki),    backgroundColor:'#A84040AA', borderColor:'#A84040', borderWidth:1, borderRadius:3 },
+        { label:'廃棄(合格)', data: dates.map(d => byDate[d].haiki_kakaku), backgroundColor:'#A84040BB', borderColor:'#A84040', borderWidth:1, borderRadius:3 },
+        { label:'廃棄(エラー)', data: dates.map(d => byDate[d].haiki_error), backgroundColor:'#A8404066', borderColor:'#A84040', borderWidth:1, borderRadius:3 },
       ],
     },
     options: {
@@ -338,21 +352,24 @@ function renderChart(dates, byDate) {
 function renderTable(dates, byDate) {
   const tbody = document.getElementById('tbody');
   if (!dates.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="4">この月のデータはまだありません</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">この月のデータはまだありません</td></tr>`;
     return;
   }
   tbody.innerHTML = dates.map(d => {
     const dt  = new Date(d + 'T00:00:00');
     const sow = new Date(dt); sow.setDate(sow.getDate() - 35);
     const row = byDate[d];
-    const mC = row.maegari  ? `<td class="has-val c-maegari">${row.maegari}</td>`   : `<td>—</td>`;
-    const sC = row.shipment ? `<td class="has-val c-shipment">${row.shipment}</td>` : `<td>—</td>`;
-    const hC = row.haiki    ? `<td class="has-val c-haiki">${row.haiki}</td>`       : `<td>—</td>`;
+    const total_haiki = row.haiki_kakaku + row.haiki_error;
+    const mC  = row.maegari      ? `<td class="has-val c-maegari">${row.maegari}</td>`       : `<td>—</td>`;
+    const sC  = row.shipment     ? `<td class="has-val c-shipment">${row.shipment}</td>`      : `<td>—</td>`;
+    const kkC = row.haiki_kakaku ? `<td class="has-val c-haiki">${row.haiki_kakaku}</td>`     : `<td>—</td>`;
+    const erC = row.haiki_error  ? `<td class="has-val c-haiki">${row.haiki_error}</td>`      : `<td>—</td>`;
+    const thC = total_haiki      ? `<td class="has-val" style="color:#1C201C">${total_haiki}</td>` : `<td>—</td>`;
     const dateCell = `<td style="text-align:left">
       <div style="color:#1C201C;font-weight:600">${dt.getMonth()+1}/${dt.getDate()}（${DAYS[dt.getDay()]}）</div>
       <div style="color:#7A7870;font-size:10px;margin-top:2px">播種 ${sow.getMonth()+1}/${sow.getDate()}</div>
     </td>`;
-    return `<tr>${dateCell}${mC}${sC}${hC}</tr>`;
+    return `<tr>${dateCell}${mC}${sC}${kkC}${erC}${thC}</tr>`;
   }).join('');
 }
 
@@ -362,33 +379,38 @@ async function loadMonthly() {
     .eq('crop', 'harvest_count')
     .order('sow_date');
 
-  const byMonth = {}; // key: 'YYYY-MM' -> { maegari, shipment, haiki }
+  const byMonth = {};
   (data || []).forEach(r => {
     const [date, course] = r.sow_date.split('_');
     const ym = date.slice(0, 7);
-    if (!byMonth[ym]) byMonth[ym] = { maegari: 0, shipment: 0, haiki: 0 };
+    if (!byMonth[ym]) byMonth[ym] = { maegari: 0, shipment: 0, haiki_kakaku: 0, haiki_error: 0 };
     try {
       const p = JSON.parse(r.note || '{}');
-      if (course === '34') byMonth[ym].maegari  += p.maegari  || 0;
-      if (course === '35') { byMonth[ym].shipment += p.shipment || 0; byMonth[ym].haiki += p.haiki || 0; }
+      if (course === '34') byMonth[ym].maegari += p.maegari || 0;
+      if (course === '35') {
+        byMonth[ym].shipment     += p.shipment     || 0;
+        byMonth[ym].haiki_kakaku += p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
+        byMonth[ym].haiki_error  += p.haiki_error  || 0;
+      }
     } catch(e) {}
   });
 
   const months = Object.keys(byMonth).sort().reverse();
   const tbody = document.getElementById('monthly-tbody');
   if (!months.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">データなし</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">データなし</td></tr>`;
     return;
   }
   tbody.innerHTML = months.map(ym => {
     const [y, m] = ym.split('-');
     const r = byMonth[ym];
-    const net = r.shipment - r.haiki;
-    const mC = r.maegari  ? `<td class="has-val c-maegari">${r.maegari}</td>`   : `<td>—</td>`;
-    const sC = r.shipment ? `<td class="has-val c-shipment">${r.shipment}</td>` : `<td>—</td>`;
-    const hC = r.haiki    ? `<td class="has-val c-haiki">${r.haiki}</td>`       : `<td>—</td>`;
-    const nC = r.shipment || r.haiki ? `<td class="has-val" style="color:#1C201C">${net}</td>` : `<td>—</td>`;
-    return `<tr><td>${+y}/${+m}月</td>${mC}${sC}${hC}${nC}</tr>`;
+    const totalH = r.haiki_kakaku + r.haiki_error;
+    const mC  = r.maegari      ? `<td class="has-val c-maegari">${r.maegari}</td>`       : `<td>—</td>`;
+    const sC  = r.shipment     ? `<td class="has-val c-shipment">${r.shipment}</td>`      : `<td>—</td>`;
+    const kkC = r.haiki_kakaku ? `<td class="has-val c-haiki">${r.haiki_kakaku}</td>`     : `<td>—</td>`;
+    const erC = r.haiki_error  ? `<td class="has-val c-haiki">${r.haiki_error}</td>`      : `<td>—</td>`;
+    const thC = totalH         ? `<td class="has-val" style="color:#1C201C">${totalH}</td>` : `<td>—</td>`;
+    return `<tr><td>${+y}/${+m}月</td>${mC}${sC}${kkC}${erC}${thC}</tr>`;
   }).join('');
 }
 

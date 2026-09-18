@@ -6,7 +6,6 @@
 <title>フリル実績</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -204,17 +203,6 @@ td.c-haiki    { color: #A84040; }
   </div>
 </div>
 
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#C47A28"></div>前借り（34日目）</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#3D7A50"></div>出荷（35日目）</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#A84040"></div>廃棄（35日目）</div>
-</div>
-
-<div class="chart-wrap">
-  <div class="section-label">日別 株数</div>
-  <canvas id="chart" height="200"></canvas>
-  <div id="no-data" style="display:none;text-align:center;color:#aaa;padding:32px;font-size:13px">この月のデータはまだありません</div>
-</div>
 
 <div class="table-wrap">
   <table>
@@ -259,7 +247,6 @@ const db = supabase.createClient(
 
 let currentYear  = new Date().getFullYear();
 let currentMonth = new Date().getMonth() + 1;
-let chart = null;
 
 const pad = n => String(n).padStart(2, '0');
 const DAYS = ['日','月','火','水','木','金','土'];
@@ -312,42 +299,9 @@ async function load() {
   document.getElementById('total-shipment').innerHTML = `${tS}<span class="tile-unit">株</span>`;
   document.getElementById('total-haiki').innerHTML    = `${tKK + tER}<span class="tile-unit">株</span><div style="font-size:10px;font-weight:400;color:#7A7870;margin-top:2px">合格${tKK} / エラー${tER}</div>`;
 
-  renderChart(activeDates, byDate);
   renderTable(activeDates, byDate);
 }
 
-function renderChart(dates, byDate) {
-  const ctx = document.getElementById('chart');
-  const noData = document.getElementById('no-data');
-  if (chart) chart.destroy();
-  if (!dates.length) { ctx.style.display = 'none'; noData.style.display = ''; return; }
-  ctx.style.display = ''; noData.style.display = 'none';
-
-  chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: dates.map(d => { const p = d.split('-'); return `${+p[1]}/${+p[2]}`; }),
-      datasets: [
-        { label:'前借り', data: dates.map(d => byDate[d].maegari),  backgroundColor:'#C47A28CC', borderColor:'#C47A28', borderWidth:1, borderRadius:3 },
-        { label:'出荷',   data: dates.map(d => byDate[d].shipment), backgroundColor:'#3D7A50CC', borderColor:'#3D7A50', borderWidth:1, borderRadius:3 },
-        { label:'廃棄(合格)', data: dates.map(d => byDate[d].haiki_kakaku), backgroundColor:'#A84040BB', borderColor:'#A84040', borderWidth:1, borderRadius:3 },
-        { label:'廃棄(エラー)', data: dates.map(d => byDate[d].haiki_error), backgroundColor:'#A8404066', borderColor:'#A84040', borderWidth:1, borderRadius:3 },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y}株` } },
-      },
-      scales: {
-        x: { grid: { color: '#D4D0C880' }, ticks: { color: '#7A7870', font: { family:"'IBM Plex Mono',monospace", size:10 } } },
-        y: { beginAtZero: true, grid: { color: '#D4D0C880' }, ticks: { color: '#7A7870', font: { family:"'IBM Plex Mono',monospace", size:10 }, precision:0 } },
-      },
-    },
-  });
-}
 
 function renderTable(dates, byDate) {
   const tbody = document.getElementById('tbody');

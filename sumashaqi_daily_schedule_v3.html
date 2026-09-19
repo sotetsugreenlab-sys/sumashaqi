@@ -452,7 +452,7 @@ db.channel('lot_notes_sumashaqi')
 // 刈取カウント（前借り・出荷・廃棄）
 // lot_notesテーブルを流用: crop='harvest_count', sow_date='YYYY-MM-DD_34' など
 // note = JSON文字列 {"maegari":5,"shipment":0,"haiki":0}
-let harvestCounts = {}; // key: `${dateStr}_${course}` -> { id, maegari, shipment, haiki_kakaku, haiki_error }
+let harvestCounts = {}; // key: `${dateStr}_${course}` -> { id, maegari, shipment, min_weight, avg_weight, haiki_kakaku, haiki_error }
 let hcDebounce = {};
 
 function updateHaikiFill(course) {
@@ -476,7 +476,7 @@ async function loadHarvestCounts(dateStr) {
   [34, 35].forEach(c => {
     const key = `${dateStr}_${c}`;
     const counts = harvestCounts[key] || {};
-    ['maegari', 'shipment', 'haiki_kakaku', 'haiki_error'].forEach(f => {
+    ['maegari', 'shipment', 'min_weight', 'avg_weight', 'haiki_kakaku', 'haiki_error'].forEach(f => {
       const el = document.getElementById(`hcount-${c}-${f}`);
       if (el && document.activeElement !== el) el.value = counts[f] != null ? counts[f] : '';
     });
@@ -498,8 +498,10 @@ function onHarvestInput(course, field) {
     harvestCounts[key][field] = val;
     const c = harvestCounts[key];
     const note = JSON.stringify({
-      maegari: c.maegari || 0,
-      shipment: c.shipment || 0,
+      maegari:    c.maegari    || 0,
+      shipment:   c.shipment   || 0,
+      min_weight: c.min_weight || 0,
+      avg_weight: c.avg_weight || 0,
       haiki_kakaku: c.haiki_kakaku || 0,
       haiki_error:  c.haiki_error  || 0,
     });
@@ -523,7 +525,7 @@ db.channel('harvest_count_notes')
       const parsed = JSON.parse(r.note || '{}');
       harvestCounts[r.sow_date] = { id: r.id, ...parsed };
       const course = parseInt(r.sow_date.split('_')[1]);
-      ['maegari', 'shipment', 'haiki_kakaku', 'haiki_error'].forEach(f => {
+      ['maegari', 'shipment', 'min_weight', 'avg_weight', 'haiki_kakaku', 'haiki_error'].forEach(f => {
         const el = document.getElementById(`hcount-${course}-${f}`);
         if (el && document.activeElement !== el) el.value = parsed[f] != null ? parsed[f] : '';
       });
@@ -614,6 +616,16 @@ function renderTasks() {
         <span class="hc-label">出荷</span>
         <input type="number" min="0" id="hcount-35-shipment" class="hc-input" value="${counts.shipment || ''}" placeholder="0" oninput="onHarvestInput(35,'shipment')">
         <span class="hc-unit">株</span>
+      </div>
+      <div class="hc-row" style="padding-left:8px">
+        <span class="hc-label" style="font-size:10px">最低</span>
+        <input type="number" min="0" id="hcount-35-min_weight" class="hc-input" value="${counts.min_weight || ''}" placeholder="0" oninput="onHarvestInput(35,'min_weight')">
+        <span class="hc-unit">g</span>
+      </div>
+      <div class="hc-row" style="padding-left:8px">
+        <span class="hc-label" style="font-size:10px">平均</span>
+        <input type="number" min="0" id="hcount-35-avg_weight" class="hc-input" value="${counts.avg_weight || ''}" placeholder="0" oninput="onHarvestInput(35,'avg_weight')">
+        <span class="hc-unit">g</span>
       </div>
       <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
         <span class="hc-label" style="font-weight:600;color:#888">廃棄</span>

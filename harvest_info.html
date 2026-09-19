@@ -211,12 +211,14 @@ td.c-haiki    { color: #A84040; }
         <th>日付</th>
         <th>前借り</th>
         <th>出荷</th>
+        <th>最低g</th>
+        <th>平均g</th>
         <th>廃棄(合格)</th>
         <th>廃棄(エラー)</th>
         <th>廃棄計</th>
       </tr>
     </thead>
-    <tbody id="tbody"><tr class="empty-row"><td colspan="6">読み込み中...</td></tr></tbody>
+    <tbody id="tbody"><tr class="empty-row"><td colspan="8">読み込み中...</td></tr></tbody>
   </table>
 </div>
 
@@ -269,12 +271,14 @@ async function load() {
   const byDate = {};
   (data || []).forEach(r => {
     const [date, course] = r.sow_date.split('_');
-    if (!byDate[date]) byDate[date] = { maegari: 0, shipment: 0, haiki_kakaku: 0, haiki_error: 0 };
+    if (!byDate[date]) byDate[date] = { maegari: 0, shipment: 0, min_weight: 0, avg_weight: 0, haiki_kakaku: 0, haiki_error: 0 };
     try {
       const p = JSON.parse(r.note || '{}');
       if (course === '34') byDate[date].maegari = p.maegari || 0;
       if (course === '35') {
         byDate[date].shipment     = p.shipment     || 0;
+        byDate[date].min_weight   = p.min_weight   || 0;
+        byDate[date].avg_weight   = p.avg_weight   || 0;
         // 旧データ(haiki)と新データ(haiki_kakaku/haiki_error)の両方に対応
         byDate[date].haiki_kakaku = p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
         byDate[date].haiki_error  = p.haiki_error  || 0;
@@ -306,7 +310,7 @@ async function load() {
 function renderTable(dates, byDate) {
   const tbody = document.getElementById('tbody');
   if (!dates.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">この月のデータはまだありません</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">この月のデータはまだありません</td></tr>`;
     return;
   }
   tbody.innerHTML = dates.map(d => {
@@ -314,16 +318,18 @@ function renderTable(dates, byDate) {
     const sow = new Date(dt); sow.setDate(sow.getDate() - 35);
     const row = byDate[d];
     const total_haiki = row.haiki_kakaku + row.haiki_error;
-    const mC  = row.maegari      ? `<td class="has-val c-maegari">${row.maegari}</td>`       : `<td>—</td>`;
-    const sC  = row.shipment     ? `<td class="has-val c-shipment">${row.shipment}</td>`      : `<td>—</td>`;
-    const kkC = row.haiki_kakaku ? `<td class="has-val c-haiki">${row.haiki_kakaku}</td>`     : `<td>—</td>`;
-    const erC = row.haiki_error  ? `<td class="has-val c-haiki">${row.haiki_error}</td>`      : `<td>—</td>`;
-    const thC = total_haiki      ? `<td class="has-val" style="color:#1C201C">${total_haiki}</td>` : `<td>—</td>`;
+    const mC   = row.maegari      ? `<td class="has-val c-maegari">${row.maegari}</td>`       : `<td>—</td>`;
+    const sC   = row.shipment     ? `<td class="has-val c-shipment">${row.shipment}</td>`      : `<td>—</td>`;
+    const minC = row.min_weight   ? `<td class="has-val">${row.min_weight}g</td>`              : `<td>—</td>`;
+    const avgC = row.avg_weight   ? `<td class="has-val">${row.avg_weight}g</td>`              : `<td>—</td>`;
+    const kkC  = row.haiki_kakaku ? `<td class="has-val c-haiki">${row.haiki_kakaku}</td>`     : `<td>—</td>`;
+    const erC  = row.haiki_error  ? `<td class="has-val c-haiki">${row.haiki_error}</td>`      : `<td>—</td>`;
+    const thC  = total_haiki      ? `<td class="has-val" style="color:#1C201C">${total_haiki}</td>` : `<td>—</td>`;
     const dateCell = `<td style="text-align:left">
       <div style="color:#1C201C;font-weight:600">${dt.getMonth()+1}/${dt.getDate()}（${DAYS[dt.getDay()]}）</div>
       <div style="color:#7A7870;font-size:10px;margin-top:2px">播種 ${sow.getMonth()+1}/${sow.getDate()}</div>
     </td>`;
-    return `<tr>${dateCell}${mC}${sC}${kkC}${erC}${thC}</tr>`;
+    return `<tr>${dateCell}${mC}${sC}${minC}${avgC}${kkC}${erC}${thC}</tr>`;
   }).join('');
 }
 

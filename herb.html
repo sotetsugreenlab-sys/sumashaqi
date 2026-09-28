@@ -467,26 +467,26 @@ function renderTasks() {
       ? `<div class="harvest-stack">${harvestCards.join('')}</div>`
       : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
 
-    // その他セル：32穴グループ・非32穴グループに分け、両スケジュールをスタック表示
-    const makePosCell = (is30ana) => {
+    // その他セル：stages2の各ステージを1列ずつ表示
+    const refStages = (herb.stages2 || herb.stages).slice(1);
+    const otherCells = refStages.map(refStage => {
       const cards = [];
       const seenSow = new Set();
       allStageSets.forEach(stageSet => {
-        stageSet.slice(1).filter(s => s.label.includes('32穴') === is30ana).forEach(stage => {
-          const sow = addDays(viewDate, -stage.days);
-          const sowStr = toDateStr(sow);
-          if (seenSow.has(sowStr) || !isValidSow(herb, sow)) return;
-          const appStages = getStagesForSow(herb, sow);
-          const match = appStages.slice(1).find(s => s.days === stage.days);
-          if (match) { seenSow.add(sowStr); cards.push(makeCompactCard(match, sow, herb.name)); }
-        });
+        const stage = stageSet.slice(1).find(s => s.days === refStage.days);
+        if (!stage) return;
+        const sow = addDays(viewDate, -stage.days);
+        const sowStr = toDateStr(sow);
+        if (seenSow.has(sowStr) || !isValidSow(herb, sow)) return;
+        const appStages = getStagesForSow(herb, sow);
+        const match = appStages.slice(1).find(s => s.days === stage.days);
+        if (match) { seenSow.add(sowStr); cards.push(makeCompactCard(match, sow, herb.name)); }
       });
       const inner = cards.length > 0
         ? `<div class="harvest-stack">${cards.join('')}</div>`
         : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
       return `<div class="stage-cell">${inner}</div>`;
-    };
-    const otherCells = [makePosCell(false), makePosCell(true)];
+    });
 
     const hasTask = harvestCards.length > 0 ||
       allStageSets.some(stageSet =>

@@ -171,9 +171,9 @@ const HERBS = [
     ],
     stagesNewFrom: '2026-08-11',
     stages2: [
-      { label: '収穫',       days: 38, cls: 'card-harvest' },
-      { label: '8穴へ移植',  days: 21, cls: 'card-green'   },
-      { label: '30穴へ移植', days: 12, cls: 'card-30'      },
+      { label: '収穫',       days: 40, cls: 'card-harvest' },
+      { label: '8穴へ移植',  days: 24, cls: 'card-green'   },
+      { label: '32穴へ移植', days: 12, cls: 'card-30'      },
     ]
   },
   {
@@ -184,7 +184,7 @@ const HERBS = [
     stages: [
       { label: '収穫',       days: 30, cls: 'card-harvest' },
       { label: '8穴へ移植',  days: 17, cls: 'card-yellow'  },
-      { label: '30穴へ移植', days: 9,  cls: 'card-30'      },
+      { label: '32穴へ移植', days: 9,  cls: 'card-30'      },
     ]
   },
   {
@@ -194,13 +194,13 @@ const HERBS = [
     stages: [
       { label: '収穫',       days: 34, cls: 'card-harvest' },
       { label: '8穴へ移植',  days: 20, cls: 'card-green'   },
-      { label: '30穴へ移植', days: 9,  cls: 'card-30'      },
+      { label: '32穴へ移植', days: 9,  cls: 'card-30'      },
     ],
     stagesNewFrom: '2026-08-11',
     stages2: [
       { label: '収穫',       days: 39, cls: 'card-harvest' },
       { label: '8穴へ移植',  days: 24, cls: 'card-green'   },
-      { label: '30穴へ移植', days: 12, cls: 'card-30'      },
+      { label: '32穴へ移植', days: 12, cls: 'card-30'      },
     ]
   },
   {
@@ -210,13 +210,13 @@ const HERBS = [
     stages: [
       { label: '収穫',             days: 32, cls: 'card-harvest' },
       { label: 'LED高い場所へ移動', days: 20, cls: 'card-led'    },
-      { label: '30穴へ移植',       days: 9,  cls: 'card-30'      },
+      { label: '32穴へ移植',       days: 9,  cls: 'card-30'      },
     ],
     stagesNewFrom: '2026-08-11',
     stages2: [
       { label: '収穫',       days: 39, cls: 'card-harvest' },
       { label: '8穴へ移植',  days: 24, cls: 'card-green'   },
-      { label: '30穴へ移植', days: 12, cls: 'card-30'      },
+      { label: '32穴へ移植', days: 12, cls: 'card-30'      },
     ]
   },
   {
@@ -227,7 +227,7 @@ const HERBS = [
     stages: [
       { label: '収穫',          days: 35, cls: 'card-harvest' },
       { label: 'LED高い段へ移動', days: 26, cls: 'card-led'    },
-      { label: '30穴へ移植',    days: 12, cls: 'card-30'      },
+      { label: '32穴へ移植',    days: 12, cls: 'card-30'      },
     ]
   },
   {
@@ -238,7 +238,7 @@ const HERBS = [
     stages: [
       { label: '収穫',          days: 33, cls: 'card-harvest' },
       { label: 'LED高い段へ移動', days: 26, cls: 'card-led'    },
-      { label: '30穴へ移植',    days: 9,  cls: 'card-30'      },
+      { label: '32穴へ移植',    days: 9,  cls: 'card-30'      },
     ]
   },
 ];
@@ -461,12 +461,12 @@ function renderTasks() {
       ? `<div class="harvest-stack">${harvestCards.join('')}</div>`
       : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
 
-    // その他セル：30穴グループ・非30穴グループに分け、両スケジュールをスタック表示
+    // その他セル：32穴グループ・非32穴グループに分け、両スケジュールをスタック表示
     const makePosCell = (is30ana) => {
       const cards = [];
       const seenSow = new Set();
       allStageSets.forEach(stageSet => {
-        stageSet.slice(1).filter(s => s.label.includes('30穴') === is30ana).forEach(stage => {
+        stageSet.slice(1).filter(s => s.label.includes('32穴') === is30ana).forEach(stage => {
           const sow = addDays(viewDate, -stage.days);
           const sowStr = toDateStr(sow);
           if (seenSow.has(sowStr) || !isValidSow(herb, sow)) return;

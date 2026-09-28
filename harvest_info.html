@@ -274,15 +274,16 @@ async function load() {
     if (!byDate[date]) byDate[date] = { maegari: 0, shipment: 0, min_weight: 0, avg_weight: 0, haiki_kakaku: 0, haiki_error: 0 };
     try {
       const p = JSON.parse(r.note || '{}');
-      if (course === '34') byDate[date].maegari = p.maegari || 0;
-      if (course === '35') {
+      if (course === '33') byDate[date].maegari = p.maegari || 0;
+      if (course === '34' || course === '35') { // '35'は旧データ後方互換
         byDate[date].shipment     = p.shipment     || 0;
         byDate[date].min_weight   = p.min_weight   || 0;
         byDate[date].avg_weight   = p.avg_weight   || 0;
-        // 旧データ(haiki)と新データ(haiki_kakaku/haiki_error)の両方に対応
         byDate[date].haiki_kakaku = p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
         byDate[date].haiki_error  = p.haiki_error  || 0;
       }
+      // 旧データ後方互換: _34がmaegariを持っていた時期
+      if (course === '34' && p.maegari != null) byDate[date].maegari = p.maegari;
     } catch(e) {}
   });
 
@@ -346,12 +347,13 @@ async function loadMonthly() {
     if (!byMonth[ym]) byMonth[ym] = { maegari: 0, shipment: 0, haiki_kakaku: 0, haiki_error: 0 };
     try {
       const p = JSON.parse(r.note || '{}');
-      if (course === '34') byMonth[ym].maegari += p.maegari || 0;
-      if (course === '35') {
+      if (course === '33') byMonth[ym].maegari += p.maegari || 0;
+      if (course === '34' || course === '35') { // '35'は旧データ後方互換
         byMonth[ym].shipment     += p.shipment     || 0;
         byMonth[ym].haiki_kakaku += p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
         byMonth[ym].haiki_error  += p.haiki_error  || 0;
       }
+      if (course === '34' && p.maegari != null) byMonth[ym].maegari += p.maegari; // 旧データ後方互換
     } catch(e) {}
   });
 

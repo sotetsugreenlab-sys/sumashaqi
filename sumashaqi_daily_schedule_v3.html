@@ -168,8 +168,8 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
     <button class="calc-tab active" id="tab-course-31" onclick="selectCourse('31')">31日</button>
     <button class="calc-tab" id="tab-course-32" onclick="selectCourse('32')">32日</button>
     <button class="calc-tab" id="tab-course-33" onclick="selectCourse('33')">33日</button>
+    <button class="calc-tab" id="tab-course-33" onclick="selectCourse('33')">33日</button>
     <button class="calc-tab" id="tab-course-34" onclick="selectCourse('34')">34日</button>
-    <button class="calc-tab" id="tab-course-35" onclick="selectCourse('35')">35日</button>
   </div>
   <div class="calc-tabs">
     <button class="calc-tab active" id="tab-sow" onclick="switchCalcDir('sow')">播種日 → 各日程</button>
@@ -450,8 +450,8 @@ db.channel('lot_notes_sumashaqi')
   .subscribe();
 
 // 刈取カウント（前借り・出荷・廃棄）
-// lot_notesテーブルを流用: crop='harvest_count', sow_date='YYYY-MM-DD_34' など
-// note = JSON文字列 {"maegari":5,"shipment":0,"haiki":0}
+// lot_notesテーブルを流用: crop='harvest_count', sow_date='YYYY-MM-DD_33'(前借り) / 'YYYY-MM-DD_34'(出荷) など
+// note = JSON文字列 {"maegari":5} or {"shipment":0,"min_weight":0,...}
 let harvestCounts = {}; // key: `${dateStr}_${course}` -> { id, maegari, shipment, min_weight, avg_weight, haiki_kakaku, haiki_error }
 let hcDebounce = {};
 
@@ -473,7 +473,7 @@ async function loadHarvestCounts(dateStr) {
       harvestCounts[r.sow_date] = { id: r.id, ...parsed };
     } catch(e) {}
   });
-  [34, 35].forEach(c => {
+  [33, 34].forEach(c => {
     const key = `${dateStr}_${c}`;
     const counts = harvestCounts[key] || {};
     ['maegari', 'shipment', 'min_weight', 'avg_weight', 'haiki_kakaku', 'haiki_error'].forEach(f => {
@@ -497,14 +497,15 @@ function onHarvestInput(course, field) {
     if (!harvestCounts[key]) harvestCounts[key] = {};
     harvestCounts[key][field] = val;
     const c = harvestCounts[key];
-    const note = JSON.stringify({
-      maegari:    c.maegari    || 0,
-      shipment:   c.shipment   || 0,
-      min_weight: c.min_weight || 0,
-      avg_weight: c.avg_weight || 0,
-      haiki_kakaku: c.haiki_kakaku || 0,
-      haiki_error:  c.haiki_error  || 0,
-    });
+    const note = course === 33
+      ? JSON.stringify({ maegari: c.maegari || 0 })
+      : JSON.stringify({
+          shipment:   c.shipment   || 0,
+          min_weight: c.min_weight || 0,
+          avg_weight: c.avg_weight || 0,
+          haiki_kakaku: c.haiki_kakaku || 0,
+          haiki_error:  c.haiki_error  || 0,
+        });
     if (c.id) {
       await db.from('lot_notes').update({ note }).eq('id', c.id);
     } else {
@@ -591,7 +592,7 @@ function renderTasks() {
   const isToday = isSameDay(viewDate, realToday);
   const dayLabel = isToday ? '今日の' : 'この日の';
 
-  const courses = [34, 35];
+  const courses = [33, 34];
   const hist  = [{label:'30穴',daysFromSow:6},{label:'5穴',daysFromSow:16}];
   const hist5 = [{label:'30穴',daysFromSow:6}];
   const sow5  = addDays(viewDate, -16);
@@ -600,11 +601,11 @@ function renderTasks() {
   const dateStr = toDateStr(viewDate);
   function harvestInputsHtml(c) {
     const counts = harvestCounts[`${dateStr}_${c}`] || {};
-    if (c === 34) {
+    if (c === 33) {
       return `<div class="harvest-counts">
         <div class="hc-row">
           <span class="hc-label">前借り</span>
-          <input type="number" min="0" id="hcount-34-maegari" class="hc-input" value="${counts.maegari || ''}" placeholder="0" oninput="onHarvestInput(34,'maegari')">
+          <input type="number" min="0" id="hcount-33-maegari" class="hc-input" value="${counts.maegari || ''}" placeholder="0" oninput="onHarvestInput(33,'maegari')">
           <span class="hc-unit">株</span>
         </div>
       </div>`;
@@ -614,32 +615,32 @@ function renderTasks() {
     return `<div class="harvest-counts">
       <div class="hc-row">
         <span class="hc-label">出荷</span>
-        <input type="number" min="0" id="hcount-35-shipment" class="hc-input" value="${counts.shipment || ''}" placeholder="0" oninput="onHarvestInput(35,'shipment')">
+        <input type="number" min="0" id="hcount-34-shipment" class="hc-input" value="${counts.shipment || ''}" placeholder="0" oninput="onHarvestInput(34,'shipment')">
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row" style="padding-left:8px">
         <span class="hc-label" style="font-size:10px">最低</span>
-        <input type="number" min="0" id="hcount-35-min_weight" class="hc-input" value="${counts.min_weight || ''}" placeholder="0" oninput="onHarvestInput(35,'min_weight')">
+        <input type="number" min="0" id="hcount-34-min_weight" class="hc-input" value="${counts.min_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'min_weight')">
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row" style="padding-left:8px">
         <span class="hc-label" style="font-size:10px">平均</span>
-        <input type="number" min="0" id="hcount-35-avg_weight" class="hc-input" value="${counts.avg_weight || ''}" placeholder="0" oninput="onHarvestInput(35,'avg_weight')">
+        <input type="number" min="0" id="hcount-34-avg_weight" class="hc-input" value="${counts.avg_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'avg_weight')">
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
         <span class="hc-label" style="font-weight:600;color:#888">廃棄</span>
-        <span class="hc-unit" style="margin-left:auto;font-weight:600" id="hcount-35-haiki_total">${kk + er}</span>
+        <span class="hc-unit" style="margin-left:auto;font-weight:600" id="hcount-34-haiki_total">${kk + er}</span>
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row" style="padding-left:8px">
         <span class="hc-label" style="font-size:10px">合格</span>
-        <input type="number" min="0" id="hcount-35-haiki_kakaku" class="hc-input" value="${counts.haiki_kakaku || ''}" placeholder="0" oninput="onHarvestInput(35,'haiki_kakaku')">
+        <input type="number" min="0" id="hcount-34-haiki_kakaku" class="hc-input" value="${counts.haiki_kakaku || ''}" placeholder="0" oninput="onHarvestInput(34,'haiki_kakaku')">
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row" style="padding-left:8px">
         <span class="hc-label" style="font-size:10px">エラー</span>
-        <input type="number" min="0" id="hcount-35-haiki_error" class="hc-input" value="${counts.haiki_error || ''}" placeholder="0" oninput="onHarvestInput(35,'haiki_error')">
+        <input type="number" min="0" id="hcount-34-haiki_error" class="hc-input" value="${counts.haiki_error || ''}" placeholder="0" oninput="onHarvestInput(34,'haiki_error')">
         <span class="hc-unit">株</span>
       </div>
     </div>`;
@@ -745,7 +746,7 @@ function chip(label, dayNum, date) {
 }
 function selectCourse(ver) {
   calcCourse = ver;
-  [31,32,33,34,35].forEach(c => {
+  [31,32,33,34].forEach(c => {
     document.getElementById(`tab-course-${c}`).classList.toggle('active', String(c) === ver);
   });
   document.getElementById('sow-result').innerHTML = '';

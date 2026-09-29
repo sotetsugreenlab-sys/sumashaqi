@@ -45,8 +45,14 @@ jobs:
             // Supabaseデータ読み込み待ち
             await new Promise(r => setTimeout(r, 5000));
 
-            // 棚1スクリーンショット（デフォルトで棚1が選択済み）
+            const today = new Date().toLocaleDateString('ja-JP', {
+              timeZone: 'Asia/Tokyo',
+              year: 'numeric', month: '2-digit', day: '2-digit'
+            }).replace(/\//g, '-');
+
+            // 棚1スクリーンショット
             await page.screenshot({ path: 'screenshots/tana-1.png', fullPage: true });
+            await page.screenshot({ path: `screenshots/${today}-tana-1.png`, fullPage: true });
             console.log('棚1 saved!');
 
             // 棚2ボタンをクリック
@@ -62,16 +68,38 @@ jobs:
 
             // 棚2スクリーンショット
             await page.screenshot({ path: 'screenshots/tana-2.png', fullPage: true });
+            await page.screenshot({ path: `screenshots/${today}-tana-2.png`, fullPage: true });
             console.log('棚2 saved!');
 
             await browser.close();
           })();
           EOF
 
+      - name: index.json更新
+        run: |
+          DATE=$(TZ=Asia/Tokyo date '+%Y-%m-%d')
+          INDEX_FILE="screenshots/index.json"
+          if [ -f "$INDEX_FILE" ]; then
+            # 既存リストに今日の日付を追加（重複除去・降順）
+            node -e "
+              const fs = require('fs');
+              const data = JSON.parse(fs.readFileSync('$INDEX_FILE', 'utf8'));
+              const dates = new Set(data.dates);
+              dates.add('$DATE');
+              data.dates = Array.from(dates).sort().reverse();
+              fs.writeFileSync('$INDEX_FILE', JSON.stringify(data, null, 2));
+            "
+          else
+            echo '{"dates":["'$DATE'"]}' > "$INDEX_FILE"
+          fi
+
       - name: コミット＆プッシュ
         run: |
+          DATE=$(TZ=Asia/Tokyo date '+%Y-%m-%d')
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add screenshots/tana-1.png screenshots/tana-2.png
+          git add screenshots/tana-1.png screenshots/tana-2.png \
+                  screenshots/${DATE}-tana-1.png screenshots/${DATE}-tana-2.png \
+                  screenshots/index.json
           git diff --staged --quiet || git commit -m "📸 棚管理 $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M')"
           git push

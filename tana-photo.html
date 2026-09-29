@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>棚管理スクショ</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding: 1rem; }
+
+.header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0 1rem;
+  border-bottom: 1px solid #e5e5e3;
+  margin-bottom: 1rem;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+.header-sub { font-size: 11px; color: #999; margin-top: 2px; }
+
+.section { margin-bottom: 1.5rem; }
+.section-label {
+  font-size: 13px; font-weight: 700; color: #555;
+  margin-bottom: 0.5rem;
+  padding: 4px 10px;
+  background: #fff;
+  border-radius: 8px;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.photo-wrap {
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+}
+.photo-wrap img {
+  width: 100%; display: block;
+}
+
+.updated { font-size: 11px; color: #aaa; text-align: right; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">← 戻る</a>
+  <div>
+    <div class="header-title">🤓 棚管理スクショ</div>
+    <div class="header-sub" id="updated-at">読み込み中...</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">棚 1</div>
+  <div class="photo-wrap">
+    <img id="img1" src="" alt="棚1">
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">棚 2</div>
+  <div class="photo-wrap">
+    <img id="img2" src="" alt="棚2">
+  </div>
+</div>
+
+<script>
+const t = Date.now();
+const img1 = document.getElementById('img1');
+const img2 = document.getElementById('img2');
+img1.src = 'screenshots/tana-1.png?t=' + t;
+img2.src = 'screenshots/tana-2.png?t=' + t;
+
+// 最終更新日時をファイルのlast-modifiedから取得
+fetch('screenshots/tana-1.png', { method: 'HEAD' }).then(r => {
+  const d = r.headers.get('last-modified');
+  if (d) {
+    const dt = new Date(d).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+    document.getElementById('updated-at').textContent = '撮影: ' + dt;
+  } else {
+    document.getElementById('updated-at').textContent = '毎朝10時自動更新';
+  }
+}).catch(() => {
+  document.getElementById('updated-at').textContent = '毎朝10時自動更新';
+});
+</script>
+</body>
+</html>

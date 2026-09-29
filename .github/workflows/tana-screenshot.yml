@@ -37,7 +37,7 @@ jobs:
               args: ['--no-sandbox', '--disable-setuid-sandbox']
             });
             const page = await browser.newPage();
-            await page.setViewport({ width: 390, height: 844 });
+            await page.setViewport({ width: 900, height: 844 });
             await page.goto('https://sotetsugreenlab-sys.github.io/sumashaqi/tana.html', {
               waitUntil: 'networkidle0',
               timeout: 30000

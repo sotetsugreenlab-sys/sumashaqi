@@ -21,25 +21,58 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 .header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
 .header-sub { font-size: 11px; color: #999; margin-top: 2px; }
 
+/* 日付セレクタ */
+.date-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 1rem; flex-wrap: wrap;
+}
+.date-label { font-size: 12px; color: #666; white-space: nowrap; }
+.date-select {
+  border: 1.5px solid #ddd; border-radius: 8px;
+  padding: 6px 10px; font-size: 14px; background: #fff;
+  color: #1a1a1a; flex: 1; max-width: 200px;
+}
+.today-btn {
+  background: #534AB7; color: #fff; border: none;
+  border-radius: 8px; padding: 6px 12px; font-size: 13px;
+  cursor: pointer; white-space: nowrap;
+}
+
 .section { margin-bottom: 1.5rem; }
 .section-label {
   font-size: 13px; font-weight: 700; color: #555;
-  margin-bottom: 0.5rem;
-  padding: 4px 10px;
-  background: #fff;
-  border-radius: 8px;
+  margin-bottom: 0.5rem; padding: 4px 10px;
+  background: #fff; border-radius: 8px;
   display: inline-block;
   box-shadow: 0 1px 3px rgba(0,0,0,0.07);
 }
 .photo-wrap {
   border-radius: 12px; overflow: hidden;
   box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+  background: #eee;
+  min-height: 100px;
 }
-.photo-wrap img {
-  width: 100%; display: block;
+.photo-wrap img { width: 100%; display: block; }
+.photo-error {
+  padding: 2rem; text-align: center; color: #aaa; font-size: 13px;
 }
 
-.updated { font-size: 11px; color: #aaa; text-align: right; margin-bottom: 1rem; }
+.history-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid #e5e5e3;
+  padding-top: 1rem;
+}
+.history-title { font-size: 13px; color: #999; margin-bottom: 0.75rem; }
+.history-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.history-btn {
+  background: #fff; border: 1.5px solid #e5e5e3;
+  border-radius: 8px; padding: 5px 12px;
+  font-size: 13px; color: #555; cursor: pointer;
+}
+.history-btn.active {
+  border-color: #534AB7; color: #534AB7; font-weight: 600;
+  background: #EEF2FF;
+}
 </style>
 </head>
 <body>
@@ -52,39 +85,125 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
   </div>
 </div>
 
+<div class="date-row">
+  <span class="date-label">日付：</span>
+  <select class="date-select" id="date-select" onchange="showDate(this.value)">
+    <option value="">読み込み中...</option>
+  </select>
+  <button class="today-btn" onclick="showToday()">今日</button>
+</div>
+
 <div class="section">
   <div class="section-label">棚 1</div>
-  <div class="photo-wrap">
-    <img id="img1" src="" alt="棚1">
+  <div class="photo-wrap" id="wrap1">
+    <div class="photo-error">読み込み中...</div>
   </div>
 </div>
 
 <div class="section">
   <div class="section-label">棚 2</div>
-  <div class="photo-wrap">
-    <img id="img2" src="" alt="棚2">
+  <div class="photo-wrap" id="wrap2">
+    <div class="photo-error">読み込み中...</div>
   </div>
 </div>
 
-<script>
-const t = Date.now();
-const img1 = document.getElementById('img1');
-const img2 = document.getElementById('img2');
-img1.src = 'screenshots/tana-1.png?t=' + t;
-img2.src = 'screenshots/tana-2.png?t=' + t;
+<div class="history-section">
+  <div class="history-title">📅 過去の記録</div>
+  <div class="history-list" id="history-list"></div>
+</div>
 
-// 最終更新日時をファイルのlast-modifiedから取得
-fetch('screenshots/tana-1.png', { method: 'HEAD' }).then(r => {
-  const d = r.headers.get('last-modified');
-  if (d) {
-    const dt = new Date(d).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
-    document.getElementById('updated-at').textContent = '撮影: ' + dt;
+<script>
+let allDates = [];
+let currentDate = '';
+
+function todayStr() {
+  return new Date().toLocaleDateString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).replace(/\//g, '-');
+}
+
+function showDate(date) {
+  if (!date) return;
+  currentDate = date;
+
+  const today = todayStr();
+  const isToday = date === today;
+  const t = Date.now();
+
+  // 今日は latest ファイル、過去は日付ファイル
+  const src1 = isToday
+    ? `screenshots/tana-1.png?t=${t}`
+    : `screenshots/${date}-tana-1.png`;
+  const src2 = isToday
+    ? `screenshots/tana-2.png?t=${t}`
+    : `screenshots/${date}-tana-2.png`;
+
+  setImg('wrap1', src1);
+  setImg('wrap2', src2);
+
+  // セレクト更新
+  document.getElementById('date-select').value = date;
+
+  // 履歴ボタン強調
+  document.querySelectorAll('.history-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.date === date);
+  });
+
+  // 撮影日時表示
+  if (isToday) {
+    fetch(`screenshots/tana-1.png`, { method: 'HEAD' }).then(r => {
+      const d = r.headers.get('last-modified');
+      document.getElementById('updated-at').textContent =
+        d ? '撮影: ' + new Date(d).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+          : '毎朝10時自動更新';
+    }).catch(() => {
+      document.getElementById('updated-at').textContent = '毎朝10時自動更新';
+    });
   } else {
-    document.getElementById('updated-at').textContent = '毎朝10時自動更新';
+    document.getElementById('updated-at').textContent = date + ' の記録';
   }
-}).catch(() => {
-  document.getElementById('updated-at').textContent = '毎朝10時自動更新';
-});
+}
+
+function setImg(wrapId, src) {
+  const wrap = document.getElementById(wrapId);
+  const img = new Image();
+  img.onload = () => { wrap.innerHTML = ''; wrap.appendChild(img); img.style.width = '100%'; };
+  img.onerror = () => { wrap.innerHTML = '<div class="photo-error">画像が見つかりません</div>'; };
+  img.src = src;
+}
+
+function showToday() {
+  showDate(todayStr());
+}
+
+async function init() {
+  try {
+    const res = await fetch('screenshots/index.json?t=' + Date.now());
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    allDates = data.dates || [];
+  } catch(e) {
+    allDates = [todayStr()];
+  }
+
+  // セレクトを更新
+  const sel = document.getElementById('date-select');
+  sel.innerHTML = allDates.map(d =>
+    `<option value="${d}">${d}</option>`
+  ).join('');
+
+  // 履歴ボタン
+  const histList = document.getElementById('history-list');
+  histList.innerHTML = allDates.map(d =>
+    `<button class="history-btn" data-date="${d}" onclick="showDate('${d}')">${d}</button>`
+  ).join('');
+
+  // 今日を表示
+  showToday();
+}
+
+init();
 </script>
 </body>
 </html>

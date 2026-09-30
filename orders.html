@@ -171,11 +171,13 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
   margin: 0 1rem 0.75rem;
   border-radius: 10px; padding: 12px 16px; text-align: center;
 }
-.weight-verdict.ok { background: #F0FDF4; }
-.weight-verdict.ng { background: #FEF2F2; }
+.weight-verdict.ok   { background: #F0FDF4; }
+.weight-verdict.warn { background: #FEFCE8; }
+.weight-verdict.ng   { background: #FEF2F2; }
 .weight-verdict-main { font-size: 22px; font-weight: 700; }
-.weight-verdict.ok .weight-verdict-main { color: #16A34A; }
-.weight-verdict.ng .weight-verdict-main { color: #DC2626; }
+.weight-verdict.ok   .weight-verdict-main { color: #16A34A; }
+.weight-verdict.warn .weight-verdict-main { color: #92400E; }
+.weight-verdict.ng   .weight-verdict-main { color: #DC2626; }
 .weight-verdict-sub { font-size: 11px; color: #999; margin-top: 2px; }
 .weight-reset-btn {
   display: block; width: calc(100% - 2rem); margin: 0 1rem 0.75rem;
@@ -400,7 +402,8 @@ load();
 
 // ── 出荷重量チェック ──────────────────────────────
 const SPONGE_G  = 3;     // スポンジ1個の重量(g)
-const TARGET_G  = 1100;  // 基準正味重量(g)
+const TARGET_G  = 1100;  // 基準正味重量(g) ← 🟢
+const WARN_G    = 1050;  // 黄色信号の下限(g) ← 🟡
 
 let weightRows = [];
 
@@ -452,11 +455,21 @@ function weightRender() {
   document.getElementById('ws-net').textContent    = netWeight;
   summaryEl.style.display = '';
 
-  const ok = netWeight >= TARGET_G;
-  verdictEl.className = 'weight-verdict ' + (ok ? 'ok' : 'ng');
-  document.getElementById('wv-main').textContent = ok
-    ? 'ばっちり👌'
-    : `❌ NG　あと${TARGET_G - netWeight}g足りません`;
+  let cls, main;
+  if (netWeight >= TARGET_G) {
+    cls  = 'ok';
+    main = 'ばっちり👌';
+  } else if (netWeight >= WARN_G) {
+    cls  = 'warn';
+    main = `⚠️ 他に株がなければ出荷OK\nあと${TARGET_G - netWeight}gで1,100g`;
+  } else {
+    cls  = 'ng';
+    main = `❌ NG　あと${TARGET_G - netWeight}g足りません`;
+  }
+  verdictEl.className = 'weight-verdict ' + cls;
+  const mainEl = document.getElementById('wv-main');
+  mainEl.style.whiteSpace = 'pre-line';
+  mainEl.textContent = main;
   document.getElementById('wv-sub').textContent  = `正味 ${netWeight}g`;
   verdictEl.style.display = '';
   resetBtn.style.display  = '';

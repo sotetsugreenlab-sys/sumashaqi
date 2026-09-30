@@ -74,16 +74,21 @@ jobs:
             console.log('ログイン完了');
             await new Promise(r => setTimeout(r, 3000));
 
-            // デバッグ: フレーム一覧
-            for (const f of page.frames()) {
-              const t = await getText(f);
-              console.log('frame:', f.url().slice(0,60), '| text:', t.slice(0,60).replace(/\n/g,' '));
-            }
+            // topmenuの「受注」リンクをクリック
+            const topmenu = await waitFrame(page, '受注', 10000);
+            if (!topmenu) { console.log('topmenuフレームなし'); await browser.close(); return; }
+            await topmenu.evaluate(() => {
+              for (const el of document.querySelectorAll('a')) {
+                if (el.textContent.trim() === '受注') { el.click(); return; }
+              }
+            });
+            console.log('受注クリック完了');
+            await new Promise(r => setTimeout(r, 3000));
 
-            // 受注データ処理をクリック
-            const nav = await waitFrame(page, '受注データ処理', 10000);
-            if (!nav) { console.log('navフレームなし'); await browser.close(); return; }
-            await nav.evaluate(() => {
+            // サブメニューの「受注データ処理」をクリック
+            const submenu = await waitFrame(page, '受注データ処理', 10000);
+            if (!submenu) { console.log('submenuフレームなし'); await browser.close(); return; }
+            await submenu.evaluate(() => {
               for (const el of document.querySelectorAll('a,button')) {
                 if (el.textContent.includes('受注データ処理')) { el.click(); return; }
               }

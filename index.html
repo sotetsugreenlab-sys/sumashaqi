@@ -155,9 +155,9 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; display:
       .limit(1);
     if (!data || data.length === 0) return;
 
-    const latest = data[0].created_at;
-    const lastVisit = localStorage.getItem('handover_last_visit') || '';
-    if (latest > lastVisit) {
+    const latestMs = new Date(data[0].created_at).getTime();
+    const lastVisitMs = new Date(localStorage.getItem('handover_last_visit') || 0).getTime();
+    if (latestMs > lastVisitMs) {
       document.getElementById('handover-badge').classList.add('show');
     }
   } catch(e) {}

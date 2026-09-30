@@ -210,6 +210,15 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
   border-radius: 10px; padding: 10px; font-size: 13px; cursor: pointer;
 }
 .weight-reset-btn:active { background: #e5e5e3; }
+.weight-product-btn {
+  flex: 1; padding: 9px 6px; font-size: 13px; font-weight: 600;
+  border: 1.5px solid #ddd; border-radius: 10px;
+  background: #f5f5f3; color: #888; cursor: pointer;
+}
+.weight-product-btn.active {
+  background: #534AB7; color: #fff; border-color: #534AB7;
+}
+.weight-product-btn:active { opacity: 0.85; }
 </style>
 </head>
 <body>
@@ -227,6 +236,10 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 <!-- 出荷重量チェック -->
 <div class="weight-section">
   <div class="weight-section-header">⚖️ 出荷重量チェック</div>
+  <div style="display:flex;gap:6px;padding:0 1rem 0.75rem;">
+    <button class="weight-product-btn active" id="wpbtn-0" onclick="weightSwitchProduct(0)">🥬 フリルレタス</button>
+    <button class="weight-product-btn"        id="wpbtn-1" onclick="weightSwitchProduct(1)">🌿 バジル</button>
+  </div>
   <div class="weight-inputs">
     <div class="weight-input-group">
       <label>スポンジ数（個）</label>
@@ -450,11 +463,28 @@ async function load() {
 load();
 
 // ── 出荷重量チェック ──────────────────────────────
-const SPONGE_G  = 3;     // スポンジ1個の重量(g)
-const TARGET_G  = 1100;  // 基準正味重量(g) ← 🟢
-const WARN_G    = 1050;  // 黄色信号の下限(g) ← 🟡
+const WEIGHT_PRODUCTS = [
+  { name: 'フリルレタス', spongeG: 3, targetG: 1100, warnG: 1050 },
+  { name: 'バジル',       spongeG: 3, targetG: 23,   warnG: 20   },
+];
 
+let weightProductIdx = 0;
 let weightRows = [];
+
+function weightSwitchProduct(idx) {
+  if (idx === weightProductIdx && weightRows.length === 0) return;
+  if (weightRows.length > 0 && !confirm('計量中のデータをリセットして切り替えますか？')) return;
+  weightProductIdx = idx;
+  weightRows = [];
+  document.querySelectorAll('.weight-product-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+  weightRender();
+}
+
+function weightSpongeG()  { return WEIGHT_PRODUCTS[weightProductIdx].spongeG; }
+function weightTargetG()  { return WEIGHT_PRODUCTS[weightProductIdx].targetG; }
+function weightWarnG()    { return WEIGHT_PRODUCTS[weightProductIdx].warnG; }
 
 function weightAdd() {
   const spongeEl = document.getElementById('w-sponge');
@@ -497,7 +527,8 @@ function weightRender() {
 
   const totalSponge = weightRows.reduce((a, r) => a + r.sponge, 0);
   const totalWeight = weightRows.reduce((a, r) => a + r.weight, 0);
-  const netWeight   = totalWeight - totalSponge * SPONGE_G;
+  const netWeight   = totalWeight - totalSponge * weightSpongeG();
+  const tg = weightTargetG(), wg = weightWarnG();
 
   document.getElementById('ws-sponge').textContent = totalSponge;
   document.getElementById('ws-weight').textContent = totalWeight;
@@ -505,15 +536,15 @@ function weightRender() {
   summaryEl.style.display = '';
 
   let cls, main;
-  if (netWeight >= TARGET_G) {
+  if (netWeight >= tg) {
     cls  = 'ok';
     main = 'ばっちり👌';
-  } else if (netWeight >= WARN_G) {
+  } else if (netWeight >= wg) {
     cls  = 'warn';
-    main = `⚠️ 他に株がなければ出荷OK\nあと${TARGET_G - netWeight}gで1,100g`;
+    main = `⚠️ 他に株がなければ出荷OK\nあと${tg - netWeight}gで${tg}g`;
   } else {
     cls  = 'ng';
-    main = `❌ NG　あと${TARGET_G - netWeight}g足りません`;
+    main = `❌ NG　あと${tg - netWeight}g足りません`;
   }
   verdictEl.className = 'weight-verdict ' + cls;
   const mainEl = document.getElementById('wv-main');

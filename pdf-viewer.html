@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マニュアル</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { display: flex; flex-direction: column; height: 100dvh; background: #f7f7f5; font-family: sans-serif; }
+.bar {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #e5e5e3;
+  background: #fff; flex-shrink: 0;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.bar-title { font-size: 14px; font-weight: 700; color: #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+iframe { flex: 1; border: none; width: 100%; }
+.no-src { flex: 1; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <a class="back-btn" id="back-btn" href="manual.html">← 戻る</a>
+  <div class="bar-title" id="bar-title">マニュアル</div>
+</div>
+<div id="content"></div>
+<script>
+const params = new URLSearchParams(location.search);
+const src   = params.get('src');
+const title = params.get('title');
+const back  = params.get('back') || 'manual.html';
+
+if (title) document.getElementById('bar-title').textContent = title;
+document.getElementById('back-btn').href = back;
+
+const el = document.getElementById('content');
+if (src) {
+  el.outerHTML = `<iframe src="${src}"></iframe>`;
+} else {
+  el.className = 'no-src';
+  el.textContent = 'ファイルが指定されていません';
+}
+</script>
+</body>
+</html>

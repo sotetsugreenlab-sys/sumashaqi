@@ -142,6 +142,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 }
 .pack-spec-item .icon { font-size: 22px; }
 .pack-spec-item .weight { color: #3D7A50; }
+.pack-note { font-size: 12px; font-weight: 400; color: #999; }
 
 /* 出荷重量チェック */
 .weight-section {
@@ -283,8 +284,8 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 <script>
 // ── パック規格（追加・変更はここだけ） ───────────────────
 const PACK_SPECS = [
-  { icon: '🥬', name: 'フリルレタス', weight: '1,000g' },
-  { icon: '🌿', name: 'バジル',       weight: '20g'    },
+  { icon: '🥬', name: 'フリルレタス', weight: '1,000g', note: 'スポンジ付き' },
+  { icon: '🌿', name: 'バジル',       weight: '20g',    note: 'スポンジ付き' },
 ];
 
 (function renderPackSpec() {
@@ -294,6 +295,7 @@ const PACK_SPECS = [
       <span class="icon">${s.icon}</span>
       <span>${s.name}</span>
       <span class="weight">1パック ${s.weight}</span>
+      ${s.note ? `<span class="pack-note">${s.note}</span>` : ''}
     </div>`
   ).join('');
   card.innerHTML = `

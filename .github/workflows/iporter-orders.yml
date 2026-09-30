@@ -102,25 +102,31 @@ jobs:
             const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
             const year = String(now.getFullYear());
             const month = String(now.getMonth() + 1); // 今月
-            await listFrame.evaluate((yr, mo) => {
-              const sels = document.querySelectorAll('select');
-              // 1番目のセレクト=年、2番目=月と仮定
-              if (sels[0]) {
-                for (const opt of sels[0].options) {
-                  if (opt.value === yr || opt.text === yr) { sels[0].value = opt.value; break; }
+            const formDebug = await listFrame.evaluate((yr, mo) => {
+              const info = [];
+              // セレクトボックスの情報
+              document.querySelectorAll('select').forEach((sel, i) => {
+                const opts = Array.from(sel.options).map(o => o.value || o.text).slice(0,5).join(',');
+                info.push(`sel[${i}] name=${sel.name} opts=${opts}`);
+                // 年または月にマッチするものをセット
+                for (const opt of sel.options) {
+                  if (opt.value === yr || opt.text === yr) { sel.value = opt.value; sel.dispatchEvent(new Event('change')); break; }
+                  if (opt.value === mo || opt.text === mo) { sel.value = opt.value; sel.dispatchEvent(new Event('change')); break; }
                 }
-              }
-              if (sels[1]) {
-                for (const opt of sels[1].options) {
-                  if (opt.value === mo || opt.text === mo) { sels[1].value = opt.value; break; }
-                }
-              }
-              // 検索ボタンをクリック
+              });
+              // ボタンの情報
+              document.querySelectorAll('input[type=submit],input[type=button],button').forEach((btn, i) => {
+                info.push(`btn[${i}] val="${btn.value}" txt="${btn.textContent?.trim()}"`);
+              });
+              // ボタンクリック
+              let clicked = false;
               for (const btn of document.querySelectorAll('input[type=submit],input[type=button],button')) {
-                const v = btn.value || btn.textContent || '';
-                if (v.includes('検索') || v.includes('表示') || v.includes('一覧')) { btn.click(); return; }
+                const v = (btn.value || btn.textContent || '').trim();
+                if (v) { btn.click(); clicked = true; info.push('clicked:' + v); break; }
               }
+              return info.join(' | ');
             }, year, month);
+            console.log('フォームデバッグ:', formDebug);
             console.log('検索実行:', year, '年', month, '月');
             await new Promise(r => setTimeout(r, 6000));
 

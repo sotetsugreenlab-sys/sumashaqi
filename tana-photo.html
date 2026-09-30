@@ -202,7 +202,7 @@ async function init() {
   // URLパラメータで日付指定があればその日を表示
   const params = new URLSearchParams(location.search);
   const paramDate = params.get('date');
-  if (paramDate && allDates.includes(paramDate)) {
+  if (paramDate) {
     showDate(paramDate);
   } else {
     showToday();

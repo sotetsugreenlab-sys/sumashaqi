@@ -21,10 +21,67 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 .header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
 .updated-at { font-size: 11px; color: #aaa; text-align: right; margin-bottom: 1rem; }
 
+/* タブ */
+.tabs {
+  display: flex; gap: 0; margin-bottom: 1rem;
+  background: #ebebea; border-radius: 10px; padding: 3px;
+}
+.tab-btn {
+  flex: 1; padding: 7px; font-size: 13px; font-weight: 600;
+  border: none; background: transparent; border-radius: 8px;
+  color: #888; cursor: pointer;
+}
+.tab-btn.active { background: #fff; color: #534AB7; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* カレンダー */
+.cal-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.cal-nav-btn {
+  background: none; border: none; font-size: 20px; color: #534AB7;
+  cursor: pointer; padding: 4px 10px;
+}
+.cal-month { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-dow {
+  text-align: center; font-size: 11px; font-weight: 700;
+  color: #aaa; padding: 4px 0;
+}
+.cal-dow:first-child { color: #e84040; }
+.cal-dow:last-child { color: #534AB7; }
+.cal-day {
+  aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-radius: 8px; cursor: pointer; position: relative;
+  font-size: 13px; color: #333;
+}
+.cal-day.empty { cursor: default; }
+.cal-day.today { background: #EEF2FF; font-weight: 700; color: #534AB7; }
+.cal-day.has-order { background: #534AB7; color: #fff; font-weight: 700; }
+.cal-day.has-order.today { background: #3730A3; }
+.cal-day.sun { color: #e84040; }
+.cal-day.sat { color: #534AB7; }
+.cal-day.has-order { color: #fff !important; }
+.order-dot {
+  width: 5px; height: 5px; background: #fff;
+  border-radius: 50%; margin-top: 2px; opacity: 0.8;
+}
+
+/* 日付クリックの注文詳細 */
+.day-detail {
+  background: #fff; border-radius: 12px;
+  padding: 1rem; margin-top: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border-left: 4px solid #534AB7;
+}
+.day-detail-title { font-size: 14px; font-weight: 700; color: #534AB7; margin-bottom: 0.5rem; }
+.day-detail-item { font-size: 13px; color: #444; padding: 4px 0; border-top: 1px solid #f0f0ee; }
+
 .empty-msg { text-align: center; color: #aaa; font-size: 14px; padding: 3rem 1rem; }
 .empty-icon { font-size: 48px; margin-bottom: 0.5rem; }
 
-/* 注文カード */
+/* 注文カード（一覧） */
 .order-card {
   background: #fff; border-radius: 14px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
@@ -40,35 +97,26 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 }
 .status-new { background: #FEF2F2; color: #DC2626; }
 .status-done { background: #F0FDF4; color: #16A34A; }
-
 .order-id { font-size: 12px; color: #999; margin-bottom: 0.25rem; }
 .order-delivery { font-size: 15px; font-weight: 700; color: #1a1a1a; }
 .order-hotel { font-size: 12px; color: #666; margin-top: 2px; }
-
-/* 商品リスト */
 .items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .items-table th { background: #f5f5f3; color: #666; font-weight: 600; padding: 6px 10px; text-align: left; font-size: 11px; }
 .items-table td { padding: 7px 10px; border-top: 1px solid #f0f0ee; color: #333; }
 .items-table td:last-child { text-align: right; color: #534AB7; font-weight: 600; }
-
 .order-total {
   padding: 0.6rem 1rem; text-align: right;
   font-size: 14px; font-weight: 700; color: #1a1a1a;
-  border-top: 1px solid #f0f0ee;
-  background: #fafaf8;
+  border-top: 1px solid #f0f0ee; background: #fafaf8;
 }
-
-/* iPorterボタン */
 .iporter-btn {
   display: block; margin: 0.75rem 1rem;
   background: #534AB7; color: #fff;
   border: none; border-radius: 10px;
   padding: 12px; font-size: 14px; font-weight: 700;
-  text-align: center; text-decoration: none;
-  cursor: pointer;
+  text-align: center; text-decoration: none; cursor: pointer;
 }
 .iporter-btn:active { opacity: 0.85; }
-
 .loading { text-align: center; color: #aaa; padding: 3rem; font-size: 14px; }
 </style>
 </head>
@@ -80,78 +128,180 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 </div>
 
 <div id="updated-at" class="updated-at"></div>
-<div id="content" class="loading">読み込み中...</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-cal" onclick="switchTab('cal')">📅 カレンダー</button>
+  <button class="tab-btn" id="tab-list" onclick="switchTab('list')">📋 一覧</button>
+</div>
+
+<!-- カレンダービュー -->
+<div id="view-cal">
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+    <div class="cal-month" id="cal-month-label"></div>
+    <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="cal-grid">
+    <div class="cal-dow">日</div>
+    <div class="cal-dow">月</div>
+    <div class="cal-dow">火</div>
+    <div class="cal-dow">水</div>
+    <div class="cal-dow">木</div>
+    <div class="cal-dow">金</div>
+    <div class="cal-dow">土</div>
+  </div>
+  <div class="cal-grid" id="cal-days"></div>
+  <div id="day-detail"></div>
+</div>
+
+<!-- 一覧ビュー -->
+<div id="view-list" style="display:none">
+  <div id="list-content" class="loading">読み込み中...</div>
+</div>
 
 <script>
 const IPORTER_URL = 'https://iporter.nehops.com/ybs/crpctr/trader/index.asp';
+let allOrders = [];
+let calYear, calMonth;
+
+function switchTab(tab) {
+  document.getElementById('tab-cal').classList.toggle('active', tab === 'cal');
+  document.getElementById('tab-list').classList.toggle('active', tab === 'list');
+  document.getElementById('view-cal').style.display = tab === 'cal' ? '' : 'none';
+  document.getElementById('view-list').style.display = tab === 'list' ? '' : 'none';
+}
+
+function todayJST() {
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  return { y: d.getFullYear(), m: d.getMonth(), d: d.getDate() };
+}
+
+function changeMonth(delta) {
+  calMonth += delta;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const today = todayJST();
+  const label = `${calYear}年${calMonth + 1}月`;
+  document.getElementById('cal-month-label').textContent = label;
+
+  // 注文を delivery_date でマップ化
+  const orderMap = {};
+  for (const o of allOrders) {
+    const key = o.delivery_date; // "YYYY/MM/DD"
+    if (!orderMap[key]) orderMap[key] = [];
+    orderMap[key].push(o);
+  }
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${calYear}/${String(calMonth+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
+    const orders = orderMap[key] || [];
+    const dow = (firstDay + d - 1) % 7;
+    const isToday = calYear === today.y && calMonth === today.m && d === today.d;
+    const hasOrder = orders.length > 0;
+    const classes = [
+      'cal-day',
+      isToday ? 'today' : '',
+      hasOrder ? 'has-order' : '',
+      dow === 0 ? 'sun' : '',
+      dow === 6 ? 'sat' : '',
+    ].filter(Boolean).join(' ');
+    html += `<div class="${classes}" onclick="showDayDetail('${key}')">
+      ${d}
+      ${hasOrder ? '<div class="order-dot"></div>' : ''}
+    </div>`;
+  }
+  document.getElementById('cal-days').innerHTML = html;
+  document.getElementById('day-detail').innerHTML = '';
+}
+
+function showDayDetail(key) {
+  const orderMap = {};
+  for (const o of allOrders) {
+    if (!orderMap[o.delivery_date]) orderMap[o.delivery_date] = [];
+    orderMap[o.delivery_date].push(o);
+  }
+  const orders = orderMap[key] || [];
+  const el = document.getElementById('day-detail');
+  if (orders.length === 0) { el.innerHTML = ''; return; }
+
+  const [y,m,d] = key.split('/');
+  let html = `<div class="day-detail"><div class="day-detail-title">📅 ${m}月${d}日の納品</div>`;
+  for (const o of orders) {
+    const statusLabel = o.is_new ? '🔴 未受注' : '🟢 受注済';
+    html += `<div class="day-detail-item">${statusLabel} 伝票番号: ${o.order_id}</div>`;
+  }
+  html += `<a class="iporter-btn" href="${IPORTER_URL}" target="_blank" style="margin:0.75rem 0 0;">🖥️ iPorterで受注実行・PDF印刷</a></div>`;
+  el.innerHTML = html;
+}
+
+function renderList() {
+  const content = document.getElementById('list-content');
+  if (allOrders.length === 0) {
+    content.innerHTML = `<div class="empty-msg"><div class="empty-icon">📭</div><div>現在、注文はありません</div></div>`;
+    return;
+  }
+  let html = '';
+  for (const o of allOrders) {
+    const statusCls = o.is_new ? 'status-new' : 'status-done';
+    const statusLabel = o.is_new ? '未受注' : '受注済';
+    let itemsHtml = '';
+    if (o.items && o.items.length > 0) {
+      itemsHtml = `<table class="items-table">
+        <thead><tr><th>商品</th><th>数量</th><th>金額</th></tr></thead>
+        <tbody>${o.items.map(item => `<tr><td>${item.name||''}</td><td>${item.qty||''}</td><td>${item.amount||''}</td></tr>`).join('')}</tbody>
+      </table>`;
+    }
+    html += `<div class="order-card">
+      <div class="order-card-header">
+        <div><span class="order-status ${statusCls}">${statusLabel}</span></div>
+        <div class="order-id">伝票番号: ${o.order_id}</div>
+        <div class="order-delivery">📅 納品希望日: ${o.delivery_date}</div>
+        <div class="order-hotel">${o.hotel||'横浜ベイシェラトンホテル&タワーズ'}</div>
+      </div>
+      ${itemsHtml}
+      ${o.total ? `<div class="order-total">合計: ${o.total}</div>` : ''}
+      <a class="iporter-btn" href="${IPORTER_URL}" target="_blank">🖥️ iPorterで受注実行・PDF印刷</a>
+    </div>`;
+  }
+  content.innerHTML = html;
+}
 
 async function load() {
-  const content = document.getElementById('content');
   const updatedEl = document.getElementById('updated-at');
   try {
     const res = await fetch('orders.json?t=' + Date.now());
     if (!res.ok) throw new Error('データなし');
     const data = await res.json();
-
     if (data.updated_at) updatedEl.textContent = '最終更新: ' + data.updated_at;
-
-    const orders = data.orders || [];
-    if (orders.length === 0) {
-      content.innerHTML = `
-        <div class="empty-msg">
-          <div class="empty-icon">📭</div>
-          <div>現在、注文はありません</div>
-        </div>`;
-      return;
-    }
-
-    let html = '';
-    for (const o of orders) {
-      const isNew = o.is_new;
-      const statusCls = isNew ? 'status-new' : 'status-done';
-      const statusLabel = isNew ? '未受注' : '受注済';
-
-      // 商品テーブル
-      let itemsHtml = '';
-      if (o.items && o.items.length > 0) {
-        itemsHtml = `
-          <table class="items-table">
-            <thead><tr><th>商品</th><th>数量</th><th>金額</th></tr></thead>
-            <tbody>
-              ${o.items.map(item => `
-                <tr>
-                  <td>${item.name || ''}</td>
-                  <td>${item.qty || ''}</td>
-                  <td>${item.amount || ''}</td>
-                </tr>`).join('')}
-            </tbody>
-          </table>`;
-      }
-
-      html += `
-        <div class="order-card">
-          <div class="order-card-header">
-            <div><span class="order-status ${statusCls}">${statusLabel}</span></div>
-            <div class="order-id">伝票番号: ${o.order_id || '—'}</div>
-            <div class="order-delivery">📅 納品希望日: ${o.delivery_date || '—'}</div>
-            <div class="order-hotel">${o.hotel || '横浜ベイシェラトンホテル&タワーズ'}</div>
-          </div>
-          ${itemsHtml}
-          ${o.total ? `<div class="order-total">合計: ${o.total}</div>` : ''}
-          <a class="iporter-btn" href="${IPORTER_URL}" target="_blank">
-            🖥️ iPorterで受注実行・PDF印刷
-          </a>
-        </div>`;
-    }
-    content.innerHTML = html;
+    allOrders = data.orders || [];
   } catch(e) {
-    content.innerHTML = `
-      <div class="empty-msg">
-        <div class="empty-icon">📭</div>
-        <div>注文データを取得できませんでした</div>
-        <div style="font-size:12px;margin-top:4px;color:#ccc">${e.message}</div>
-      </div>`;
+    allOrders = [];
   }
+
+  const today = todayJST();
+  calYear = today.y;
+  calMonth = today.m;
+
+  // 最も近い納品日の月にジャンプ
+  if (allOrders.length > 0) {
+    const nearest = allOrders.slice().sort((a,b) => a.delivery_date.localeCompare(b.delivery_date))[0];
+    const [ny, nm] = nearest.delivery_date.split('/').map(Number);
+    if (ny * 12 + nm > today.y * 12 + today.m) {
+      calYear = ny; calMonth = nm - 1;
+    }
+  }
+
+  renderCalendar();
+  renderList();
 }
 
 load();

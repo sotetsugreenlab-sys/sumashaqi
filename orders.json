@@ -1,13 +1,1 @@
-{
-  "updated_at": "2026/9/30 16:52:10",
-  "orders": [
-    {
-      "order_id": "958052",
-      "delivery_date": "2026/10/01",
-      "is_new": true,
-      "hotel": "横浜ベイシェラトンホテル&タワーズ",
-      "items": [],
-      "total": ""
-    }
-  ]
-}
+{"updated_at":"","orders":[]}

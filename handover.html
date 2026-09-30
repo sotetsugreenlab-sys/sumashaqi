@@ -403,6 +403,9 @@ db.channel('handover_changes')
 
 renderFilterBar();
 loadMessages();
+
+// 引き継ぎページを開いた時刻を記録（トップページのバッジ判定用）
+try { localStorage.setItem('handover_last_visit', new Date().toISOString()); } catch(e) {}
 </script>
 </body>
 </html>

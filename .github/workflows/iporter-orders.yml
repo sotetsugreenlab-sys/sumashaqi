@@ -74,7 +74,7 @@ jobs:
             console.log('ログイン完了');
             await new Promise(r => setTimeout(r, 3000));
 
-            // topmenuの「受注」リンクをクリック
+            // トップメニューの「受注」をクリック
             const topmenu = await waitFrame(page, '受注', 10000);
             if (!topmenu) { console.log('topmenuフレームなし'); await browser.close(); return; }
             await topmenu.evaluate(() => {
@@ -83,95 +83,59 @@ jobs:
               }
             });
             console.log('受注クリック完了');
-            await new Promise(r => setTimeout(r, 3000));
+            await new Promise(r => setTimeout(r, 4000));
 
-            // サブメニューの「受注データ処理」をクリック
-            const submenu = await waitFrame(page, '受注データ処理', 10000);
+            // サブメニューの「受注一覧」をクリック
+            const submenu = await waitFrame(page, '受注一覧', 10000);
             if (!submenu) { console.log('submenuフレームなし'); await browser.close(); return; }
             await submenu.evaluate(() => {
               for (const el of document.querySelectorAll('a,button')) {
-                if (el.textContent.includes('受注データ処理')) { el.click(); return; }
+                if (el.textContent.includes('受注一覧')) { el.click(); return; }
               }
             });
-            console.log('受注データ処理クリック完了');
+            console.log('受注一覧クリック完了');
             await new Promise(r => setTimeout(r, 5000));
 
-            // 注文一覧を収集
-            const orders = [];
-            let attempts = 10;
-
-            while (attempts-- > 0) {
-              const frame = await waitFrame(page, '伝票番号', 15000);
-              if (!frame) {
-                // デバッグ: 全フレームのテキスト確認
-                for (const f of page.frames()) {
-                  const t = (await getText(f)).slice(0, 100).replace(/\n/g,' ');
-                  if (t) console.log('frame text:', t);
-                }
-                break;
+            // メインフレームから注文テーブルを取得
+            const mainFrame = await waitFrame(page, '伝票番号', 15000);
+            if (!mainFrame) {
+              // デバッグ: 全フレームのテキスト
+              for (const f of page.frames()) {
+                const t = (await getText(f)).slice(0, 120).replace(/\n/g,' ');
+                if (t) console.log('frame:', t);
               }
-
-              const order = await frame.evaluate(() => {
-                const text = document.body.innerText;
-                if (!text.includes('伝票番号')) return null;
-
-                // 伝票番号
-                const denpyoMatch = text.match(/(\d{6,8})\s*\n/);
-                const denpyo = denpyoMatch ? denpyoMatch[1] : '';
-
-                // 各フィールド
-                const getField = (label) => {
-                  const m = text.match(new RegExp(label + '[\\s\\S]{0,5}?([^\\n]+)'));
-                  return m ? m[1].trim() : '';
-                };
-
-                // 商品テーブル
-                const rows = Array.from(document.querySelectorAll('table tr'));
-                const items = [];
-                for (const row of rows) {
-                  const cells = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
-                  if (cells.length >= 6 && /^\d+$/.test(cells[0]) && cells[1].length > 3) {
-                    items.push({ no: cells[0], name: cells[1], qty: cells[2], unit_price: cells[4], amount: cells[5] });
-                  }
-                }
-
-                const isNew = text.includes('未受注');
-                const delivMatch = text.match(/納品希望日[\s\S]*?(\d{4}\/\d{2}\/\d{2})/);
-                const hotelMatch = text.match(/発注ホテル[\s\S]*?([^\n]+ホテル[^\n]*)/);
-                const totalMatch = text.match(/合計\s+([\d,]+円)/);
-
-                return {
-                  order_id: denpyo,
-                  is_new: isNew,
-                  delivery_date: delivMatch ? delivMatch[1] : '',
-                  hotel: hotelMatch ? hotelMatch[1].trim() : '横浜ベイシェラトンホテル&タワーズ',
-                  items,
-                  total: totalMatch ? totalMatch[1] : '',
-                };
-              });
-
-              if (!order || !order.order_id) break;
-              console.log('注文取得:', order.order_id, '未受注:', order.is_new);
-
-              if (!orders.find(o => o.order_id === order.order_id)) {
-                orders.push(order);
-              }
-
-              // 次の未受注へ
-              const next = await frame.evaluate(() => {
-                for (const btn of document.querySelectorAll('button,input[type=button],input[type=submit]')) {
-                  if ((btn.value || btn.textContent).includes('次の未受注') ||
-                      (btn.value || btn.textContent).includes('次の伝票')) {
-                    btn.click(); return true;
-                  }
-                }
-                return false;
-              });
-              if (!next) break;
-              await new Promise(r => setTimeout(r, 2000));
+              console.log('メインフレームなし');
+              await browser.close();
+              return;
             }
 
+            const orders = await mainFrame.evaluate(() => {
+              const rows = Array.from(document.querySelectorAll('table tr'));
+              const results = [];
+              for (const row of rows) {
+                const cells = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
+                // 伝票番号は6桁数字、希望納品日はYYYY/MM/DD形式
+                if (cells.length >= 5) {
+                  const denpyo = cells.find(c => /^\d{6,8}$/.test(c));
+                  const date = cells.find(c => /^\d{4}\/\d{2}\/\d{2}$/.test(c));
+                  const status = cells.find(c => c === '未処理' || c === '処理済');
+                  if (denpyo && date) {
+                    results.push({
+                      order_id: denpyo,
+                      delivery_date: date,
+                      is_new: status === '未処理',
+                      hotel: '横浜ベイシェラトンホテル&タワーズ',
+                      items: [],
+                      total: ''
+                    });
+                  }
+                }
+              }
+              return results;
+            });
+
             console.log(`取得完了: ${orders.length}件`);
+            orders.forEach(o => console.log('注文:', o.order_id, o.delivery_date, o.is_new ? '未処理' : '処理済'));
 
             // 既存データとマージ
             let existing = { orders: [] };
@@ -179,6 +143,11 @@ jobs:
             const existingIds = new Set(existing.orders.map(o => o.order_id));
             for (const o of orders) {
               if (!existingIds.has(o.order_id)) existing.orders.unshift(o);
+              else {
+                // ステータス更新
+                const idx = existing.orders.findIndex(e => e.order_id === o.order_id);
+                if (idx >= 0) existing.orders[idx].is_new = o.is_new;
+              }
             }
 
             fs.writeFileSync('orders.json', JSON.stringify({

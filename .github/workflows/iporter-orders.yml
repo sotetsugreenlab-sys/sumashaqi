@@ -96,9 +96,9 @@ jobs:
             console.log('受注一覧クリック完了');
             await new Promise(r => setTimeout(r, 5000));
 
-            // 受注一覧フォームで年を選択して検索
-            const listFrame = await waitFrame(page, '受注一覧', 10000);
-            if (!listFrame) { console.log('受注一覧フレームなし'); await browser.close(); return; }
+            // コンテンツフレーム（受注日フォーム）で年を選択して検索
+            const listFrame = await waitFrame(page, '納品予定日', 10000);
+            if (!listFrame) { console.log('受注一覧フォームフレームなし'); await browser.close(); return; }
             const year = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric' }).replace('年','');
             await listFrame.evaluate((yr) => {
               // 年セレクトを現在年に設定
@@ -109,15 +109,12 @@ jobs:
               }
               // 検索ボタンをクリック
               for (const btn of document.querySelectorAll('input[type=submit],input[type=button],button')) {
-                const v = btn.value || btn.textContent;
+                const v = btn.value || btn.textContent || '';
                 if (v.includes('検索') || v.includes('表示') || v.includes('一覧')) { btn.click(); return; }
               }
-              // ボタンが見つからなければformをsubmit
-              const form = document.querySelector('form');
-              if (form) form.submit();
             }, year);
             console.log('検索実行:', year, '年');
-            await new Promise(r => setTimeout(r, 5000));
+            await new Promise(r => setTimeout(r, 6000));
 
             // メインフレームから注文テーブルを取得
             const mainFrame = await waitFrame(page, '伝票番号', 15000);

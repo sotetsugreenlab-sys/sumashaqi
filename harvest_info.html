@@ -316,7 +316,8 @@ function renderTable(dates, byDate) {
   }
   tbody.innerHTML = dates.map(d => {
     const dt  = new Date(d + 'T00:00:00');
-    const sow = new Date(dt); sow.setDate(sow.getDate() - 35);
+    const sow34 = new Date(dt); sow34.setDate(sow34.getDate() - 34);
+    const sow33 = new Date(dt); sow33.setDate(sow33.getDate() - 33);
     const row = byDate[d];
     const total_haiki = row.haiki_kakaku + row.haiki_error;
     const mC   = row.maegari      ? `<td class="has-val c-maegari">${row.maegari}</td>`       : `<td>—</td>`;
@@ -326,9 +327,11 @@ function renderTable(dates, byDate) {
     const kkC  = row.haiki_kakaku ? `<td class="has-val c-haiki">${row.haiki_kakaku}</td>`     : `<td>—</td>`;
     const erC  = row.haiki_error  ? `<td class="has-val c-haiki">${row.haiki_error}</td>`      : `<td>—</td>`;
     const thC  = total_haiki      ? `<td class="has-val" style="color:#1C201C">${total_haiki}</td>` : `<td>—</td>`;
+    const sowLine34 = `播種 ${sow34.getMonth()+1}/${sow34.getDate()}（34日）`;
+    const sowLine33 = row.maegari ? `<br>播種 ${sow33.getMonth()+1}/${sow33.getDate()}（33日）` : '';
     const dateCell = `<td style="text-align:left">
       <div style="color:#1C201C;font-weight:600">${dt.getMonth()+1}/${dt.getDate()}（${DAYS[dt.getDay()]}）</div>
-      <div style="color:#7A7870;font-size:10px;margin-top:2px">播種 ${sow.getMonth()+1}/${sow.getDate()}</div>
+      <div style="color:#7A7870;font-size:10px;margin-top:2px">${sowLine34}${sowLine33}</div>
     </td>`;
     return `<tr>${dateCell}${mC}${sC}${minC}${avgC}${kkC}${erC}${thC}</tr>`;
   }).join('');

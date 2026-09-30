@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>業務マニュアル</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding: 1rem; }
+
+.header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0 1rem;
+  border-bottom: 1px solid #e5e5e3;
+  margin-bottom: 1.5rem;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+
+.section-title {
+  font-size: 12px; font-weight: 700; color: #aaa;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 0.75rem; padding-left: 2px;
+}
+
+.manual-list {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 2rem;
+}
+
+.manual-item {
+  display: flex; align-items: center; gap: 1rem;
+  background: #fff; border-radius: 14px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  text-decoration: none; color: #1a1a1a;
+  border-left: 4px solid #3D7A50;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+.manual-item:active { transform: scale(0.98); box-shadow: 0 0 2px rgba(0,0,0,0.07); }
+
+.manual-icon { font-size: 28px; flex-shrink: 0; }
+.manual-info { flex: 1; min-width: 0; }
+.manual-name { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.manual-desc { font-size: 12px; color: #999; margin-top: 2px; }
+.manual-arrow { font-size: 18px; color: #ccc; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">← 戻る</a>
+  <div class="header-title">📖 業務マニュアル</div>
+</div>
+
+<div class="section-title">葉物</div>
+<div class="manual-list">
+  <a class="manual-item" href="manuals/frill-lettuce.pdf" target="_blank">
+    <div class="manual-icon">🥬</div>
+    <div class="manual-info">
+      <div class="manual-name">フリルレタス</div>
+      <div class="manual-desc">収穫マニュアル</div>
+    </div>
+    <div class="manual-arrow">›</div>
+  </a>
+</div>
+
+</body>
+</html>

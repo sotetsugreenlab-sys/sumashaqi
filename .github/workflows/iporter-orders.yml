@@ -99,12 +99,20 @@ jobs:
             // コンテンツフレーム（受注日フォーム）で年を選択して検索
             const listFrame = await waitFrame(page, '納品予定日', 10000);
             if (!listFrame) { console.log('受注一覧フォームフレームなし'); await browser.close(); return; }
-            const year = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric' }).replace('年','');
-            await listFrame.evaluate((yr) => {
-              // 年セレクトを現在年に設定
-              for (const sel of document.querySelectorAll('select')) {
-                for (const opt of sel.options) {
-                  if (opt.value === yr || opt.text === yr) { sel.value = opt.value; break; }
+            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+            const year = String(now.getFullYear());
+            const month = String(now.getMonth() + 1); // 今月
+            await listFrame.evaluate((yr, mo) => {
+              const sels = document.querySelectorAll('select');
+              // 1番目のセレクト=年、2番目=月と仮定
+              if (sels[0]) {
+                for (const opt of sels[0].options) {
+                  if (opt.value === yr || opt.text === yr) { sels[0].value = opt.value; break; }
+                }
+              }
+              if (sels[1]) {
+                for (const opt of sels[1].options) {
+                  if (opt.value === mo || opt.text === mo) { sels[1].value = opt.value; break; }
                 }
               }
               // 検索ボタンをクリック
@@ -112,8 +120,8 @@ jobs:
                 const v = btn.value || btn.textContent || '';
                 if (v.includes('検索') || v.includes('表示') || v.includes('一覧')) { btn.click(); return; }
               }
-            }, year);
-            console.log('検索実行:', year, '年');
+            }, year, month);
+            console.log('検索実行:', year, '年', month, '月');
             await new Promise(r => setTimeout(r, 6000));
 
             // メインフレームから注文テーブルを取得

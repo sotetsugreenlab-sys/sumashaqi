@@ -93,15 +93,23 @@ jobs:
                 if (el.textContent.includes('受注データ処理')) { el.click(); return; }
               }
             });
-            await new Promise(r => setTimeout(r, 3000));
+            console.log('受注データ処理クリック完了');
+            await new Promise(r => setTimeout(r, 5000));
 
             // 注文一覧を収集
             const orders = [];
             let attempts = 10;
 
             while (attempts-- > 0) {
-              const frame = await waitFrame(page, '伝票番号', 5000);
-              if (!frame) break;
+              const frame = await waitFrame(page, '伝票番号', 15000);
+              if (!frame) {
+                // デバッグ: 全フレームのテキスト確認
+                for (const f of page.frames()) {
+                  const t = (await getText(f)).slice(0, 100).replace(/\n/g,' ');
+                  if (t) console.log('frame text:', t);
+                }
+                break;
+              }
 
               const order = await frame.evaluate(() => {
                 const text = document.body.innerText;

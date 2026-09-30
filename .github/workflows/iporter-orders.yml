@@ -122,8 +122,8 @@ jobs:
                   seen.add(denpyo);
                   const statusCell = Array.from(row.querySelectorAll('td')).slice(-1)[0];
                   const status = statusCell?.innerText.trim() || '';
-                  // 発注部門を取得
-                  const dept = cells.find(c => c.includes('購買') || c.includes('調理') || c.includes('6105')) || '';
+                  // 発注部門を取得（短い文字列のみ対象）
+                  const dept = cells.find(c => c.length < 30 && (c.includes('購買') || c.includes('調理') || c.match(/\(\d{4}\)/))) || '';
                   results.push({
                     order_id: denpyo,
                     delivery_date: date,
@@ -138,7 +138,7 @@ jobs:
               return results;
             });
             // 購買(6105)のみ抽出（エコデシックの注文）
-            const orders = allOrders.filter(o => o.dept.includes('購買') || o.dept.includes('6105') || o.dept === '');
+            const orders = allOrders.filter(o => o.dept.includes('購買') || o.dept.includes('6105'));
             console.log(`全注文: ${allOrders.length}件、購買注文: ${orders.length}件`);
 
             console.log(`取得完了: ${orders.length}件`);
@@ -151,8 +151,9 @@ jobs:
             try { existing = JSON.parse(fs.readFileSync('orders.json', 'utf8')); } catch(e) {}
             const existingIds = new Set(existing.orders.map(o => o.order_id));
             for (const o of orders) {
+              const { dept, ...orderData } = o;
               if (!existingIds.has(o.order_id)) {
-                existing.orders.unshift(o);
+                existing.orders.unshift(orderData);
               } else {
                 const idx = existing.orders.findIndex(e => e.order_id === o.order_id);
                 if (idx >= 0) existing.orders[idx].is_new = o.is_new;

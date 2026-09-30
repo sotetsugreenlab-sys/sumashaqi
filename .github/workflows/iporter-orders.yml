@@ -96,10 +96,32 @@ jobs:
             console.log('受注一覧クリック完了');
             await new Promise(r => setTimeout(r, 5000));
 
+            // 受注一覧フォームで年を選択して検索
+            const listFrame = await waitFrame(page, '受注一覧', 10000);
+            if (!listFrame) { console.log('受注一覧フレームなし'); await browser.close(); return; }
+            const year = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric' }).replace('年','');
+            await listFrame.evaluate((yr) => {
+              // 年セレクトを現在年に設定
+              for (const sel of document.querySelectorAll('select')) {
+                for (const opt of sel.options) {
+                  if (opt.value === yr || opt.text === yr) { sel.value = opt.value; break; }
+                }
+              }
+              // 検索ボタンをクリック
+              for (const btn of document.querySelectorAll('input[type=submit],input[type=button],button')) {
+                const v = btn.value || btn.textContent;
+                if (v.includes('検索') || v.includes('表示') || v.includes('一覧')) { btn.click(); return; }
+              }
+              // ボタンが見つからなければformをsubmit
+              const form = document.querySelector('form');
+              if (form) form.submit();
+            }, year);
+            console.log('検索実行:', year, '年');
+            await new Promise(r => setTimeout(r, 5000));
+
             // メインフレームから注文テーブルを取得
             const mainFrame = await waitFrame(page, '伝票番号', 15000);
             if (!mainFrame) {
-              // デバッグ: 全フレームのテキスト
               for (const f of page.frames()) {
                 const t = (await getText(f)).slice(0, 120).replace(/\n/g,' ');
                 if (t) console.log('frame:', t);

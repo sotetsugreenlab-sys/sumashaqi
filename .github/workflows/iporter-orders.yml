@@ -123,7 +123,7 @@ jobs:
                   const statusCell = Array.from(row.querySelectorAll('td')).slice(-1)[0];
                   const status = statusCell?.innerText.trim() || '';
                   // 発注部門を取得（短い文字列のみ対象）
-                  const dept = cells.find(c => c.length < 30 && (c.includes('購買') || c.includes('調理') || c.match(/\(\d{4}\)/))) || '';
+                  const dept = cells.find(c => c.length < 30 && c.match(/\(\d{4}\)/)) || '';
                   results.push({
                     order_id: denpyo,
                     delivery_date: date,
@@ -137,9 +137,8 @@ jobs:
               }
               return results;
             });
-            // 購買(6105)のみ抽出（エコデシックの注文）
-            const orders = allOrders.filter(o => o.dept.includes('購買') || o.dept.includes('6105'));
-            console.log(`全注文: ${allOrders.length}件、購買注文: ${orders.length}件`);
+            const orders = allOrders;
+            console.log(`取得完了: ${orders.length}件`);
 
             console.log(`取得完了: ${orders.length}件`);
             orders.forEach(o => console.log('注文:', o.order_id, o.delivery_date, o.is_new ? '未処理' : '処理済'));

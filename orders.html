@@ -237,7 +237,7 @@ function showDayDetail(key) {
   let html = `<div class="day-detail"><div class="day-detail-title">📅 ${m}月${d}日の納品</div>`;
   for (const o of orders) {
     const statusLabel = o.is_new ? '🔴 未受注' : '🟢 受注済';
-    html += `<div class="day-detail-item">${statusLabel} 伝票番号: ${o.order_id}</div>`;
+    html += `<div class="day-detail-item">${statusLabel} ${o.dept || ''} 伝票番号: ${o.order_id}</div>`;
   }
   html += `<a class="iporter-btn" href="${IPORTER_URL}" target="_blank" style="margin:0.75rem 0 0;">🖥️ iPorterで受注実行・PDF印刷</a></div>`;
   el.innerHTML = html;
@@ -263,7 +263,7 @@ function renderList() {
     html += `<div class="order-card">
       <div class="order-card-header">
         <div><span class="order-status ${statusCls}">${statusLabel}</span></div>
-        <div class="order-id">伝票番号: ${o.order_id}</div>
+        <div class="order-id">伝票番号: ${o.order_id}${o.dept ? ' ／ ' + o.dept : ''}</div>
         <div class="order-delivery">📅 納品希望日: ${o.delivery_date}</div>
         <div class="order-hotel">${o.hotel||'横浜ベイシェラトンホテル&タワーズ'}</div>
       </div>

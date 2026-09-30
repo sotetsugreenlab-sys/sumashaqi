@@ -2,8 +2,7 @@ name: 棚管理スクリーンショット
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 毎日 10:00 JST (UTC+9)
-    - cron: '0 5 29 9 *'  # 2026-09-29 14:00 JST（テスト用・1回のみ）
+    - cron: '0 23 * * *'  # 毎日 08:00 JST (UTC+9)
   workflow_dispatch:       # 手動実行も可能
 
 permissions:

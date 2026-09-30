@@ -72,10 +72,16 @@ jobs:
               page.click('input[type="submit"]')
             ]);
             console.log('ログイン完了');
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, 3000));
+
+            // デバッグ: フレーム一覧
+            for (const f of page.frames()) {
+              const t = await getText(f);
+              console.log('frame:', f.url().slice(0,60), '| text:', t.slice(0,60).replace(/\n/g,' '));
+            }
 
             // 受注データ処理をクリック
-            const nav = await findFrame(page, '受注データ処理');
+            const nav = await waitFrame(page, '受注データ処理', 10000);
             if (!nav) { console.log('navフレームなし'); await browser.close(); return; }
             await nav.evaluate(() => {
               for (const el of document.querySelectorAll('a,button')) {

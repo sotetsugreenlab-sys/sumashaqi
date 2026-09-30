@@ -282,7 +282,7 @@ async function load() {
     if (!res.ok) throw new Error('データなし');
     const data = await res.json();
     if (data.updated_at) updatedEl.textContent = '最終更新: ' + data.updated_at;
-    allOrders = data.orders || [];
+    allOrders = (data.orders || []).sort((a, b) => a.delivery_date.localeCompare(b.delivery_date));
   } catch(e) {
     allOrders = [];
   }

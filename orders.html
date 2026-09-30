@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>注文一覧</title>
+<title>シェラトン注文</title>
 <link rel="apple-touch-icon" href="Saibai%20Cat.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SGL">
@@ -17,39 +17,57 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
   border-bottom: 1px solid #e5e5e3;
   margin-bottom: 1rem;
 }
-.back-btn {
-  text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600;
-}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
 .header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
-.header-sub { font-size: 11px; color: #999; margin-top: 2px; }
-
 .updated-at { font-size: 11px; color: #aaa; text-align: right; margin-bottom: 1rem; }
 
-.empty-msg {
-  text-align: center; color: #aaa; font-size: 14px;
-  padding: 3rem 1rem;
-}
+.empty-msg { text-align: center; color: #aaa; font-size: 14px; padding: 3rem 1rem; }
 .empty-icon { font-size: 48px; margin-bottom: 0.5rem; }
 
+/* 注文カード */
 .order-card {
-  background: #fff; border-radius: 12px; padding: 1rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  margin-bottom: 0.75rem;
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-bottom: 1rem; overflow: hidden;
+}
+.order-card-header {
+  padding: 0.9rem 1rem 0.75rem;
   border-left: 4px solid #534AB7;
 }
-.order-date { font-size: 11px; color: #999; margin-bottom: 0.25rem; }
-.order-name { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 0.5rem; }
-.order-detail { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.order-tag {
-  background: #f0f0f0; border-radius: 6px;
-  padding: 2px 8px; font-size: 12px; color: #555;
+.order-status {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 10px; margin-bottom: 0.4rem;
 }
-.order-tag.qty { background: #EEF2FF; color: #534AB7; font-weight: 600; }
+.status-new { background: #FEF2F2; color: #DC2626; }
+.status-done { background: #F0FDF4; color: #16A34A; }
 
-.error-msg {
-  background: #FEF2F2; border-radius: 8px; padding: 0.75rem 1rem;
-  color: #B91C1C; font-size: 13px; margin-bottom: 1rem;
+.order-id { font-size: 12px; color: #999; margin-bottom: 0.25rem; }
+.order-delivery { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+.order-hotel { font-size: 12px; color: #666; margin-top: 2px; }
+
+/* 商品リスト */
+.items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.items-table th { background: #f5f5f3; color: #666; font-weight: 600; padding: 6px 10px; text-align: left; font-size: 11px; }
+.items-table td { padding: 7px 10px; border-top: 1px solid #f0f0ee; color: #333; }
+.items-table td:last-child { text-align: right; color: #534AB7; font-weight: 600; }
+
+.order-total {
+  padding: 0.6rem 1rem; text-align: right;
+  font-size: 14px; font-weight: 700; color: #1a1a1a;
+  border-top: 1px solid #f0f0ee;
+  background: #fafaf8;
 }
+
+/* iPorterボタン */
+.iporter-btn {
+  display: block; margin: 0.75rem 1rem;
+  background: #534AB7; color: #fff;
+  border: none; border-radius: 10px;
+  padding: 12px; font-size: 14px; font-weight: 700;
+  text-align: center; text-decoration: none;
+  cursor: pointer;
+}
+.iporter-btn:active { opacity: 0.85; }
 
 .loading { text-align: center; color: #aaa; padding: 3rem; font-size: 14px; }
 </style>
@@ -58,32 +76,24 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 
 <div class="header">
   <a class="back-btn" href="index.html">← 戻る</a>
-  <div>
-    <div class="header-title">🛒 注文一覧</div>
-    <div class="header-sub">横浜ベイシェラトン</div>
-  </div>
+  <div class="header-title">🏨 シェラトン注文</div>
 </div>
 
 <div id="updated-at" class="updated-at"></div>
 <div id="content" class="loading">読み込み中...</div>
 
 <script>
+const IPORTER_URL = 'https://iporter.nehops.com/ybs/crpctr/trader/index.asp';
+
 async function load() {
   const content = document.getElementById('content');
   const updatedEl = document.getElementById('updated-at');
   try {
     const res = await fetch('orders.json?t=' + Date.now());
-    if (!res.ok) throw new Error('注文データが見つかりません');
+    if (!res.ok) throw new Error('データなし');
     const data = await res.json();
 
-    if (data.updated_at) {
-      updatedEl.textContent = '最終更新: ' + data.updated_at;
-    }
-
-    if (data.error) {
-      content.innerHTML = `<div class="error-msg">⚠️ ${data.error}</div>`;
-      return;
-    }
+    if (data.updated_at) updatedEl.textContent = '最終更新: ' + data.updated_at;
 
     const orders = data.orders || [];
     if (orders.length === 0) {
@@ -96,36 +106,50 @@ async function load() {
     }
 
     let html = '';
-    orders.forEach(order => {
-      // キーを柔軟に拾う
-      const name = order['品目名'] || order['品目'] || order['商品名'] || Object.values(order)[0] || '不明';
-      const qty = order['数量'] || order['発注数量'] || '';
-      const unit = order['単位'] || '';
-      const delivDate = order['納品予定日'] || order['納品日'] || '';
-      const orderDate = order['受注日'] || '';
-      const hotel = order['納入先'] || order['ホテル'] || '';
+    for (const o of orders) {
+      const isNew = o.is_new;
+      const statusCls = isNew ? 'status-new' : 'status-done';
+      const statusLabel = isNew ? '未受注' : '受注済';
+
+      // 商品テーブル
+      let itemsHtml = '';
+      if (o.items && o.items.length > 0) {
+        itemsHtml = `
+          <table class="items-table">
+            <thead><tr><th>商品</th><th>数量</th><th>金額</th></tr></thead>
+            <tbody>
+              ${o.items.map(item => `
+                <tr>
+                  <td>${item.name || ''}</td>
+                  <td>${item.qty || ''}</td>
+                  <td>${item.amount || ''}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
+      }
 
       html += `
         <div class="order-card">
-          <div class="order-date">${orderDate ? '受注: ' + orderDate : ''}${delivDate ? '　納品: ' + delivDate : ''}</div>
-          <div class="order-name">${name}</div>
-          <div class="order-detail">
-            ${qty ? `<span class="order-tag qty">${qty}${unit}</span>` : ''}
-            ${hotel ? `<span class="order-tag">${hotel}</span>` : ''}
-            ${Object.entries(order)
-              .filter(([k]) => !['品目名','品目','商品名','数量','発注数量','単位','納品予定日','納品日','受注日','納入先','ホテル'].includes(k))
-              .map(([k, v]) => `<span class="order-tag">${k}: ${v}</span>`)
-              .join('')}
+          <div class="order-card-header">
+            <div><span class="order-status ${statusCls}">${statusLabel}</span></div>
+            <div class="order-id">伝票番号: ${o.order_id || '—'}</div>
+            <div class="order-delivery">📅 納品希望日: ${o.delivery_date || '—'}</div>
+            <div class="order-hotel">${o.hotel || '横浜ベイシェラトンホテル&タワーズ'}</div>
           </div>
+          ${itemsHtml}
+          ${o.total ? `<div class="order-total">合計: ${o.total}</div>` : ''}
+          <a class="iporter-btn" href="${IPORTER_URL}" target="_blank">
+            🖥️ iPorterで受注実行・PDF印刷
+          </a>
         </div>`;
-    });
+    }
     content.innerHTML = html;
-  } catch (e) {
+  } catch(e) {
     content.innerHTML = `
       <div class="empty-msg">
         <div class="empty-icon">📭</div>
         <div>注文データを取得できませんでした</div>
-        <div style="font-size:12px;margin-top:0.5rem;color:#ccc">${e.message}</div>
+        <div style="font-size:12px;margin-top:4px;color:#ccc">${e.message}</div>
       </div>`;
   }
 }

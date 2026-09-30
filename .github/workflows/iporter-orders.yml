@@ -110,20 +110,25 @@ jobs:
             }
 
             // テーブルから注文を取得（伝票番号・希望納品日・受注ステータス）
-            const orders = await orderFrame.evaluate(() => {
+            const allOrders = await orderFrame.evaluate(() => {
               const results = [];
+              const seen = new Set();
               const rows = document.querySelectorAll('table tr');
               for (const row of rows) {
                 const cells = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
                 const denpyo = cells.find(c => /^\d{6,8}$/.test(c));
                 const date = cells.find(c => /^\d{4}\/\d{2}\/\d{2}$/.test(c));
-                if (denpyo && date) {
+                if (denpyo && date && !seen.has(denpyo)) {
+                  seen.add(denpyo);
                   const statusCell = Array.from(row.querySelectorAll('td')).slice(-1)[0];
                   const status = statusCell?.innerText.trim() || '';
+                  // 発注部門を取得
+                  const dept = cells.find(c => c.includes('購買') || c.includes('調理') || c.includes('6105')) || '';
                   results.push({
                     order_id: denpyo,
                     delivery_date: date,
                     is_new: status.includes('未処理') || status.includes('未受注'),
+                    dept,
                     hotel: '横浜ベイシェラトンホテル&タワーズ',
                     items: [],
                     total: ''
@@ -132,6 +137,9 @@ jobs:
               }
               return results;
             });
+            // 購買(6105)のみ抽出（エコデシックの注文）
+            const orders = allOrders.filter(o => o.dept.includes('購買') || o.dept.includes('6105') || o.dept === '');
+            console.log(`全注文: ${allOrders.length}件、購買注文: ${orders.length}件`);
 
             console.log(`取得完了: ${orders.length}件`);
             orders.forEach(o => console.log('注文:', o.order_id, o.delivery_date, o.is_new ? '未処理' : '処理済'));

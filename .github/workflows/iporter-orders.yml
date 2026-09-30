@@ -35,18 +35,12 @@ jobs:
             catch(e) { return ''; }
           }
 
-          async function findFrame(page, keyword) {
-            for (const frame of page.frames()) {
-              if ((await getText(frame)).includes(keyword)) return frame;
-            }
-            return null;
-          }
-
-          async function waitFrame(page, keyword, ms = 8000) {
+          async function waitFrame(page, keyword, ms = 10000) {
             const end = Date.now() + ms;
             while (Date.now() < end) {
-              const f = await findFrame(page, keyword);
-              if (f) return f;
+              for (const frame of page.frames()) {
+                if ((await getText(frame)).includes(keyword)) return frame;
+              }
               await new Promise(r => setTimeout(r, 500));
             }
             return null;
@@ -75,8 +69,8 @@ jobs:
             await new Promise(r => setTimeout(r, 3000));
 
             // トップメニューの「受注」をクリック
-            const topmenu = await waitFrame(page, '受注', 10000);
-            if (!topmenu) { console.log('topmenuフレームなし'); await browser.close(); return; }
+            const topmenu = await waitFrame(page, 'ログアウト', 10000);
+            if (!topmenu) { console.log('topmenuなし'); await browser.close(); return; }
             await topmenu.evaluate(() => {
               for (const el of document.querySelectorAll('a')) {
                 if (el.textContent.trim() === '受注') { el.click(); return; }
@@ -85,83 +79,55 @@ jobs:
             console.log('受注クリック完了');
             await new Promise(r => setTimeout(r, 4000));
 
-            // サブメニューの「受注一覧」をクリック
-            const submenu = await waitFrame(page, '受注一覧', 10000);
-            if (!submenu) { console.log('submenuフレームなし'); await browser.close(); return; }
+            // サブメニューの「受注データ処理」をクリック
+            const submenu = await waitFrame(page, '受注データ処理', 10000);
+            if (!submenu) { console.log('submenuなし'); await browser.close(); return; }
             await submenu.evaluate(() => {
-              for (const el of document.querySelectorAll('a,button')) {
-                if (el.textContent.includes('受注一覧')) { el.click(); return; }
+              for (const el of document.querySelectorAll('a,button,input')) {
+                if ((el.textContent || el.value || '').includes('受注データ処理')) { el.click(); return; }
               }
             });
-            console.log('受注一覧クリック完了');
-            await new Promise(r => setTimeout(r, 5000));
+            console.log('受注データ処理クリック完了');
 
-            // コンテンツフレーム（受注日フォーム）で年を選択して検索
-            const listFrame = await waitFrame(page, '納品予定日', 10000);
-            if (!listFrame) { console.log('受注一覧フォームフレームなし'); await browser.close(); return; }
-            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-            const year = String(now.getFullYear());
-            const month = String(now.getMonth() + 1); // 今月
-            const formDebug = await listFrame.evaluate((yr, mo) => {
-              const info = [];
-              // セレクトボックスの情報
-              document.querySelectorAll('select').forEach((sel, i) => {
-                const opts = Array.from(sel.options).map(o => o.value || o.text).slice(0,5).join(',');
-                info.push(`sel[${i}] name=${sel.name} opts=${opts}`);
-                // 年または月にマッチするものをセット
-                for (const opt of sel.options) {
-                  if (opt.value === yr || opt.text === yr) { sel.value = opt.value; sel.dispatchEvent(new Event('change')); break; }
-                  if (opt.value === mo || opt.text === mo) { sel.value = opt.value; sel.dispatchEvent(new Event('change')); break; }
-                }
-              });
-              // ボタンの情報
-              document.querySelectorAll('input[type=submit],input[type=button],button').forEach((btn, i) => {
-                info.push(`btn[${i}] val="${btn.value}" txt="${btn.textContent?.trim()}"`);
-              });
-              // ボタンクリック
-              let clicked = false;
-              for (const btn of document.querySelectorAll('input[type=submit],input[type=button],button')) {
-                const v = (btn.value || btn.textContent || '').trim();
-                if (v) { btn.click(); clicked = true; info.push('clicked:' + v); break; }
-              }
-              return info.join(' | ');
-            }, year, month);
-            console.log('フォームデバッグ:', formDebug);
-            console.log('検索実行:', year, '年', month, '月');
-            await new Promise(r => setTimeout(r, 6000));
+            // 受注状況確認が読み込まれるまで待つ（最大20秒）
+            await new Promise(r => setTimeout(r, 10000));
 
-            // メインフレームから注文テーブルを取得
-            const mainFrame = await waitFrame(page, '伝票番号', 15000);
-            if (!mainFrame) {
-              for (const f of page.frames()) {
-                const t = (await getText(f)).slice(0, 120).replace(/\n/g,' ');
-                if (t) console.log('frame:', t);
+            // 全フレームを確認
+            let orderFrame = null;
+            for (const frame of page.frames()) {
+              const t = await getText(frame);
+              const preview = t.slice(0, 80).replace(/\n/g, ' ');
+              if (preview) console.log('frame:', preview);
+              if (t.includes('受注状況確認') || t.includes('伝票番号')) {
+                orderFrame = frame;
               }
-              console.log('メインフレームなし');
+            }
+
+            if (!orderFrame) {
+              console.log('注文一覧フレームなし');
               await browser.close();
               return;
             }
 
-            const orders = await mainFrame.evaluate(() => {
-              const rows = Array.from(document.querySelectorAll('table tr'));
+            // テーブルから注文を取得（伝票番号・希望納品日・受注ステータス）
+            const orders = await orderFrame.evaluate(() => {
               const results = [];
+              const rows = document.querySelectorAll('table tr');
               for (const row of rows) {
                 const cells = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
-                // 伝票番号は6桁数字、希望納品日はYYYY/MM/DD形式
-                if (cells.length >= 5) {
-                  const denpyo = cells.find(c => /^\d{6,8}$/.test(c));
-                  const date = cells.find(c => /^\d{4}\/\d{2}\/\d{2}$/.test(c));
-                  const status = cells.find(c => c === '未処理' || c === '処理済');
-                  if (denpyo && date) {
-                    results.push({
-                      order_id: denpyo,
-                      delivery_date: date,
-                      is_new: status === '未処理',
-                      hotel: '横浜ベイシェラトンホテル&タワーズ',
-                      items: [],
-                      total: ''
-                    });
-                  }
+                const denpyo = cells.find(c => /^\d{6,8}$/.test(c));
+                const date = cells.find(c => /^\d{4}\/\d{2}\/\d{2}$/.test(c));
+                if (denpyo && date) {
+                  const statusCell = Array.from(row.querySelectorAll('td')).slice(-1)[0];
+                  const status = statusCell?.innerText.trim() || '';
+                  results.push({
+                    order_id: denpyo,
+                    delivery_date: date,
+                    is_new: status.includes('未処理') || status.includes('未受注'),
+                    hotel: '横浜ベイシェラトンホテル&タワーズ',
+                    items: [],
+                    total: ''
+                  });
                 }
               }
               return results;
@@ -170,14 +136,16 @@ jobs:
             console.log(`取得完了: ${orders.length}件`);
             orders.forEach(o => console.log('注文:', o.order_id, o.delivery_date, o.is_new ? '未処理' : '処理済'));
 
+            if (orders.length === 0) { await browser.close(); return; }
+
             // 既存データとマージ
             let existing = { orders: [] };
             try { existing = JSON.parse(fs.readFileSync('orders.json', 'utf8')); } catch(e) {}
             const existingIds = new Set(existing.orders.map(o => o.order_id));
             for (const o of orders) {
-              if (!existingIds.has(o.order_id)) existing.orders.unshift(o);
-              else {
-                // ステータス更新
+              if (!existingIds.has(o.order_id)) {
+                existing.orders.unshift(o);
+              } else {
                 const idx = existing.orders.findIndex(e => e.order_id === o.order_id);
                 if (idx >= 0) existing.orders[idx].is_new = o.is_new;
               }

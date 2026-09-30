@@ -119,6 +119,30 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 .iporter-btn:active { opacity: 0.85; }
 .loading { text-align: center; color: #aaa; padding: 3rem; font-size: 14px; }
 
+/* パック規格 */
+.pack-spec {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-bottom: 1rem; overflow: hidden;
+}
+.pack-spec-header {
+  padding: 0.85rem 1rem 0.6rem;
+  border-left: 4px solid #3D7A50;
+  font-size: 15px; font-weight: 700; color: #1a1a1a;
+}
+.pack-spec-list {
+  display: flex; flex-wrap: wrap; gap: 0;
+  padding: 0 0.5rem 0.75rem;
+}
+.pack-spec-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  font-size: 17px; font-weight: 700; color: #1a1a1a;
+  white-space: nowrap;
+}
+.pack-spec-item .icon { font-size: 22px; }
+.pack-spec-item .weight { color: #3D7A50; }
+
 /* 出荷重量チェック */
 .weight-section {
   background: #fff; border-radius: 14px;
@@ -196,6 +220,9 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 
 <div id="updated-at" class="updated-at"></div>
 
+<!-- パック規格 -->
+<div class="pack-spec" id="pack-spec-card"></div>
+
 <!-- 出荷重量チェック -->
 <div class="weight-section">
   <div class="weight-section-header">⚖️ 出荷重量チェック</div>
@@ -254,6 +281,26 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 </div>
 
 <script>
+// ── パック規格（追加・変更はここだけ） ───────────────────
+const PACK_SPECS = [
+  { icon: '🥬', name: 'フリルレタス', weight: '1,000g' },
+  { icon: '🌿', name: 'バジル',       weight: '20g'    },
+];
+
+(function renderPackSpec() {
+  const card = document.getElementById('pack-spec-card');
+  const items = PACK_SPECS.map(s =>
+    `<div class="pack-spec-item">
+      <span class="icon">${s.icon}</span>
+      <span>${s.name}</span>
+      <span class="weight">1パック ${s.weight}</span>
+    </div>`
+  ).join('');
+  card.innerHTML = `
+    <div class="pack-spec-header">📦 パック規格</div>
+    <div class="pack-spec-list">${items}</div>`;
+})();
+
 const IPORTER_URL = 'https://iporter.nehops.com/ybs/crpctr/trader/index.asp';
 let allOrders = [];
 let calYear, calMonth;

@@ -118,6 +118,71 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 }
 .iporter-btn:active { opacity: 0.85; }
 .loading { text-align: center; color: #aaa; padding: 3rem; font-size: 14px; }
+
+/* 出荷重量チェック */
+.weight-section {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-bottom: 1rem; overflow: hidden;
+}
+.weight-section-header {
+  padding: 0.85rem 1rem 0.7rem;
+  border-left: 4px solid #E8401C;
+  font-size: 15px; font-weight: 700; color: #1a1a1a;
+}
+.weight-inputs {
+  display: flex; gap: 8px; align-items: flex-end;
+  padding: 0 1rem 0.75rem;
+}
+.weight-input-group { flex: 1; }
+.weight-input-group label { font-size: 11px; color: #999; display: block; margin-bottom: 4px; }
+.weight-input {
+  width: 100%; border: 1.5px solid #ddd; border-radius: 10px;
+  padding: 10px 12px; font-size: 16px; color: #1a1a1a;
+  background: #fafaf8; text-align: center;
+}
+.weight-input:focus { outline: none; border-color: #534AB7; }
+.weight-add-btn {
+  background: #534AB7; color: #fff; border: none;
+  border-radius: 10px; padding: 10px 18px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0;
+}
+.weight-add-btn:active { opacity: 0.85; }
+.weight-list { padding: 0 1rem; display: flex; flex-direction: column; gap: 6px; margin-bottom: 0.75rem; }
+.weight-list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #f5f5f3; border-radius: 8px; padding: 8px 12px;
+  font-size: 13px; color: #444;
+}
+.weight-list-del {
+  background: none; border: none; color: #ccc;
+  font-size: 18px; cursor: pointer; padding: 0 0 0 10px; line-height: 1;
+}
+.weight-list-del:active { color: #DC2626; }
+.weight-summary {
+  border-top: 1px solid #f0f0ee;
+  padding: 0.75rem 1rem;
+  display: flex; gap: 1rem; flex-wrap: wrap;
+}
+.weight-sum-item { font-size: 12px; color: #888; }
+.weight-sum-item span { font-weight: 700; color: #1a1a1a; }
+.weight-verdict {
+  margin: 0 1rem 0.75rem;
+  border-radius: 10px; padding: 12px 16px; text-align: center;
+}
+.weight-verdict.ok { background: #F0FDF4; }
+.weight-verdict.ng { background: #FEF2F2; }
+.weight-verdict-main { font-size: 22px; font-weight: 700; }
+.weight-verdict.ok .weight-verdict-main { color: #16A34A; }
+.weight-verdict.ng .weight-verdict-main { color: #DC2626; }
+.weight-verdict-sub { font-size: 11px; color: #999; margin-top: 2px; }
+.weight-reset-btn {
+  display: block; width: calc(100% - 2rem); margin: 0 1rem 0.75rem;
+  background: #f5f5f3; color: #888; border: none;
+  border-radius: 10px; padding: 10px; font-size: 13px; cursor: pointer;
+}
+.weight-reset-btn:active { background: #e5e5e3; }
 </style>
 </head>
 <body>
@@ -128,6 +193,33 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 </div>
 
 <div id="updated-at" class="updated-at"></div>
+
+<!-- 出荷重量チェック -->
+<div class="weight-section">
+  <div class="weight-section-header">⚖️ 出荷重量チェック</div>
+  <div class="weight-inputs">
+    <div class="weight-input-group">
+      <label>スポンジ数（個）</label>
+      <input class="weight-input" id="w-sponge" type="number" inputmode="numeric" min="0" placeholder="5">
+    </div>
+    <div class="weight-input-group">
+      <label>重さ（g）</label>
+      <input class="weight-input" id="w-weight" type="number" inputmode="numeric" min="0" placeholder="420">
+    </div>
+    <button class="weight-add-btn" onclick="weightAdd()">追加</button>
+  </div>
+  <div class="weight-list" id="weight-list"></div>
+  <div class="weight-summary" id="weight-summary" style="display:none">
+    <div class="weight-sum-item">スポンジ計 <span id="ws-sponge">0</span>個</div>
+    <div class="weight-sum-item">重さ計 <span id="ws-weight">0</span>g</div>
+    <div class="weight-sum-item">正味 <span id="ws-net">0</span>g</div>
+  </div>
+  <div class="weight-verdict" id="weight-verdict" style="display:none">
+    <div class="weight-verdict-main" id="wv-main"></div>
+    <div class="weight-verdict-sub" id="wv-sub"></div>
+  </div>
+  <button class="weight-reset-btn" id="weight-reset-btn" onclick="weightReset()" style="display:none">次のパックへ ›</button>
+</div>
 
 <div class="tabs">
   <button class="tab-btn active" id="tab-cal" onclick="switchTab('cal')">📅 カレンダー</button>
@@ -305,6 +397,84 @@ async function load() {
 }
 
 load();
+
+// ── 出荷重量チェック ──────────────────────────────
+const SPONGE_G  = 3;     // スポンジ1個の重量(g)
+const TARGET_G  = 1100;  // 基準正味重量(g)
+
+let weightRows = [];
+
+function weightAdd() {
+  const spongeEl = document.getElementById('w-sponge');
+  const weightEl = document.getElementById('w-weight');
+  const s = parseInt(spongeEl.value, 10);
+  const w = parseInt(weightEl.value, 10);
+  if (isNaN(s) || isNaN(w) || s < 0 || w <= 0) return;
+  weightRows.push({ sponge: s, weight: w });
+  spongeEl.value = '';
+  weightEl.value = '';
+  spongeEl.focus();
+  weightRender();
+}
+
+function weightDelete(i) {
+  weightRows.splice(i, 1);
+  weightRender();
+}
+
+function weightRender() {
+  const listEl    = document.getElementById('weight-list');
+  const summaryEl = document.getElementById('weight-summary');
+  const verdictEl = document.getElementById('weight-verdict');
+  const resetBtn  = document.getElementById('weight-reset-btn');
+
+  if (weightRows.length === 0) {
+    listEl.innerHTML = '';
+    summaryEl.style.display = 'none';
+    verdictEl.style.display = 'none';
+    resetBtn.style.display  = 'none';
+    return;
+  }
+
+  listEl.innerHTML = weightRows.map((r, i) =>
+    `<div class="weight-list-item">
+      <span>${i+1}回目：${r.sponge}個・${r.weight}g</span>
+      <button class="weight-list-del" onclick="weightDelete(${i})">✕</button>
+    </div>`
+  ).join('');
+
+  const totalSponge = weightRows.reduce((a, r) => a + r.sponge, 0);
+  const totalWeight = weightRows.reduce((a, r) => a + r.weight, 0);
+  const netWeight   = totalWeight - totalSponge * SPONGE_G;
+
+  document.getElementById('ws-sponge').textContent = totalSponge;
+  document.getElementById('ws-weight').textContent = totalWeight;
+  document.getElementById('ws-net').textContent    = netWeight;
+  summaryEl.style.display = '';
+
+  const ok = netWeight >= TARGET_G;
+  verdictEl.className = 'weight-verdict ' + (ok ? 'ok' : 'ng');
+  document.getElementById('wv-main').textContent = ok
+    ? 'ばっちり👌'
+    : `❌ NG　あと${TARGET_G - netWeight}g足りません`;
+  document.getElementById('wv-sub').textContent  = `正味 ${netWeight}g`;
+  verdictEl.style.display = '';
+  resetBtn.style.display  = '';
+}
+
+function weightReset() {
+  if (!confirm('このパックの計量をリセットして次のパックへ進みますか？')) return;
+  weightRows = [];
+  weightRender();
+}
+
+// Enterキーで追加
+document.getElementById('w-weight').addEventListener('keydown', e => {
+  if (e.key === 'Enter') weightAdd();
+});
+document.getElementById('w-sponge').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('w-weight').focus();
+});
 </script>
 </body>
 </html>

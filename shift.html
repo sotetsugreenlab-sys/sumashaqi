@@ -62,6 +62,7 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 0 0 3rem; }
 .staff-name.cultivation { color: #1a1a1a; }
 .staff-name.delivery { color: #ED7D31; font-weight: 600; }
 .staff-name.other { color: #3B8A28; }
+.staff-name.s-mark { color: #D62B7A; font-weight: 700; }
 
 /* Legend */
 .legend { display: flex; gap: 14px; justify-content: center; padding: 8px; font-size: 11px; }
@@ -443,15 +444,14 @@ function render() {
     if (data) {
       html += '<div class="staff-list">';
       const wasabiSet = new Set(data.other || []);
-      (data.other || []).forEach(n => {
-        html += `<div class="staff-name other">${n}</div>`;
-      });
-      (data.cultivation || []).filter(n => !wasabiSet.has(n)).forEach(n => {
-        html += `<div class="staff-name cultivation">${n}</div>`;
-      });
-      (data.delivery || []).forEach(n => {
-        html += `<div class="staff-name delivery">${n}</div>`;
-      });
+      const isOctTTS = viewYear === 2026 && viewMonth === 9 && [2,4,6].includes(dow);
+      const sNames = new Set(['かりまた', '星野']);
+      const nameTag = (n, cls) => isOctTTS && sNames.has(n)
+        ? `<div class="staff-name s-mark">S${n}</div>`
+        : `<div class="staff-name ${cls}">${n}</div>`;
+      (data.other || []).forEach(n => { html += nameTag(n, 'other'); });
+      (data.cultivation || []).filter(n => !wasabiSet.has(n)).forEach(n => { html += nameTag(n, 'cultivation'); });
+      (data.delivery || []).forEach(n => { html += nameTag(n, 'delivery'); });
       if (data.note) {
         html += `<div class="staff-name" style="color:#888;font-size:9px">${data.note}</div>`;
       }

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シェラトン伝票印刷マニュアル</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding: 1rem; }
+
+.header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0 1rem;
+  border-bottom: 1px solid #e5e5e3;
+  margin-bottom: 1.5rem;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+
+.steps { display: flex; flex-direction: column; gap: 12px; }
+
+.step {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  overflow: hidden;
+}
+
+.step-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 1rem 1.2rem 0.9rem;
+}
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #3D7A50; color: #fff;
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.step-title { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+
+.step-body {
+  padding: 0 1.2rem 1rem;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.step-desc {
+  font-size: 14px; color: #444; line-height: 1.6;
+}
+
+.step-note {
+  background: #f7f7f5; border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-size: 12px; color: #666; line-height: 1.6;
+}
+
+.tag {
+  display: inline-block;
+  background: #EEEDFE; color: #534AB7;
+  border-radius: 6px; padding: 1px 7px;
+  font-size: 12px; font-weight: 600;
+  margin: 0 2px;
+}
+.tag-red {
+  background: #FAECE7; color: #993C1D;
+}
+.tag-green {
+  background: #EAF3DE; color: #3B6D11;
+}
+
+.url-box {
+  background: #f0f0ee; border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 13px; font-family: monospace; color: #444;
+  word-break: break-all;
+}
+
+.info-grid {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+  font-size: 13px;
+}
+.info-label { color: #888; white-space: nowrap; }
+.info-val { color: #1a1a1a; font-weight: 600; }
+
+.final-step {
+  background: #EAF3DE; border-radius: 14px;
+  padding: 1rem 1.2rem;
+  display: flex; align-items: center; gap: 12px;
+}
+.final-icon { font-size: 32px; }
+.final-text { font-size: 15px; font-weight: 700; color: #3B6D11; }
+.final-sub { font-size: 12px; color: #6D8B11; margin-top: 2px; }
+
+.step-img {
+  width: 100%; border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  display: block; margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="manual.html">← 戻る</a>
+  <div class="header-title">🏨 シェラトン伝票印刷</div>
+</div>
+
+<div class="steps">
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">ログイン</div>
+    </div>
+    <div class="step-body">
+      <div class="url-box">iporter.nehops.com/ybs/index.asp</div>
+      <div class="info-grid">
+        <span class="info-label">事業所</span>
+        <span class="info-val">横浜ベイシェラトンホテル＆タワーズ</span>
+        <span class="info-label">ユーザID</span>
+        <span class="info-val">150260</span>
+        <span class="info-label">パスワード</span>
+        <span class="info-val">❤️</span>
+      </div>
+      <img src="manuals/images/sheraton-01.webp" alt="ログイン画面" class="step-img">
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">受注データ処理を開く</div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        左メニューの<span class="tag">受注</span>を開き、<span class="tag">受注データ処理</span>をクリック
+      </div>
+      <div class="step-desc">
+        表示順を<span class="tag">納品希望日</span>に変更して<span class="tag">表示切替</span>ボタンを押す
+      </div>
+      <img src="manuals/images/sheraton-02.webp" alt="受注データ処理画面" class="step-img">
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">対象伝票を開く</div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        一覧から納品対象日の<span class="tag tag-red">未処理</span>をクリックして伝票を表示させる
+      </div>
+      <div class="step-note">
+        希望納品日が空欄のものは定期注文。表示順「納品希望日」にすると日付のある伝票が上に来る
+      </div>
+      <img src="manuals/images/sheraton-03.webp" alt="未処理クリック" class="step-img">
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div class="step-title">納品数を入力して受注実行</div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        <span class="tag">修正</span>ボタンを押して実際の納品数を入力する
+      </div>
+      <div class="step-desc">
+        担当者名を入力して<span class="tag tag-green">受注実行</span>ボタンを押す
+      </div>
+      <div class="step-note">
+        「受注実行後次の未受注伝票を表示」にチェックを入れると、連続して処理できる
+      </div>
+      <img src="manuals/images/sheraton-04.webp" alt="受注処理・納品数入力" class="step-img">
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div class="step-title">伝票を印刷する</div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        <span class="tag">伝票印刷</span>ボタンを押して印刷する
+      </div>
+      <div class="step-note">
+        一覧画面の「印刷全チェック」→「伝票印刷」でまとめて印刷することもできる
+      </div>
+    </div>
+  </div>
+
+  <div class="final-step">
+    <div class="final-icon">🚚</div>
+    <div>
+      <div class="final-text">印刷した伝票を納品物と一緒にシェラトンへ</div>
+      <div class="final-sub">伝票は必ず納品物に同封すること</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

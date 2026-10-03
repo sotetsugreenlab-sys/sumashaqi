@@ -99,11 +99,11 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 </div>
 
 <script>
-// バジル: 播種(0日)→30穴(9日)→6穴(17日)→収穫(35日)　播種は月火水木日（本栽培6/2〜）
+// バジル: 播種(0日)→32穴(12日)→8穴(22日)→収穫(40日)
 const STAGES = [
-  { label: '収穫',       days: 35, cls: 'card-harvest' },
-  { label: '6穴へ移植',  days: 17, cls: 'card-mid'    },
-  { label: '30穴へ移植', days: 9,  cls: 'card-30'     },
+  { label: '収穫',        days: 40, cls: 'card-harvest'           },
+  { label: '8穴へ移植',   days: 22, cls: 'card-mid'               },
+  { label: '32穴へ移植',  days: 12, cls: 'card-30',  boards: 2   },
 ];
 const SOW_DATES = ['2026-04-08','2026-04-14','2026-04-23','2026-05-02','2026-05-15','2026-05-18','2026-05-22','2026-05-25','2026-05-29','2026-06-01','2026-06-03','2026-06-04','2026-06-07','2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-21','2026-06-22','2026-06-23','2026-06-26'];
 const SOW_CUTOFF = '2026-06-28'; // 6/29〜 毎日30キューブ
@@ -157,6 +157,7 @@ function makeCard(stage, stageIdx, sow, dayLabel) {
       </div>
       <div class="card-sub">播種から${stage.days}日目</div>
     </div>
+    ${stage.boards ? `<div class="card-sub" style="margin-top:2px;font-size:13px;color:#534AB7;font-weight:700">${stage.boards}ボード</div>` : ''}
     ${histHtml}
   </div>`;
 }

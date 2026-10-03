@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スマシャキ収穫・出荷マニュアル</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding: 1rem; }
+
+.header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0 1rem;
+  border-bottom: 1px solid #e5e5e3;
+  margin-bottom: 1.5rem;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+.header-meta { font-size: 11px; color: #aaa; margin-left: auto; text-align: right; line-height: 1.5; }
+
+.alert {
+  background: #FAECE7; border-radius: 12px;
+  padding: 0.9rem 1.1rem; margin-bottom: 1.25rem;
+  border-left: 4px solid #993C1D;
+  font-size: 13px; color: #993C1D; font-weight: 600; line-height: 1.6;
+}
+
+.section-title {
+  font-size: 12px; font-weight: 700; color: #aaa;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin: 1.5rem 0 0.75rem; padding-left: 2px;
+}
+
+/* 前提カード */
+.premise-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 0.5rem; }
+.premise-card {
+  background: #fff; border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.premise-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #534AB7; color: #fff;
+  font-size: 12px; font-weight: 700; margin-right: 6px; flex-shrink: 0;
+}
+.premise-head { display: flex; align-items: flex-start; gap: 4px; font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+.premise-body { font-size: 13px; color: #555; line-height: 1.7; }
+
+/* 数字ハイライト */
+.num { font-weight: 700; color: #993C1D; font-size: 1.05em; }
+.num-blue { font-weight: 700; color: #534AB7; }
+.num-green { font-weight: 700; color: #3B6D11; }
+
+/* 出荷先タグ */
+.tag-rosen { display: inline-block; background: #EAF3DE; color: #3B6D11; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600; }
+.tag-sheraton { display: inline-block; background: #FEF9EC; color: #8B6D11; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600; }
+
+/* ステップカード */
+.steps { display: flex; flex-direction: column; gap: 12px; }
+.step {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  overflow: hidden;
+}
+.step-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 1rem 1.2rem 0.75rem;
+}
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #3D7A50; color: #fff;
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.step-title { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.step-body { padding: 0 1.2rem 1rem; display: flex; flex-direction: column; gap: 8px; }
+.step-desc { font-size: 14px; color: #444; line-height: 1.7; }
+
+.note-box {
+  background: #f7f7f5; border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font-size: 12px; color: #666; line-height: 1.7;
+}
+.note-box p + p { margin-top: 4px; }
+
+.warn-box {
+  background: #FAECE7; border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font-size: 13px; color: #993C1D; line-height: 1.7; font-weight: 500;
+}
+
+/* キープ数ビジュアル */
+.keep-visual {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;
+}
+.board-chip {
+  background: #EEEDFE; color: #534AB7;
+  border-radius: 8px; padding: 4px 10px;
+  font-size: 13px; font-weight: 700;
+}
+.board-chip.ok { background: #EAF3DE; color: #3B6D11; }
+.board-chip.ng { background: #f0f0ee; color: #aaa; text-decoration: line-through; }
+
+/* フローカード */
+.flow { display: flex; flex-direction: column; gap: 0; margin-top: 4px; }
+.flow-item { display: flex; gap: 10px; padding: 6px 0; }
+.flow-dot { width: 10px; height: 10px; border-radius: 50%; background: #3D7A50; margin-top: 5px; flex-shrink: 0; }
+.flow-dot.sub { background: #ccc; width: 8px; height: 8px; margin-top: 6px; margin-left: 1px; }
+.flow-line { width: 0; border-left: 2px solid #e0e0dc; margin-left: 4px; }
+.flow-text { font-size: 13px; color: #444; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="manual.html">← 戻る</a>
+  <div class="header-title">🥬 収穫・出荷マニュアル</div>
+  <div class="header-meta">2026/09/29<br>後藤秀樹</div>
+</div>
+
+<div class="alert">
+  ⚠️ 本手順は栽培場所確保のため必ず厳守すること<br>
+  従来の「前借り」の概念は基本的になくします
+</div>
+
+<div class="section-title">前提</div>
+<div class="premise-grid">
+
+  <div class="premise-card">
+    <div class="premise-head"><span class="premise-num">①</span>収穫対象</div>
+    <div class="premise-body">
+      播種日から<span class="num">34日目</span>のロットを1単位として収穫する。<br>
+      前日のキープ<span class="num">最大30株</span>（6ボード分）＋当日分で<br>
+      <span class="num">最大210株</span>（180＋30）が収穫対象
+    </div>
+  </div>
+
+  <div class="premise-card">
+    <div class="premise-head"><span class="premise-num">②</span>出荷先と袋</div>
+    <div class="premise-body">
+      <span class="tag-rosen">ローゼン</span> 毎日 <span class="num-green">160袋</span>　「とれたて便」専用ボードン袋<br>
+      <span class="tag-sheraton">シェラトン</span> 週3回　注文に応じた量　1kg入り大袋<br>
+      <span style="font-size:12px;color:#888">※シェラトンは1株の重量制限なし、品質問題なければ合計1kgに包装</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="section-title">刈り取りと袋詰め</div>
+<div class="steps">
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">①</div>
+      <div class="step-title">刈り取り開始 → ローゼン160株確保</div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        小さい株のボードを残すよう収穫していく。<br>
+        基準：<span class="num">75g以上</span>を合格とする
+      </div>
+      <div class="step-desc">
+        重量不足だが品質問題なし → <span class="tag-sheraton">シェラトン用</span>として取りおく<br>
+        <span style="font-size:12px;color:#888">（当日出荷がない場合は翌日まで使用可）</span>
+      </div>
+      <div class="step-desc">
+        <span class="tag-rosen">ローゼン</span>分 <span class="num-green">160株</span> 確保できたら刈り取りをいったん終了
+      </div>
+      <div class="warn-box">
+        6ボードを残した時点でローゼン160株に足りない場合は<strong>報告</strong>してください<br>
+        → 不足株数と <span class="num">70g以上</span> の株数を一緒に報告
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">②</div>
+      <div class="step-title">シェラトン分が充足している場合</div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        そのまま収穫終了 → 残ったボードから見た目大きい方から<span class="num-blue">最大6ボード</span>をキープ用として残す
+      </div>
+      <div class="keep-visual">
+        <div class="board-chip ok">1ボード</div>
+        <div class="board-chip ok">2ボード</div>
+        <div class="board-chip ok">3ボード</div>
+        <div class="board-chip ok">4ボード</div>
+        <div class="board-chip ok">5ボード</div>
+        <div class="board-chip ok">6ボード ← キープ上限</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">③</div>
+      <div class="step-title">シェラトン分が不足している場合</div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        さらに刈り取りを続け、充足したら終了<br>
+        残ったボードから見た目大きい方から<span class="num-blue">最大6ボード</span>をキープとして残す
+      </div>
+      <div class="note-box">
+        <p>終了時に<strong>5ボードしか残っていない</strong>場合 → そのまま5ボードをキープ</p>
+        <p>終了時に<strong>8ボード残っていた</strong>場合 → 2ボード破棄して6ボードをキープ</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">④</div>
+      <div class="step-title">キープ保管場所</div>
+    </div>
+    <div class="step-body">
+      <div class="step-desc">
+        スマシャキ栽培ゾーンの<span class="num">端</span>で、<span class="num">毎日同じ場所</span>にキープを残すこと
+      </div>
+      <div class="note-box">
+        キープは<strong>1日だけ</strong>有効。翌日は必ず収穫対象に含める
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="height: 2rem;"></div>
+
+</body>
+</html>

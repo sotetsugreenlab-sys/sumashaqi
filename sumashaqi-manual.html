@@ -20,39 +20,36 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 }
 .back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
 .header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
-.header-meta { font-size: 11px; color: #aaa; margin-left: auto; text-align: right; line-height: 1.5; }
-
-.alert {
-  background: #FAECE7; border-radius: 12px;
-  padding: 0.9rem 1.1rem; margin-bottom: 1.25rem;
-  border-left: 4px solid #993C1D;
-  font-size: 13px; color: #993C1D; font-weight: 600; line-height: 1.6;
-}
 
 .section-title {
   font-size: 12px; font-weight: 700; color: #aaa;
-  letter-spacing: 0.08em; text-transform: uppercase;
+  letter-spacing: 0.08em;
   margin: 1.5rem 0 0.75rem; padding-left: 2px;
 }
 
-/* 前提カード */
-.premise-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 0.5rem; }
-.premise-card {
-  background: #fff; border-radius: 12px;
-  padding: 0.9rem 1.1rem;
+/* カード共通 */
+.card {
+  background: #fff; border-radius: 14px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 1rem 1.1rem; margin-bottom: 10px;
 }
-.premise-num {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: #534AB7; color: #fff;
-  font-size: 12px; font-weight: 700; margin-right: 6px; flex-shrink: 0;
-}
-.premise-head { display: flex; align-items: flex-start; gap: 4px; font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
-.premise-body { font-size: 13px; color: #555; line-height: 1.7; }
 
-/* 数字ハイライト */
-.num { font-weight: 700; color: #993C1D; font-size: 1.05em; }
+/* 工程フロー */
+.flow-row { display: flex; gap: 0; align-items: stretch; margin-bottom: 10px; }
+.flow-item {
+  flex: 1; text-align: center;
+  background: #EEEDFE; border-radius: 10px;
+  padding: 0.6rem 0.4rem;
+}
+.flow-item + .flow-item { margin-left: 4px; }
+.flow-item.harvest { background: #FAECE7; }
+.flow-label { font-size: 12px; font-weight: 700; color: #534AB7; }
+.flow-item.harvest .flow-label { color: #993C1D; }
+.flow-days { font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 2px 0; }
+.flow-sub { font-size: 10px; color: #999; }
+
+/* 数字強調 */
+.num { font-weight: 700; color: #993C1D; }
 .num-blue { font-weight: 700; color: #534AB7; }
 .num-green { font-weight: 700; color: #3B6D11; }
 
@@ -60,60 +57,53 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 .tag-rosen { display: inline-block; background: #EAF3DE; color: #3B6D11; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600; }
 .tag-sheraton { display: inline-block; background: #FEF9EC; color: #8B6D11; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600; }
 
-/* ステップカード */
-.steps { display: flex; flex-direction: column; gap: 12px; }
-.step {
-  background: #fff; border-radius: 14px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  overflow: hidden;
-}
-.step-header {
-  display: flex; align-items: center; gap: 12px;
-  padding: 1rem 1.2rem 0.75rem;
-}
-.step-num {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: #3D7A50; color: #fff;
-  font-size: 14px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.step-title { font-size: 16px; font-weight: 700; color: #1a1a1a; }
-.step-body { padding: 0 1.2rem 1rem; display: flex; flex-direction: column; gap: 8px; }
-.step-desc { font-size: 14px; color: #444; line-height: 1.7; }
+/* リスト */
+.item-list { display: flex; flex-direction: column; gap: 7px; }
+.item { display: flex; gap: 8px; font-size: 14px; color: #444; line-height: 1.6; }
+.item-dot { width: 6px; height: 6px; border-radius: 50%; background: #3D7A50; margin-top: 7px; flex-shrink: 0; }
+.item-dot.red { background: #993C1D; }
+.item-dot.blue { background: #534AB7; }
 
-.note-box {
-  background: #f7f7f5; border-radius: 8px;
-  padding: 0.7rem 0.9rem;
-  font-size: 12px; color: #666; line-height: 1.7;
-}
-.note-box p + p { margin-top: 4px; }
-
+/* 注意ボックス */
 .warn-box {
   background: #FAECE7; border-radius: 8px;
-  padding: 0.7rem 0.9rem;
-  font-size: 13px; color: #993C1D; line-height: 1.7; font-weight: 500;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #993C1D; font-weight: 600; line-height: 1.7;
+}
+.note-box {
+  background: #f7f7f5; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #555; line-height: 1.7;
 }
 
-/* キープ数ビジュアル */
-.keep-visual {
-  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;
+/* 重量仕分けビジュアル */
+.weight-flow { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.weight-row { display: flex; align-items: center; gap: 8px; }
+.weight-badge {
+  min-width: 52px; text-align: center;
+  border-radius: 8px; padding: 4px 8px;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
 }
-.board-chip {
-  background: #EEEDFE; color: #534AB7;
-  border-radius: 8px; padding: 4px 10px;
-  font-size: 13px; font-weight: 700;
-}
-.board-chip.ok { background: #EAF3DE; color: #3B6D11; }
-.board-chip.ng { background: #f0f0ee; color: #aaa; text-decoration: line-through; }
+.w-ng  { background: #f0f0ee; color: #aaa; }
+.w-tri { background: #FEF9EC; color: #8B6D11; }
+.w-ok  { background: #EAF3DE; color: #3B6D11; }
+.weight-arrow { color: #ccc; font-size: 14px; flex-shrink: 0; }
+.weight-dest { font-size: 13px; color: #444; }
 
-/* フローカード */
-.flow { display: flex; flex-direction: column; gap: 0; margin-top: 4px; }
-.flow-item { display: flex; gap: 10px; padding: 6px 0; }
-.flow-dot { width: 10px; height: 10px; border-radius: 50%; background: #3D7A50; margin-top: 5px; flex-shrink: 0; }
-.flow-dot.sub { background: #ccc; width: 8px; height: 8px; margin-top: 6px; margin-left: 1px; }
-.flow-line { width: 0; border-left: 2px solid #e0e0dc; margin-left: 4px; }
-.flow-text { font-size: 13px; color: #444; line-height: 1.6; }
+/* 袋セクション */
+.bag-card {
+  background: #EEEDFE; border-radius: 12px;
+  padding: 0.9rem 1.1rem; margin-top: 8px;
+}
+.bag-title { font-size: 13px; font-weight: 700; color: #534AB7; margin-bottom: 6px; }
+.bag-item { font-size: 13px; color: #444; line-height: 1.7; display: flex; gap: 8px; }
+.bag-item + .bag-item { margin-top: 4px; }
+
+.important-badge {
+  display: inline-block; background: #993C1D; color: #fff;
+  border-radius: 6px; padding: 1px 8px; font-size: 11px; font-weight: 700;
+  margin-right: 4px; vertical-align: middle;
+}
 </style>
 </head>
 <body>
@@ -121,116 +111,119 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 <div class="header">
   <a class="back-btn" href="manual.html">← 戻る</a>
   <div class="header-title">🥬 収穫・出荷マニュアル</div>
-  <div class="header-meta">2026/09/29<br>後藤秀樹</div>
 </div>
 
-<div class="alert">
-  ⚠️ 本手順は栽培場所確保のため必ず厳守すること<br>
-  従来の「前借り」の概念は基本的になくします
+<!-- 工程フロー -->
+<div class="section-title">① 工程</div>
+<div class="flow-row">
+  <div class="flow-item">
+    <div class="flow-label">播種</div>
+    <div class="flow-days">6<span style="font-size:12px">日間</span></div>
+  </div>
+  <div class="flow-item">
+    <div class="flow-label">30穴</div>
+    <div class="flow-days">11<span style="font-size:12px">日間</span></div>
+  </div>
+  <div class="flow-item">
+    <div class="flow-label">5穴</div>
+    <div class="flow-days" style="font-size:13px;padding-top:2px">刈取<br>まで</div>
+  </div>
+  <div class="flow-item harvest">
+    <div class="flow-label">刈取</div>
+    <div class="flow-days">34<span style="font-size:12px">日目</span></div>
+    <div class="flow-sub">目標33日</div>
+  </div>
 </div>
 
-<div class="section-title">前提</div>
-<div class="premise-grid">
-
-  <div class="premise-card">
-    <div class="premise-head"><span class="premise-num">①</span>収穫対象</div>
-    <div class="premise-body">
-      播種日から<span class="num">34日目</span>のロットを1単位として収穫する。<br>
-      前日のキープ<span class="num">最大30株</span>（6ボード分）＋当日分で<br>
-      <span class="num">最大210株</span>（180＋30）が収穫対象
-    </div>
+<!-- 播種数 -->
+<div class="section-title">② 播種数</div>
+<div class="card">
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>播種：<span class="num">210培地</span></div></div>
+    <div class="item"><div class="item-dot"></div><div>30穴へ移植：成長の良い<span class="num">180培地分</span></div></div>
+    <div class="item"><div class="item-dot" style="background:#aaa"></div><div style="color:#888">移植しきれない残りは翌日へ回す</div></div>
   </div>
-
-  <div class="premise-card">
-    <div class="premise-head"><span class="premise-num">②</span>出荷先と袋</div>
-    <div class="premise-body">
-      <span class="tag-rosen">ローゼン</span> 毎日 <span class="num-green">160袋</span>　「とれたて便」専用ボードン袋<br>
-      <span class="tag-sheraton">シェラトン</span> 週3回　注文に応じた量　1kg入り大袋<br>
-      <span style="font-size:12px;color:#888">※シェラトンは1株の重量制限なし、品質問題なければ合計1kgに包装</span>
-    </div>
-  </div>
-
 </div>
 
-<div class="section-title">刈り取りと袋詰め</div>
-<div class="steps">
+<!-- LED -->
+<div class="section-title">③ LED管理</div>
+<div class="card">
+  <div class="item-list">
+    <div class="item"><div class="item-dot blue"></div><div>刈取の<span class="num-blue">3日前</span>から<span class="num-blue">100%点灯</span>に切り替える</div></div>
+    <div class="item"><div class="item-dot blue"></div><div><span class="num-blue">毎朝の作業</span>：
+      <div style="margin-top:4px;padding-left:2px;font-size:13px;color:#555;line-height:1.7">
+        ・今日刈り取る区画 → <strong>「自動」</strong>に戻す<br>
+        ・3日後に刈り取る区画 → <strong>「入」</strong>にする
+      </div>
+    </div></div>
+    <div class="item"><div class="item-dot blue"></div><div>サイクルマークの<strong>「良し」</strong>を確認して報告</div></div>
+  </div>
+  <div class="note-box" style="margin-top:10px">
+    🌡️ 室温：エアコン冷房 <strong>18℃・風速急</strong><br>
+    📍 栽培場所：スマシャキ用の<strong>34区画固定</strong>（ハーブは置かない）
+  </div>
+</div>
 
-  <div class="step">
-    <div class="step-header">
-      <div class="step-num">①</div>
-      <div class="step-title">刈り取り開始 → ローゼン160株確保</div>
+<!-- 刈取 -->
+<div class="section-title">④ 刈り取り</div>
+<div class="card">
+  <div class="warn-box">
+    <span class="important-badge">重要</span>1ロットを丸々刈り取る<br>
+    栽培棚にキープは作らない！
+  </div>
+
+  <div style="margin-top:12px;font-size:13px;font-weight:600;color:#666;margin-bottom:6px">出荷目標数</div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div><span class="tag-rosen">ローゼン</span>　<span class="num-green">160株 ＋ 予備1株</span></div></div>
+    <div class="item"><div class="item-dot"></div><div><span class="tag-sheraton">シェラトン</span>　1kgごと出荷（袋詰めは500gごと）</div></div>
+  </div>
+
+  <div style="margin-top:12px;font-size:13px;font-weight:600;color:#666;margin-bottom:6px">重量で仕分け</div>
+  <div class="weight-flow">
+    <div class="weight-row">
+      <div class="weight-badge w-ok">75g以上</div>
+      <div class="weight-arrow">→</div>
+      <div class="weight-dest"><span class="tag-rosen">ローゼン</span>出荷（目標）</div>
     </div>
-    <div class="step-body">
-      <div class="step-desc">
-        小さい株のボードを残すよう収穫していく。<br>
-        基準：<span class="num">75g以上</span>を合格とする
-      </div>
-      <div class="step-desc">
-        重量不足だが品質問題なし → <span class="tag-sheraton">シェラトン用</span>として取りおく<br>
-        <span style="font-size:12px;color:#888">（当日出荷がない場合は翌日まで使用可）</span>
-      </div>
-      <div class="step-desc">
-        <span class="tag-rosen">ローゼン</span>分 <span class="num-green">160株</span> 確保できたら刈り取りをいったん終了
-      </div>
-      <div class="warn-box">
-        6ボードを残した時点でローゼン160株に足りない場合は<strong>報告</strong>してください<br>
-        → 不足株数と <span class="num">70g以上</span> の株数を一緒に報告
-      </div>
+    <div class="weight-row">
+      <div class="weight-badge w-tri">70g以上</div>
+      <div class="weight-arrow">→</div>
+      <div class="weight-dest">とりあえず分けておく（最終的にローゼンへ）</div>
+    </div>
+    <div class="weight-row">
+      <div class="weight-badge w-ng">70g未満<br>品質○</div>
+      <div class="weight-arrow">→</div>
+      <div class="weight-dest"><span class="tag-sheraton">シェラトン用</span></div>
     </div>
   </div>
 
-  <div class="step">
-    <div class="step-header">
-      <div class="step-num">②</div>
-      <div class="step-title">シェラトン分が充足している場合</div>
-    </div>
-    <div class="step-body">
-      <div class="step-desc">
-        そのまま収穫終了 → 残ったボードから見た目大きい方から<span class="num-blue">最大6ボード</span>をキープ用として残す
-      </div>
-      <div class="keep-visual">
-        <div class="board-chip ok">1ボード</div>
-        <div class="board-chip ok">2ボード</div>
-        <div class="board-chip ok">3ボード</div>
-        <div class="board-chip ok">4ボード</div>
-        <div class="board-chip ok">5ボード</div>
-        <div class="board-chip ok">6ボード ← キープ上限</div>
-      </div>
-    </div>
+  <div class="note-box">
+    70g・75gセーフで分けて作業しておくと、最終的な出荷がスムーズになる
   </div>
+</div>
 
-  <div class="step">
-    <div class="step-header">
-      <div class="step-num">③</div>
-      <div class="step-title">シェラトン分が不足している場合</div>
-    </div>
-    <div class="step-body">
-      <div class="step-desc">
-        さらに刈り取りを続け、充足したら終了<br>
-        残ったボードから見た目大きい方から<span class="num-blue">最大6ボード</span>をキープとして残す
-      </div>
-      <div class="note-box">
-        <p>終了時に<strong>5ボードしか残っていない</strong>場合 → そのまま5ボードをキープ</p>
-        <p>終了時に<strong>8ボード残っていた</strong>場合 → 2ボード破棄して6ボードをキープ</p>
-      </div>
-    </div>
+<!-- 翌日分キープ -->
+<div class="section-title">⑤ 翌日出荷分の処理</div>
+<div class="card">
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>当日160株＋予備が完成したら、残りの70g・75g株を<strong>翌日出荷分</strong>として袋詰め</div></div>
+    <div class="item"><div class="item-dot red"></div><div>電熱線は<span class="num">しない</span></div></div>
+    <div class="item"><div class="item-dot"></div><div><strong>黄色いカゴ</strong>に入れた状態で翌日の出荷キープに回す</div></div>
   </div>
+</div>
 
-  <div class="step">
-    <div class="step-header">
-      <div class="step-num">④</div>
-      <div class="step-title">キープ保管場所</div>
-    </div>
-    <div class="step-body">
-      <div class="step-desc">
-        スマシャキ栽培ゾーンの<span class="num">端</span>で、<span class="num">毎日同じ場所</span>にキープを残すこと
-      </div>
-      <div class="note-box">
-        キープは<strong>1日だけ</strong>有効。翌日は必ず収穫対象に含める
-      </div>
-    </div>
+<!-- 袋の管理 -->
+<div class="section-title">⑥ 袋の管理</div>
+<div class="card">
+  <div class="bag-card">
+    <div class="bag-title">📦 袋の場所・補充</div>
+    <div class="bag-item"><div class="item-dot" style="margin-top:7px;background:#534AB7"></div><div>当日用の袋：作業台の机の下に<strong>160枚セット</strong>で袋に入っている</div></div>
+    <div class="bag-item"><div class="item-dot" style="margin-top:7px;background:#534AB7"></div><div>予備の1枚：ホワイトボードに貼られている袋から出す</div></div>
+    <div class="bag-item"><div class="item-dot" style="margin-top:7px;background:#534AB7"></div><div>翌日分：<strong>翌日の袋セット</strong>から出す</div></div>
   </div>
-
+  <div class="note-box" style="margin-top:8px">
+    翌日の袋セット外袋に <strong>「160 − （使った袋の数）」</strong> を書いておく
+  </div>
 </div>
 
 <div style="height: 2rem;"></div>

@@ -447,7 +447,7 @@ function render() {
       const isOctTTS = viewYear === 2026 && viewMonth === 9 && [2,4,6].includes(dow);
       const sNames = new Set(['かりまた', '星野']);
       const nameTag = (n, cls) => isOctTTS && sNames.has(n)
-        ? `<div class="staff-name s-mark">S${n}</div>`
+        ? `<div class="staff-name ${cls}"><span style="color:#D62B7A;font-weight:700">S</span>${n}</div>`
         : `<div class="staff-name ${cls}">${n}</div>`;
       (data.other || []).forEach(n => { html += nameTag(n, 'other'); });
       (data.cultivation || []).filter(n => !wasabiSet.has(n)).forEach(n => { html += nameTag(n, 'cultivation'); });

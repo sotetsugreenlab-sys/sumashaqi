@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ハーブ栽培・出荷マニュアル</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding: 1rem; }
+
+.header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0 1rem;
+  border-bottom: 1px solid #e5e5e3;
+  margin-bottom: 1.5rem;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+
+.section-title {
+  font-size: 12px; font-weight: 700; color: #aaa;
+  letter-spacing: 0.08em;
+  margin: 1.5rem 0 0.75rem; padding-left: 2px;
+}
+
+.card {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 1rem 1.1rem; margin-bottom: 10px;
+}
+
+.num { font-weight: 700; color: #993C1D; }
+.num-green { font-weight: 700; color: #3B6D11; }
+.num-blue { font-weight: 700; color: #534AB7; }
+
+.tag-basil { display: inline-block; background: #EAF3DE; color: #3B6D11; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600; }
+.tag-rocket { display: inline-block; background: #FEF9EC; color: #8B6D11; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600; }
+
+.item-list { display: flex; flex-direction: column; gap: 7px; }
+.item { display: flex; gap: 8px; font-size: 14px; color: #444; line-height: 1.6; }
+.item-dot { width: 6px; height: 6px; border-radius: 50%; background: #3D7A50; margin-top: 7px; flex-shrink: 0; }
+.item-dot.red { background: #993C1D; }
+.item-dot.blue { background: #534AB7; }
+.item-dot.gray { background: #ccc; }
+
+.warn-box {
+  background: #FAECE7; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #993C1D; font-weight: 600; line-height: 1.7;
+}
+.note-box {
+  background: #f7f7f5; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #555; line-height: 1.7;
+}
+.info-box {
+  background: #EEEDFE; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #534AB7; line-height: 1.7;
+}
+
+/* 2カラム */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.col-card {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 0.9rem 1rem;
+}
+.col-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.col-title.basil { color: #3B6D11; }
+.col-title.rocket { color: #8B6D11; }
+
+/* 工程フロー */
+.flow-col { display: flex; flex-direction: column; gap: 4px; }
+.flow-step {
+  border-radius: 8px; padding: 5px 8px;
+  font-size: 12px; text-align: center;
+}
+.flow-step.sow { background: #f0f0ee; color: #666; }
+.flow-step.mid { background: #EEEDFE; color: #534AB7; font-weight: 600; }
+.flow-step.harvest { background: #FAECE7; color: #993C1D; font-weight: 600; }
+.flow-days { font-size: 16px; font-weight: 700; }
+.flow-arrow { text-align: center; color: #ccc; font-size: 12px; }
+
+/* 播種タイムライン */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-item { display: flex; gap: 10px; padding-bottom: 10px; position: relative; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-left { display: flex; flex-direction: column; align-items: center; width: 28px; flex-shrink: 0; }
+.tl-dot { width: 10px; height: 10px; border-radius: 50%; background: #3D7A50; flex-shrink: 0; margin-top: 4px; }
+.tl-dot.dark { background: #1a1a1a; }
+.tl-line { flex: 1; width: 2px; background: #e0e0dc; margin-top: 2px; }
+.tl-item:last-child .tl-line { display: none; }
+.tl-day { font-size: 11px; font-weight: 700; color: #534AB7; min-width: 26px; margin-top: 3px; }
+.tl-text { font-size: 13px; color: #444; line-height: 1.6; padding-top: 2px; }
+
+.important-badge {
+  display: inline-block; background: #993C1D; color: #fff;
+  border-radius: 6px; padding: 1px 8px; font-size: 11px; font-weight: 700;
+  margin-right: 4px; vertical-align: middle;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="manual.html">← 戻る</a>
+  <div class="header-title">🌿 ハーブ栽培・出荷マニュアル</div>
+</div>
+
+<div class="note-box" style="margin-bottom:1rem;background:#f0f0ee;color:#888">
+  ※ パクチーは出荷終了
+</div>
+
+<!-- 播種数 -->
+<div class="section-title">① 播種数</div>
+<div class="two-col">
+  <div class="col-card">
+    <div class="col-title basil">🌿 バジル</div>
+    <div class="item-list">
+      <div class="item"><div class="item-dot"></div><div>播種：<span class="num-green">90培地</span></div></div>
+      <div class="item"><div class="item-dot"></div><div>32穴へ：合格品 <span class="num-green">64培地</span>（2ボード）</div></div>
+    </div>
+  </div>
+  <div class="col-card">
+    <div class="col-title rocket">🥬 ワイルドルッコラ</div>
+    <div class="item-list">
+      <div class="item"><div class="item-dot"></div><div>播種：<span class="num-green">130培地</span></div></div>
+      <div class="item"><div class="item-dot"></div><div>32穴へ：合格品 <span class="num-green">96培地</span>（3ボード）</div></div>
+    </div>
+  </div>
+</div>
+<div class="warn-box" style="margin-top:0">
+  <span class="important-badge">必須</span>不合格品は必ず廃棄！<br>
+  <span style="font-size:12px;font-weight:400">（ボードが足りなくなるため）</span>
+</div>
+
+<!-- 播種方法 -->
+<div class="section-title">② 播種方法</div>
+<div class="card">
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot dark"></div><div class="tl-line"></div></div>
+      <div class="tl-day">0日目</div>
+      <div class="tl-text"><strong>播種</strong>　水のみで播種<br>黒い板をかぶせて遮光</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:#534AB7"></div><div class="tl-line"></div></div>
+      <div class="tl-day">3日目</div>
+      <div class="tl-text"><strong>遮光板を外す</strong>　光に当てる<br><span style="color:#aaa;font-size:12px">例：1日播種→4日に外す</span></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:#3D7A50"></div></div>
+      <div class="tl-day">12日目</div>
+      <div class="tl-text"><strong>選別 → 32穴へ移植</strong><br>各培地から芽が<span class="num-green">5本以上</span>あるものだけ合格</div>
+    </div>
+  </div>
+</div>
+
+<!-- 工程 -->
+<div class="section-title">③ 工程</div>
+<div class="two-col">
+  <div class="col-card">
+    <div class="col-title basil">🌿 バジル</div>
+    <div class="flow-col">
+      <div class="flow-step sow">播種<br><span class="flow-days">12</span>日間</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-step mid">32穴<br><span class="flow-days">10</span>日間</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-step harvest">8穴<br>刈取まで</div>
+    </div>
+  </div>
+  <div class="col-card">
+    <div class="col-title rocket">🥬 ワイルドルッコラ</div>
+    <div class="flow-col">
+      <div class="flow-step sow">播種<br><span class="flow-days">12</span>日間</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-step mid">32穴<br><span class="flow-days">10</span>日間</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-step harvest">8穴<br>刈取まで</div>
+    </div>
+  </div>
+</div>
+
+<!-- ボード -->
+<div class="section-title">④ ボード</div>
+<div class="card">
+  <div class="item-list">
+    <div class="item"><div class="item-dot blue"></div><div>30穴ボードは<strong>32穴ボードに変更</strong>（30穴に穴あけして作る）<br><span style="color:#888;font-size:12px">手が空いた時に穴あけお願いします</span></div></div>
+    <div class="item"><div class="item-dot gray"></div><div>8穴への移植が多すぎる日は、古い順に<strong>2日に分けて移してOK</strong></div></div>
+  </div>
+</div>
+
+<!-- 刈取・出荷 -->
+<div class="section-title">⑤ 刈取・出荷</div>
+<div class="card">
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>大きい順に並んでいるので<strong>大きい方から刈取</strong></div></div>
+    <div class="item"><div class="item-dot red"></div><div><strong>出さないもの（エラー）</strong>：茎の変色・黒い点があるもの</div></div>
+    <div class="item"><div class="item-dot"></div><div><span class="tag-rocket">ルッコラ</span>　蕾は袋詰め時にカット<br><span style="color:#aaa;font-size:12px">（パウチ後に見つけた場合はそのままでOK）</span></div></div>
+  </div>
+  <div class="note-box">
+    📏 袋の高さは<span class="num"> 35cm </span>まで<br>
+    📦 袋詰めは<strong>縦置きで統一</strong>
+  </div>
+  <div class="warn-box">
+    <span class="important-badge">注意</span><span class="tag-basil">バジル</span>　衝撃で黒くなりやすい<br>
+    パウチは<strong>直前</strong>に行うこと
+  </div>
+</div>
+
+<div style="height: 2rem;"></div>
+
+</body>
+</html>

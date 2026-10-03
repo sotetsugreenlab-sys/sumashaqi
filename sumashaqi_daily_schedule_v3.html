@@ -279,7 +279,7 @@ loadLiquidStock();
 const SHEET_ID = '1Ljdufzcvy-BkfzyY6iMU1FqpQxY8fHAXpxyR4hQ81F4';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-// 35日コース: 播種(0日)→30穴(6日)→5穴(16日)→刈取(35日)
+// 35日コース: 播種(0日)→30穴(6日)→5穴(17日)→刈取(35日)
 // 36日コース: 播種(0日)→30穴(7日)→5穴(17日)→刈取(36日)
 
 // 液肥管理
@@ -593,9 +593,9 @@ function renderTasks() {
   const dayLabel = isToday ? '今日の' : 'この日の';
 
   const courses = [33, 34];
-  const hist  = [{label:'30穴',daysFromSow:6},{label:'5穴',daysFromSow:16}];
+  const hist  = [{label:'30穴',daysFromSow:6},{label:'5穴',daysFromSow:17}];
   const hist5 = [{label:'30穴',daysFromSow:6}];
-  const sow5  = addDays(viewDate, -16);
+  const sow5  = addDays(viewDate, -17);
   const sow30 = addDays(viewDate, -6);
 
   const dateStr = toDateStr(viewDate);
@@ -655,7 +655,7 @@ function renderTasks() {
 
   // 5穴（全コース共通）
   html += `<div class="stage-row-full">
-    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:16, sow:sow5, history:hist5}, dayLabel)}
+    ${cardCell({label:'5穴へ移植', cls:'card-5穴', days:17, sow:sow5, history:hist5}, dayLabel)}
   </div>`;
 
   // 30穴（全コース共通）
@@ -761,7 +761,7 @@ function switchCalcDir(dir) {
 function schForSow(ver) {
   return [
     { label: '30穴', days: 6 },
-    { label: '5穴',  days: 16 },
+    { label: '5穴',  days: 17 },
     { label: '刈取', days: parseInt(ver) },
   ];
 }

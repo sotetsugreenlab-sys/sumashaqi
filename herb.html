@@ -173,10 +173,10 @@ const HERBS = [
     ],
     stagesNewFrom: '2026-08-11',
     stages2: [
-      { label: '収穫',       days: 40, cls: 'card-harvest' },
-      { label: '8穴へ移植',  days: 24, cls: 'card-green'   },
-      { label: '32穴へ移植', days: 12, cls: 'card-30'      },
-      { label: '黒板を外す', days: 3,  cls: 'card-kuro'    },
+      { label: '収穫',       days: 40, cls: 'card-harvest'            },
+      { label: '8穴へ移植',  days: 22, cls: 'card-green'              },
+      { label: '32穴へ移植', days: 12, cls: 'card-30',   boards: 2   },
+      { label: '黒板を外す', days: 3,  cls: 'card-kuro'               },
     ]
   },
   {
@@ -185,9 +185,8 @@ const HERBS = [
     sowDays: [1,2,3,4,0], sowCutoff: '2099-12-31',
     sowDates: ['2026-04-14','2026-04-23','2026-05-02','2026-05-15','2026-05-18','2026-05-21','2026-05-22','2026-05-25','2026-05-29'],
     stages: [
-      { label: '収穫',       days: 30, cls: 'card-harvest' },
-      { label: '8穴へ移植',  days: 17, cls: 'card-yellow'  },
-      { label: '32穴へ移植', days: 9,  cls: 'card-30'      },
+      { label: '8穴へ移植',   days: 22, cls: 'card-yellow'             },
+      { label: '32穴へ移植',  days: 12, cls: 'card-30',   boards: 3   },
     ]
   },
   {
@@ -424,6 +423,7 @@ function makeCompactCard(stage, sow, herbName) {
     <div class="card-task">${stage.label}</div>
     <div class="card-sow">${fmtShort(sow)}播種</div>
     <div class="card-sub">${stage.days}日目</div>
+    ${stage.boards ? `<div class="card-sub" style="color:#534AB7;font-weight:700;font-size:11px">${stage.boards}ボード</div>` : ''}
     ${herbName ? herbNotesHtml(herbName, toDateStr(sow)) : ''}
   </div>`;
 }

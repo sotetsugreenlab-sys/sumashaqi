@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アプリの使い方</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding: 1rem; }
+
+.header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0 1rem;
+  border-bottom: 1px solid #e5e5e3;
+  margin-bottom: 1.5rem;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+
+.section-title {
+  font-size: 12px; font-weight: 700; color: #aaa;
+  letter-spacing: 0.08em;
+  margin: 1.5rem 0 0.75rem; padding-left: 2px;
+}
+
+.card {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 1rem 1.1rem; margin-bottom: 10px;
+}
+
+.page-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.page-icon { font-size: 22px; flex-shrink: 0; }
+.page-name { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.page-desc { font-size: 12px; color: #999; margin-top: 1px; }
+
+.item-list { display: flex; flex-direction: column; gap: 7px; }
+.item { display: flex; gap: 8px; font-size: 14px; color: #444; line-height: 1.6; }
+.item-dot { width: 6px; height: 6px; border-radius: 50%; background: #3D7A50; margin-top: 7px; flex-shrink: 0; }
+.item-dot.blue { background: #534AB7; }
+.item-dot.red { background: #993C1D; }
+.item-dot.gray { background: #ccc; }
+
+.note-box {
+  background: #f7f7f5; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #555; line-height: 1.7;
+}
+.info-box {
+  background: #EEEDFE; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #534AB7; line-height: 1.7;
+}
+
+.tag { display: inline-block; background: #EEEDFE; color: #534AB7; border-radius: 6px; padding: 1px 7px; font-size: 12px; font-weight: 600; margin: 0 2px; }
+.tag-green { background: #EAF3DE; color: #3B6D11; }
+.tag-red { background: #FAECE7; color: #993C1D; }
+
+.num { font-weight: 700; color: #993C1D; }
+.num-blue { font-weight: 700; color: #534AB7; }
+
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.badge {
+  background: #f0f0ee; color: #555;
+  border-radius: 20px; padding: 3px 10px;
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="manual.html">← 戻る</a>
+  <div class="header-title">📱 アプリの使い方</div>
+</div>
+
+<!-- スマシャキ -->
+<div class="section-title">🥬 スマシャキ</div>
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">📅</div>
+    <div>
+      <div class="page-name">当日作業確認</div>
+      <div class="page-desc">今日やること・播種日・移植日を一覧表示</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>画面上部の <strong>＜ ＞</strong> で日付を切り替えられる</div></div>
+    <div class="item"><div class="item-dot blue"></div><div><strong>33日目カード</strong>（ピンク）：前借り株数を入力</div></div>
+    <div class="item"><div class="item-dot blue"></div><div><strong>34日目カード</strong>（黄色）：刈取報告を入力
+      <div style="margin-top:6px;padding-left:2px;font-size:13px;color:#555;line-height:1.8">
+        最低g　／　平均g<br>
+        70g株数　／　75g株数<br>
+        翌日袋数<br>
+        シェラトン用（株数＋重量）<br>
+        チップバーン・ブラウン株数
+      </div>
+    </div></div>
+    <div class="item"><div class="item-dot"></div><div><strong>5穴・30穴カード</strong>（青）：今日移植する播種日を確認</div></div>
+    <div class="item"><div class="item-dot gray"></div><div><span class="tag">＋ メモ</span> で各カードにメモを追加できる</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">💧</div>
+    <div>
+      <div class="page-name">貯液・袋在庫</div>
+      <div class="page-desc">液肥の残量と袋の在庫を管理</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div><strong>袋在庫</strong>：今日の袋セットの残り組数</div></div>
+    <div class="item"><div class="item-dot"></div><div><strong>貯液 〇〇L</strong>：現在の液肥残量<br>
+      <span style="font-size:13px;color:#888">「使用量 −」で減らす・「追加量 ＋」で増やす</span>
+    </div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">🔢</div>
+    <div>
+      <div class="page-name">栽培日程計算</div>
+      <div class="page-desc">播種日から各作業日・収穫日を自動計算</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot blue"></div><div><span class="tag">播種日 → 各日程</span>：播種日を入れると30穴・5穴・刈取日が出る</div></div>
+    <div class="item"><div class="item-dot blue"></div><div><span class="tag">刈取日 → 播種日</span>：刈取予定日から逆算して播種日がわかる</div></div>
+    <div class="item"><div class="item-dot blue"></div><div><span class="tag">31日〜34日</span>：目標の刈取日数を選んで計算できる</div></div>
+    <div class="item"><div class="item-dot gray"></div><div>「今日は播種から何日目？」欄でも逆算できる</div></div>
+  </div>
+</div>
+
+<!-- ハーブ -->
+<div class="section-title">🌿 ハーブ</div>
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">📅</div>
+    <div>
+      <div class="page-name">当日作業確認</div>
+      <div class="page-desc">バジル・ワイルドロケットの今日の作業を表示</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>各ハーブの <strong>収穫 / 8穴移植 / 32穴移植 / 黒板外す</strong> の対象播種日を表示</div></div>
+    <div class="item"><div class="item-dot"></div><div>カード右上の <strong>袋 〇組</strong> で袋の残数を確認できる</div></div>
+    <div class="item"><div class="item-dot"></div><div><strong>〇ボード</strong> 表示で移植するボード枚数がわかる</div></div>
+    <div class="item"><div class="item-dot gray"></div><div><span class="tag">＋ メモ</span> でメモを追加・<span class="tag-green tag">編集</span>・<span class="tag-red tag">削除</span> も可能</div></div>
+    <div class="item"><div class="item-dot gray"></div><div>「その他のハーブ」からルッコラ・パクチー等の詳細ページへ</div></div>
+  </div>
+  <div class="info-box">
+    栽培日程計算もスマシャキと同様に使えます（ハーブ別に計算）
+  </div>
+</div>
+
+<!-- シフト -->
+<div class="section-title">📆 シフト</div>
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">🗓️</div>
+    <div>
+      <div class="page-name">シフトカレンダー</div>
+      <div class="page-desc">月ごとのスタッフシフトを確認</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>月ごとに <strong>＜ ＞</strong> で切り替えられる</div></div>
+    <div class="item"><div class="item-dot"></div><div>名前の色でロールがわかる
+      <div class="badge-row">
+        <span class="badge" style="color:#3D7A50;font-weight:700">● 緑：わさび</span>
+        <span class="badge" style="color:#1a1a1a;font-weight:700">● 黒：出荷栽培</span>
+        <span class="badge" style="color:#E8620A;font-weight:700">● 橙：配送</span>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- 引き継ぎ -->
+<div class="section-title">📋 引き継ぎ</div>
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">✍️</div>
+    <div>
+      <div class="page-name">引き継ぎ投稿・確認</div>
+      <div class="page-desc">スタッフ間の申し送り事項を共有</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>画面右下の <strong>＋ ボタン</strong> で新規投稿</div></div>
+    <div class="item"><div class="item-dot"></div><div>カテゴリタグ（スマシャキ・ハーブ・わさび・配送など）でフィルターできる</div></div>
+    <div class="item"><div class="item-dot"></div><div>右上の <strong>✓</strong> をタップすると「終了」に移動</div></div>
+    <div class="item"><div class="item-dot red"></div><div><strong>✕</strong> で削除（取り消し不可）</div></div>
+  </div>
+</div>
+
+<!-- 棚管理 -->
+<div class="section-title">🪜 棚管理</div>
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">🗂️</div>
+    <div>
+      <div class="page-name">栽培棚の区画管理</div>
+      <div class="page-desc">どの区画に何を播種したか記録</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div><strong>棚1 / 棚2</strong> タブで切り替え、段と列のグリッドで区画を確認</div></div>
+    <div class="item"><div class="item-dot"></div><div><strong>＋</strong> のある区画をタップして播種日・作物を登録</div></div>
+    <div class="item"><div class="item-dot"></div><div>登録済み区画をタップして内容を編集・削除できる</div></div>
+    <div class="item"><div class="item-dot gray"></div><div>右上の <strong>スクショ</strong> ボタンで棚の状態を画像保存できる</div></div>
+  </div>
+  <div class="note-box">
+    色の意味：黄色=標準日程・ピンク=刈取間近・緑=当日刈取
+  </div>
+</div>
+
+<!-- フリル実績 -->
+<div class="section-title">📊 フリル実績</div>
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">📈</div>
+    <div>
+      <div class="page-name">刈取実績の確認</div>
+      <div class="page-desc">月次・日次の出荷・廃棄数を集計表示</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>月上部に <strong>前借り / 出荷 / 廃棄</strong> の月間合計を表示</div></div>
+    <div class="item"><div class="item-dot"></div><div>一覧で日別の実績（前借り・出荷・最低g・平均g・廃棄合格・廃棄エラー）を確認</div></div>
+    <div class="item"><div class="item-dot blue"></div><div>データはスマシャキの34日目入力から自動集計される</div></div>
+    <div class="item"><div class="item-dot gray"></div><div><strong>＜ ＞</strong> で月を切り替えて過去の実績も確認できる</div></div>
+  </div>
+</div>
+
+<!-- シェラトン注文 -->
+<div class="section-title">🏨 シェラトン注文</div>
+<div class="card">
+  <div class="page-header">
+    <div class="page-icon">📦</div>
+    <div>
+      <div class="page-name">注文確認・重量チェック</div>
+      <div class="page-desc">シェラトンの注文日程と出荷重量を管理</div>
+    </div>
+  </div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot"></div><div>上部に <strong>パック規格</strong>（フリルレタス1,000g・バジル20g）を表示</div></div>
+    <div class="item"><div class="item-dot blue"></div><div><strong>出荷重量チェック</strong>：スポンジ数と重さを入力して追加 → 合計1,000gになったらパック完成</div></div>
+    <div class="item"><div class="item-dot"></div><div><strong>カレンダー</strong>：出荷予定日（青い日付）を月次で確認できる</div></div>
+    <div class="item"><div class="item-dot"></div><div><strong>一覧</strong>タブで過去の注文履歴も確認できる</div></div>
+  </div>
+  <div class="note-box">
+    伝票印刷の手順は <strong>シェラトン伝票印刷マニュアル</strong> を参照
+  </div>
+</div>
+
+<div style="height: 2rem;"></div>
+
+</body>
+</html>

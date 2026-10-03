@@ -188,57 +188,31 @@ td.c-haiki    { color: #A84040; }
   </div>
 </div>
 
-<div class="tiles">
+<div class="tiles" id="tiles">
   <div class="tile maegari">
     <div class="tile-label">前借り</div>
     <div class="tile-value" id="total-maegari">—<span class="tile-unit">株</span></div>
   </div>
-  <div class="tile shipment">
-    <div class="tile-label">出荷</div>
-    <div class="tile-value" id="total-shipment">—<span class="tile-unit">株</span></div>
+  <div class="tile shipment" id="tile-2">
+    <div class="tile-label" id="tile-2-label">出荷</div>
+    <div class="tile-value" id="total-tile2">—<span class="tile-unit" id="tile-2-unit">株</span></div>
   </div>
-  <div class="tile haiki">
-    <div class="tile-label">廃棄</div>
-    <div class="tile-value" id="total-haiki">—<span class="tile-unit">株</span></div>
+  <div class="tile haiki" id="tile-3">
+    <div class="tile-label" id="tile-3-label">廃棄</div>
+    <div class="tile-value" id="total-tile3">—<span class="tile-unit">株</span></div>
   </div>
 </div>
 
-
 <div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>日付</th>
-        <th>前借り</th>
-        <th>出荷</th>
-        <th>最低g</th>
-        <th>平均g</th>
-        <th>廃棄(合格)</th>
-        <th>廃棄(エラー)</th>
-        <th>廃棄計</th>
-      </tr>
-    </thead>
+  <table id="daily-table">
+    <thead id="daily-thead"></thead>
     <tbody id="tbody"><tr class="empty-row"><td colspan="8">読み込み中...</td></tr></tbody>
   </table>
 </div>
 
 <div style="margin-top:24px">
   <div class="section-label" style="margin-bottom:10px">月次集計</div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>月</th>
-          <th>前借り</th>
-          <th>出荷</th>
-          <th>廃棄(合格)</th>
-          <th>廃棄(エラー)</th>
-          <th>廃棄計</th>
-        </tr>
-      </thead>
-      <tbody id="monthly-tbody"><tr class="empty-row"><td colspan="5">読み込み中...</td></tr></tbody>
-    </table>
-  </div>
+  <div id="monthly-wrap"></div>
 </div>
 
 <script>
@@ -252,6 +226,9 @@ let currentMonth = new Date().getMonth() + 1;
 
 const pad = n => String(n).padStart(2, '0');
 const DAYS = ['日','月','火','水','木','金','土'];
+const NEW_FMT_YM = '2026-10'; // この年月以降は新フォーマット
+
+function isNewFmt(ym) { return ym >= NEW_FMT_YM; }
 
 function shiftMonth(delta) {
   currentMonth += delta;
@@ -260,9 +237,34 @@ function shiftMonth(delta) {
   load();
 }
 
+function parseRow(byObj, key, course, p) {
+  if (!byObj[key]) byObj[key] = {
+    maegari:0, shipment:0, min_weight:0, avg_weight:0,
+    haiki_kakaku:0, haiki_error:0,
+    w70:0, w75:0, yoku_bukuro:0, sheraton_count:0, sheraton_weight:0, chipburn:0
+  };
+  if (course === '33') byObj[key].maegari += (p.maegari || 0);
+  if (course === '34' || course === '35') {
+    byObj[key].shipment      += p.shipment      || 0;
+    byObj[key].min_weight     = p.min_weight    || 0;
+    byObj[key].avg_weight     = p.avg_weight    || 0;
+    byObj[key].haiki_kakaku  += p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
+    byObj[key].haiki_error   += p.haiki_error   || 0;
+    byObj[key].w70           += p.w70           || 0;
+    byObj[key].w75           += p.w75           || 0;
+    byObj[key].yoku_bukuro   += p.yoku_bukuro   || 0;
+    byObj[key].sheraton_count+= p.sheraton_count|| 0;
+    byObj[key].sheraton_weight+=p.sheraton_weight||0;
+    byObj[key].chipburn      += p.chipburn      || 0;
+  }
+  if (course === '34' && p.maegari != null) byObj[key].maegari += p.maegari;
+}
+
 async function load() {
   document.getElementById('month-label').textContent = `${currentYear}/${pad(currentMonth)}`;
-  const prefix = `${currentYear}-${pad(currentMonth)}-`;
+  const ym = `${currentYear}-${pad(currentMonth)}`;
+  const newFmt = isNewFmt(ym);
+  const prefix = ym + '-';
   const { data } = await db.from('lot_notes')
     .select('sow_date,note')
     .eq('crop', 'harvest_count')
@@ -271,71 +273,81 @@ async function load() {
   const byDate = {};
   (data || []).forEach(r => {
     const [date, course] = r.sow_date.split('_');
-    if (!byDate[date]) byDate[date] = { maegari: 0, shipment: 0, min_weight: 0, avg_weight: 0, haiki_kakaku: 0, haiki_error: 0 };
-    try {
-      const p = JSON.parse(r.note || '{}');
-      if (course === '33') byDate[date].maegari = p.maegari || 0;
-      if (course === '34' || course === '35') { // '35'は旧データ後方互換
-        byDate[date].shipment     = p.shipment     || 0;
-        byDate[date].min_weight   = p.min_weight   || 0;
-        byDate[date].avg_weight   = p.avg_weight   || 0;
-        byDate[date].haiki_kakaku = p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
-        byDate[date].haiki_error  = p.haiki_error  || 0;
-      }
-      // 旧データ後方互換: _34がmaegariを持っていた時期
-      if (course === '34' && p.maegari != null) byDate[date].maegari = p.maegari;
-    } catch(e) {}
+    try { parseRow(byDate, date, course, JSON.parse(r.note || '{}')); } catch(e) {}
   });
 
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-  const allDates = Array.from({length: daysInMonth}, (_, i) =>
-    `${currentYear}-${pad(currentMonth)}-${pad(i + 1)}`);
-  const activeDates = allDates.filter(d => byDate[d]);
+  const activeDates = Array.from({length: daysInMonth}, (_, i) =>
+    `${prefix}${pad(i + 1)}`).filter(d => byDate[d]);
 
-  let tM = 0, tS = 0, tKK = 0, tER = 0;
+  let tM = 0, tTile2 = 0, tTile3 = 0;
   activeDates.forEach(d => {
-    tM  += byDate[d].maegari;
-    tS  += byDate[d].shipment;
-    tKK += byDate[d].haiki_kakaku;
-    tER += byDate[d].haiki_error;
+    const r = byDate[d];
+    tM += r.maegari;
+    if (newFmt) { tTile2 += r.yoku_bukuro; tTile3 += r.sheraton_count; }
+    else        { tTile2 += r.shipment;    tTile3 += r.haiki_kakaku + r.haiki_error; }
   });
 
-  document.getElementById('total-maegari').innerHTML  = `${tM}<span class="tile-unit">株</span>`;
-  document.getElementById('total-shipment').innerHTML = `${tS}<span class="tile-unit">株</span>`;
-  document.getElementById('total-haiki').innerHTML    = `${tKK + tER}<span class="tile-unit">株</span><div style="font-size:10px;font-weight:400;color:#7A7870;margin-top:2px">合格${tKK} / エラー${tER}</div>`;
+  document.getElementById('total-maegari').innerHTML = `${tM}<span class="tile-unit">株</span>`;
+  if (newFmt) {
+    document.getElementById('tile-2-label').textContent = '翌日袋';
+    document.getElementById('tile-2-unit').textContent  = '袋';
+    document.getElementById('total-tile2').innerHTML    = `${tTile2}<span class="tile-unit">袋</span>`;
+    document.getElementById('tile-3-label').textContent = 'シェラトン';
+    document.getElementById('total-tile3').innerHTML    = `${tTile3}<span class="tile-unit">株</span>`;
+  } else {
+    document.getElementById('tile-2-label').textContent = '出荷';
+    document.getElementById('tile-2-unit').textContent  = '株';
+    document.getElementById('total-tile2').innerHTML    = `${tTile2}<span class="tile-unit">株</span>`;
+    document.getElementById('tile-3-label').textContent = '廃棄';
+    document.getElementById('total-tile3').innerHTML    = `${tTile3}<span class="tile-unit">株</span>`;
+  }
 
-  renderTable(activeDates, byDate);
-}
+  if (newFmt) {
+    document.getElementById('daily-thead').innerHTML = `<tr>
+      <th>日付</th><th>前借り</th><th>最低g</th><th>平均g</th>
+      <th>70g株</th><th>75g株</th><th>翌日袋</th>
+      <th>シェラトン株</th><th>シェラトンg</th><th>チップ等</th>
+    </tr>`;
+  } else {
+    document.getElementById('daily-thead').innerHTML = `<tr>
+      <th>日付</th><th>前借り</th><th>出荷</th>
+      <th>最低g</th><th>平均g</th>
+      <th>廃棄(合格)</th><th>廃棄(エラー)</th><th>廃棄計</th>
+    </tr>`;
+  }
 
-
-function renderTable(dates, byDate) {
   const tbody = document.getElementById('tbody');
-  if (!dates.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">この月のデータはまだありません</td></tr>`;
+  const cols  = newFmt ? 10 : 8;
+  if (!activeDates.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="${cols}">この月のデータはまだありません</td></tr>`;
     return;
   }
-  tbody.innerHTML = dates.map(d => {
-    const dt  = new Date(d + 'T00:00:00');
+  tbody.innerHTML = activeDates.map(d => {
+    const dt = new Date(d + 'T00:00:00');
     const sow34 = new Date(dt); sow34.setDate(sow34.getDate() - 34);
     const sow33 = new Date(dt); sow33.setDate(sow33.getDate() - 33);
     const row = byDate[d];
-    const total_haiki = row.haiki_kakaku + row.haiki_error;
-    const mC   = row.maegari      ? `<td class="has-val c-maegari">${row.maegari}</td>`       : `<td>—</td>`;
-    const sC   = row.shipment     ? `<td class="has-val c-shipment">${row.shipment}</td>`      : `<td>—</td>`;
-    const minC = row.min_weight   ? `<td class="has-val">${row.min_weight}g</td>`              : `<td>—</td>`;
-    const avgC = row.avg_weight   ? `<td class="has-val">${row.avg_weight}g</td>`              : `<td>—</td>`;
-    const kkC  = row.haiki_kakaku ? `<td class="has-val c-haiki">${row.haiki_kakaku}</td>`     : `<td>—</td>`;
-    const erC  = row.haiki_error  ? `<td class="has-val c-haiki">${row.haiki_error}</td>`      : `<td>—</td>`;
-    const thC  = total_haiki      ? `<td class="has-val" style="color:#1C201C">${total_haiki}</td>` : `<td>—</td>`;
-    const sowLine34 = `播種 ${sow34.getMonth()+1}/${sow34.getDate()}（34日）`;
-    const sowLine33 = row.maegari ? `<br>播種 ${sow33.getMonth()+1}/${sow33.getDate()}（33日）` : '';
     const dateCell = `<td style="text-align:left">
       <a href="tana-photo.html?date=${d}" style="color:inherit;text-decoration:none">
         <div style="color:#1C201C;font-weight:600">${dt.getMonth()+1}/${dt.getDate()}（${DAYS[dt.getDay()]}）<span style="font-size:10px;color:#534AB7;margin-left:4px">🪜</span></div>
-        <div style="color:#7A7870;font-size:10px;margin-top:2px">${sowLine34}${sowLine33}</div>
-      </a>
-    </td>`;
-    return `<tr>${dateCell}${mC}${sC}${minC}${avgC}${kkC}${erC}${thC}</tr>`;
+        <div style="color:#7A7870;font-size:10px;margin-top:2px">播種 ${sow34.getMonth()+1}/${sow34.getDate()}（34日）${row.maegari ? `<br>播種 ${sow33.getMonth()+1}/${sow33.getDate()}（33日）` : ''}</div>
+      </a></td>`;
+    const mC = row.maegari ? `<td class="has-val c-maegari">${row.maegari}</td>` : `<td>—</td>`;
+    if (newFmt) {
+      const v = f => row[f] ? `<td class="has-val">${row[f]}</td>` : `<td>—</td>`;
+      const gv = f => row[f] ? `<td class="has-val">${row[f]}g</td>` : `<td>—</td>`;
+      return `<tr>${dateCell}${mC}${gv('min_weight')}${gv('avg_weight')}${v('w70')}${v('w75')}${v('yoku_bukuro')}${v('sheraton_count')}${gv('sheraton_weight')}${v('chipburn')}</tr>`;
+    } else {
+      const total_haiki = row.haiki_kakaku + row.haiki_error;
+      const sC   = row.shipment     ? `<td class="has-val c-shipment">${row.shipment}</td>`  : `<td>—</td>`;
+      const minC = row.min_weight   ? `<td class="has-val">${row.min_weight}g</td>`          : `<td>—</td>`;
+      const avgC = row.avg_weight   ? `<td class="has-val">${row.avg_weight}g</td>`          : `<td>—</td>`;
+      const kkC  = row.haiki_kakaku ? `<td class="has-val c-haiki">${row.haiki_kakaku}</td>` : `<td>—</td>`;
+      const erC  = row.haiki_error  ? `<td class="has-val c-haiki">${row.haiki_error}</td>`  : `<td>—</td>`;
+      const thC  = total_haiki      ? `<td class="has-val">${total_haiki}</td>`              : `<td>—</td>`;
+      return `<tr>${dateCell}${mC}${sC}${minC}${avgC}${kkC}${erC}${thC}</tr>`;
+    }
   }).join('');
 }
 
@@ -349,36 +361,54 @@ async function loadMonthly() {
   (data || []).forEach(r => {
     const [date, course] = r.sow_date.split('_');
     const ym = date.slice(0, 7);
-    if (!byMonth[ym]) byMonth[ym] = { maegari: 0, shipment: 0, haiki_kakaku: 0, haiki_error: 0 };
-    try {
-      const p = JSON.parse(r.note || '{}');
-      if (course === '33') byMonth[ym].maegari += p.maegari || 0;
-      if (course === '34' || course === '35') { // '35'は旧データ後方互換
-        byMonth[ym].shipment     += p.shipment     || 0;
-        byMonth[ym].haiki_kakaku += p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
-        byMonth[ym].haiki_error  += p.haiki_error  || 0;
-      }
-      if (course === '34' && p.maegari != null) byMonth[ym].maegari += p.maegari; // 旧データ後方互換
-    } catch(e) {}
+    try { parseRow(byMonth, ym, course, JSON.parse(r.note || '{}')); } catch(e) {}
   });
 
   const months = Object.keys(byMonth).sort().reverse();
-  const tbody = document.getElementById('monthly-tbody');
+  const wrap = document.getElementById('monthly-wrap');
   if (!months.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">データなし</td></tr>`;
+    wrap.innerHTML = `<div class="table-wrap"><table><tbody><tr class="empty-row"><td colspan="5">データなし</td></tr></tbody></table></div>`;
     return;
   }
-  tbody.innerHTML = months.map(ym => {
-    const [y, m] = ym.split('-');
-    const r = byMonth[ym];
-    const totalH = r.haiki_kakaku + r.haiki_error;
-    const mC  = r.maegari      ? `<td class="has-val c-maegari">${r.maegari}</td>`       : `<td>—</td>`;
-    const sC  = r.shipment     ? `<td class="has-val c-shipment">${r.shipment}</td>`      : `<td>—</td>`;
-    const kkC = r.haiki_kakaku ? `<td class="has-val c-haiki">${r.haiki_kakaku}</td>`     : `<td>—</td>`;
-    const erC = r.haiki_error  ? `<td class="has-val c-haiki">${r.haiki_error}</td>`      : `<td>—</td>`;
-    const thC = totalH         ? `<td class="has-val" style="color:#1C201C">${totalH}</td>` : `<td>—</td>`;
-    return `<tr><td>${+y}/${+m}月</td>${mC}${sC}${kkC}${erC}${thC}</tr>`;
-  }).join('');
+
+  const oldMonths = months.filter(ym => !isNewFmt(ym));
+  const newMonths = months.filter(ym =>  isNewFmt(ym));
+
+  let html = '';
+
+  if (newMonths.length) {
+    html += `<div class="table-wrap" style="margin-bottom:12px"><table>
+      <thead><tr><th>月</th><th>前借り</th><th>翌日袋</th><th>シェラトン株</th><th>チップ等</th></tr></thead>
+      <tbody>${newMonths.map(ym => {
+        const [y, m] = ym.split('-');
+        const r = byMonth[ym];
+        const mC  = r.maegari       ? `<td class="has-val c-maegari">${r.maegari}</td>`        : `<td>—</td>`;
+        const ybC = r.yoku_bukuro   ? `<td class="has-val">${r.yoku_bukuro}</td>`              : `<td>—</td>`;
+        const shC = r.sheraton_count? `<td class="has-val">${r.sheraton_count}</td>`           : `<td>—</td>`;
+        const cbC = r.chipburn      ? `<td class="has-val c-haiki">${r.chipburn}</td>`         : `<td>—</td>`;
+        return `<tr><td>${+y}/${+m}月</td>${mC}${ybC}${shC}${cbC}</tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }
+
+  if (oldMonths.length) {
+    html += `<div class="table-wrap"><table>
+      <thead><tr><th>月</th><th>前借り</th><th>出荷</th><th>廃棄(合格)</th><th>廃棄(エラー)</th><th>廃棄計</th></tr></thead>
+      <tbody>${oldMonths.map(ym => {
+        const [y, m] = ym.split('-');
+        const r = byMonth[ym];
+        const totalH = r.haiki_kakaku + r.haiki_error;
+        const mC  = r.maegari      ? `<td class="has-val c-maegari">${r.maegari}</td>`      : `<td>—</td>`;
+        const sC  = r.shipment     ? `<td class="has-val c-shipment">${r.shipment}</td>`    : `<td>—</td>`;
+        const kkC = r.haiki_kakaku ? `<td class="has-val c-haiki">${r.haiki_kakaku}</td>`   : `<td>—</td>`;
+        const erC = r.haiki_error  ? `<td class="has-val c-haiki">${r.haiki_error}</td>`    : `<td>—</td>`;
+        const thC = totalH         ? `<td class="has-val">${totalH}</td>`                   : `<td>—</td>`;
+        return `<tr><td>${+y}/${+m}月</td>${mC}${sC}${kkC}${erC}${thC}</tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }
+
+  wrap.innerHTML = html;
 }
 
 db.channel('harvest_info_rt')

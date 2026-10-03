@@ -289,7 +289,7 @@ const INITIAL_SHIFTS = {
   '2026-08-31': {cultivation:["布川"], delivery:["宮本"], other:["かりまた"]},
   '2026-10-01': {cultivation:["まき","星野"],   delivery:["前島"],    other:["かりまた"]},
   '2026-10-02': {cultivation:["星野"],          delivery:["星野"],    other:["かりまた"]},
-  '2026-10-03': {cultivation:["布川"],   delivery:["前島"],    other:["星野"]},
+  '2026-10-03': {cultivation:["布川","下田"],   delivery:["前島"],    other:["星野"]},
   '2026-10-04': {cultivation:["北島"],   delivery:["宮本"],    other:["星野"]},
   '2026-10-05': {cultivation:["布川"],   delivery:["宮本"],    other:["かりまた"]},
   '2026-10-06': {cultivation:["北島","下田"],   delivery:["前島"],    other:["かりまた"]},
@@ -347,11 +347,13 @@ async function loadShifts() {
   } else {
     // 特定日付のみパッチ（手動編集した他の日付は上書きしない）
     const oct6 = shifts['2026-10-06'];
-    const needsPatch = !oct6 || !oct6.cultivation.includes('下田');
+    const oct3 = shifts['2026-10-03'];
+    const needsPatch = !oct6 || !oct6.cultivation.includes('下田') || !oct3?.cultivation.includes('下田');
     if (needsPatch) {
       await patchShiftDates([
         ['2026-10-01', INITIAL_SHIFTS['2026-10-01']],
         ['2026-10-02', INITIAL_SHIFTS['2026-10-02']],
+        ['2026-10-03', INITIAL_SHIFTS['2026-10-03']],
         ['2026-10-06', INITIAL_SHIFTS['2026-10-06']],
         ['2026-10-13', INITIAL_SHIFTS['2026-10-13']],
         ['2026-10-17', INITIAL_SHIFTS['2026-10-17']],

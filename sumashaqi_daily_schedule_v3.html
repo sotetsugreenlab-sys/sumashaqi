@@ -172,6 +172,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 </div>
 
 <div id="morning-check-wrap"></div>
+<div id="evening-check-wrap"></div>
 <div id="delivery-banner"></div>
 <div id="event-banner"></div>
 <div id="tasks"></div>
@@ -911,11 +912,63 @@ async function toggleMC(id) {
   }
 }
 
+const EC_ITEMS = [
+  { id: 'ec_cycle', label: 'LEDサイクルマーク よし' },
+  { id: 'ec_ac',    label: 'エアコン 18℃強 よし' },
+  { id: 'ec_fan',   label: '換気扇 よし' },
+  { id: 'ec_basil', label: 'バジルLED よし' },
+];
+
+let ecState = {};
+let ecRowId = null;
+
+function renderEveningCheck() {
+  const wrap = document.getElementById('evening-check-wrap');
+  const itemsHtml = EC_ITEMS.map(item => {
+    const checked = !!ecState[item.id];
+    return `<div class="mc-item${checked ? ' checked' : ''}" onclick="toggleEC('${item.id}')">
+      <div class="mc-box${checked ? ' checked' : ''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">${item.label}</div>
+    </div>`;
+  }).join('');
+  const allDone = EC_ITEMS.every(i => ecState[i.id]);
+  wrap.innerHTML = `<div class="morning-check">
+    <div class="morning-check-title">🌙 帰りのチェック</div>
+    <div>${itemsHtml}</div>
+    <div class="mc-all-done${allDone ? ' show' : ''}">✅ すべて完了！</div>
+  </div>`;
+}
+
+async function initEveningCheck() {
+  renderEveningCheck();
+  const { data } = await db.from('lot_notes')
+    .select('id,note').eq('crop','evening_check').eq('sow_date', mcTodayStr()).limit(1);
+  if (data && data.length > 0) {
+    ecRowId = data[0].id;
+    try { ecState = JSON.parse(data[0].note); } catch(e) { ecState = {}; }
+  }
+  renderEveningCheck();
+}
+
+async function toggleEC(id) {
+  ecState[id] = !ecState[id];
+  renderEveningCheck();
+  const noteStr = JSON.stringify(ecState);
+  if (ecRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', ecRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'evening_check', sow_date: mcTodayStr(), note: noteStr }).select('id');
+    if (data && data.length > 0) ecRowId = data[0].id;
+  }
+}
+
 renderAll();
 loadEvents();
 loadShifts();
 loadLotNotes();
 initMorningCheck();
+initEveningCheck();
 </script>
 </body>
 </html>

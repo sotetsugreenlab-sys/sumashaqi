@@ -109,6 +109,19 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .sync-status { font-size: 12px; color: #aaa; margin-top: 6px; }
 .sync-status.ok { color: #3B6D11; }
 .sync-status.err { color: #E24B4A; }
+
+.morning-check { background: #f7f7f5; border-radius: 14px; padding: 0.75rem 1rem; margin-bottom: 10px; }
+.morning-check-title { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 0.06em; margin-bottom: 6px; }
+.mc-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.mc-item + .mc-item { border-top: 1px solid #ececea; }
+.mc-box { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; background: #fff; }
+.mc-box.checked { background: #3B8A28; border-color: #3B8A28; }
+.mc-check { display: none; color: #fff; font-size: 14px; font-weight: 700; }
+.mc-box.checked .mc-check { display: block; }
+.mc-label { font-size: 13px; color: #333; transition: color 0.15s; line-height: 1.4; }
+.mc-item.checked .mc-label { color: #bbb; text-decoration: line-through; }
+.mc-all-done { background: #EAF3DE; border-radius: 10px; padding: 6px 10px; font-size: 12px; color: #3B6D11; font-weight: 600; text-align: center; margin-top: 8px; display: none; }
+.mc-all-done.show { display: block; }
 .staff-line { font-size: 13px; color: #666; margin-top: 5px; }
 .staff-line strong { color: #1a1a1a; font-weight: 600; }
 .card-notes { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(0,0,0,0.07); }
@@ -158,6 +171,7 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
   </div>
 </div>
 
+<div id="morning-check-wrap"></div>
 <div id="delivery-banner"></div>
 <div id="event-banner"></div>
 <div id="tasks"></div>
@@ -843,6 +857,50 @@ renderAll();
 loadEvents();
 loadShifts();
 loadLotNotes();
+initMorningCheck();
+
+const MC_ITEMS = [
+  { id: 'ac',       label: 'エアコン 18℃・風速急 よし' },
+  { id: 'fan',      label: '換気扇 よし' },
+  { id: 'temp',     label: '室温 確認' },
+  { id: 'led_auto', label: 'LED：今日の区画 → 自動 に戻した' },
+  { id: 'led_on',   label: 'LED：3日後の区画 → 入 にした' },
+  { id: 'cycle',    label: 'サイクルマーク よし' },
+];
+
+function mcKey() {
+  const t = new Date();
+  return `mc_${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+
+function initMorningCheck() {
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(mcKey()) || '{}'); } catch(e) {}
+
+  const wrap = document.getElementById('morning-check-wrap');
+  const itemsHtml = MC_ITEMS.map(item => {
+    const checked = !!state[item.id];
+    return `<div class="mc-item${checked ? ' checked' : ''}" onclick="toggleMC('${item.id}')">
+      <div class="mc-box${checked ? ' checked' : ''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">${item.label}</div>
+    </div>`;
+  }).join('');
+
+  const allDone = MC_ITEMS.every(i => state[i.id]);
+  wrap.innerHTML = `<div class="morning-check">
+    <div class="morning-check-title">☀️ 朝のチェック</div>
+    <div id="mc-items">${itemsHtml}</div>
+    <div class="mc-all-done${allDone ? ' show' : ''}" id="mc-all-done">✅ すべて完了！</div>
+  </div>`;
+}
+
+function toggleMC(id) {
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(mcKey()) || '{}'); } catch(e) {}
+  state[id] = !state[id];
+  try { localStorage.setItem(mcKey(), JSON.stringify(state)); } catch(e) {}
+  initMorningCheck();
+}
 </script>
 </body>
 </html>

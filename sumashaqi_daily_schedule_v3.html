@@ -909,9 +909,11 @@ function renderMorningCheck() {
 }
 
 async function initMorningCheck() {
+  const targetDate = toDateStr(viewDate);
   renderMorningCheck();
   const { data } = await db.from('lot_notes')
-    .select('id,note').eq('crop','morning_check').eq('sow_date', toDateStr(viewDate)).limit(1);
+    .select('id,note').eq('crop','morning_check').eq('sow_date', targetDate).limit(1);
+  if (toDateStr(viewDate) !== targetDate) return;
   if (data && data.length > 0) {
     mcRowId = data[0].id;
     try { mcState = JSON.parse(data[0].note); } catch(e) { mcState = {}; }
@@ -961,9 +963,11 @@ function renderEveningCheck() {
 }
 
 async function initEveningCheck() {
+  const targetDate = toDateStr(viewDate);
   renderEveningCheck();
   const { data } = await db.from('lot_notes')
-    .select('id,note').eq('crop','evening_check').eq('sow_date', toDateStr(viewDate)).limit(1);
+    .select('id,note').eq('crop','evening_check').eq('sow_date', targetDate).limit(1);
+  if (toDateStr(viewDate) !== targetDate) return;
   if (data && data.length > 0) {
     ecRowId = data[0].id;
     try { ecState = JSON.parse(data[0].note); } catch(e) { ecState = {}; }
@@ -988,8 +992,6 @@ renderAll();
 loadEvents();
 loadShifts();
 loadLotNotes();
-initMorningCheck();
-initEveningCheck();
 </script>
 </body>
 </html>

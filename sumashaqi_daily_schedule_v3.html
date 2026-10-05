@@ -855,7 +855,7 @@ async function loadEvents() {
 }
 
 const MC_ITEMS = [
-  { id: 'ac',       label: 'エアコン 18℃・風速急 よし' },
+  { id: 'ac',       type: 'ac', label: 'エアコン 18℃' },
   { id: 'fan',      label: '換気扇 よし' },
   { id: 'temp',     label: '室温 確認（21〜23℃、棚1-A は22.5〜24.5℃）' },
   { id: 'led_auto', label: 'LED：今日の区画 → 自動 に戻した' },
@@ -871,16 +871,39 @@ function mcTodayStr() {
   return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
 }
 
+function renderAcRow(item, state, toggleFn) {
+  const kId = item.id + '_kyu', tId = item.id + '_tsu';
+  const kC = !!state[kId], tC = !!state[tId];
+  return `<div class="mc-item" style="flex-direction:column;align-items:flex-start;cursor:default">
+    <div class="mc-label" style="font-weight:600;color:#444;margin-bottom:4px">${item.label}</div>
+    <div style="display:flex;gap:20px">
+      <div class="mc-item" style="border:none;padding:0;margin:0" onclick="${toggleFn}('${kId}')">
+        <div class="mc-box${kC?' checked':''}"><span class="mc-check">✓</span></div>
+        <div class="mc-label">風速急 よし</div>
+      </div>
+      <div class="mc-item" style="border:none;padding:0;margin:0" onclick="${toggleFn}('${tId}')">
+        <div class="mc-box${tC?' checked':''}"><span class="mc-check">✓</span></div>
+        <div class="mc-label">風速強 よし</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function checkAllDone(items, state) {
+  return items.every(i => i.type === 'ac' ? (state[i.id+'_kyu'] || state[i.id+'_tsu']) : state[i.id]);
+}
+
 function renderMorningCheck() {
   const wrap = document.getElementById('morning-check-wrap');
   const itemsHtml = MC_ITEMS.map(item => {
+    if (item.type === 'ac') return renderAcRow(item, mcState, 'toggleMC');
     const checked = !!mcState[item.id];
     return `<div class="mc-item${checked ? ' checked' : ''}" onclick="toggleMC('${item.id}')">
       <div class="mc-box${checked ? ' checked' : ''}"><span class="mc-check">✓</span></div>
       <div class="mc-label">${item.label}</div>
     </div>`;
   }).join('');
-  const allDone = MC_ITEMS.every(i => mcState[i.id]);
+  const allDone = checkAllDone(MC_ITEMS, mcState);
   wrap.innerHTML = `<div class="morning-check">
     <div class="morning-check-title">☀️ 朝のチェック</div>
     <div id="mc-items">${itemsHtml}</div>
@@ -914,7 +937,7 @@ async function toggleMC(id) {
 
 const EC_ITEMS = [
   { id: 'ec_cycle', label: 'LEDサイクルマーク よし' },
-  { id: 'ec_ac',    label: 'エアコン 18℃強 よし' },
+  { id: 'ec_ac',    type: 'ac', label: 'エアコン 18℃' },
   { id: 'ec_fan',   label: '換気扇 よし' },
   { id: 'ec_basil', label: 'バジルLED よし' },
 ];
@@ -925,13 +948,14 @@ let ecRowId = null;
 function renderEveningCheck() {
   const wrap = document.getElementById('evening-check-wrap');
   const itemsHtml = EC_ITEMS.map(item => {
+    if (item.type === 'ac') return renderAcRow(item, ecState, 'toggleEC');
     const checked = !!ecState[item.id];
     return `<div class="mc-item${checked ? ' checked' : ''}" onclick="toggleEC('${item.id}')">
       <div class="mc-box${checked ? ' checked' : ''}"><span class="mc-check">✓</span></div>
       <div class="mc-label">${item.label}</div>
     </div>`;
   }).join('');
-  const allDone = EC_ITEMS.every(i => ecState[i.id]);
+  const allDone = checkAllDone(EC_ITEMS, ecState);
   wrap.innerHTML = `<div class="morning-check">
     <div class="morning-check-title">🌙 帰りのチェック</div>
     <div>${itemsHtml}</div>

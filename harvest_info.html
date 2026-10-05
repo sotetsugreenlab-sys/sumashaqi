@@ -307,7 +307,7 @@ async function load() {
     document.getElementById('daily-thead').innerHTML = `<tr>
       <th>日付</th><th>前借り</th><th>最低g</th><th>平均g</th>
       <th>70g株</th><th>75g株</th><th>翌日袋</th>
-      <th>シェラトン株</th><th>シェラトンg</th><th>チップ等</th>
+      <th>シェラトン株</th><th>シェラトンg</th><th>ダメ株</th>
     </tr>`;
   } else {
     document.getElementById('daily-thead').innerHTML = `<tr>
@@ -378,7 +378,7 @@ async function loadMonthly() {
 
   if (newMonths.length) {
     html += `<div class="table-wrap" style="margin-bottom:12px"><table>
-      <thead><tr><th>月</th><th>前借り</th><th>翌日袋</th><th>シェラトン株</th><th>チップ等</th></tr></thead>
+      <thead><tr><th>月</th><th>前借り</th><th>翌日袋</th><th>シェラトン株</th><th>ダメ株</th></tr></thead>
       <tbody>${newMonths.map(ym => {
         const [y, m] = ym.split('-');
         const r = byMonth[ym];

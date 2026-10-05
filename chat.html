@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SGLチャット</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, sans-serif; background: #f5f5f0; height: 100dvh; display: flex; flex-direction: column; }
+
+/* ヘッダー */
+.header { background: #fff; padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.header-icon { font-size: 22px; }
+.header-title { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.header-sub { font-size: 11px; color: #aaa; margin-top: 1px; }
+.btn-settings { margin-left: auto; font-size: 20px; background: none; border: none; cursor: pointer; color: #888; }
+
+/* 設定画面 */
+#setup-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 16px; }
+#setup-screen h2 { font-size: 16px; color: #333; }
+#setup-screen p { font-size: 13px; color: #888; text-align: center; line-height: 1.6; }
+#setup-screen input { width: 100%; padding: 12px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 13px; }
+#setup-screen button { width: 100%; padding: 13px; background: #534AB7; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+/* チャット */
+#chat-screen { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+.messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.msg { display: flex; gap: 8px; align-items: flex-end; }
+.msg.user { flex-direction: row-reverse; }
+.bubble { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.msg.bot .bubble { background: #fff; color: #1a1a1a; border-bottom-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.msg.user .bubble { background: #534AB7; color: #fff; border-bottom-right-radius: 4px; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; background: #EEEDFE; }
+.msg.user .avatar { background: #534AB7; }
+
+.typing { display: flex; gap: 4px; padding: 12px 14px; }
+.typing span { width: 7px; height: 7px; border-radius: 50%; background: #bbb; animation: bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+/* 入力エリア */
+.input-area { background: #fff; border-top: 1px solid #eee; padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0; }
+.input-area textarea { flex: 1; border: 1.5px solid #ddd; border-radius: 20px; padding: 8px 14px; font-size: 14px; resize: none; max-height: 120px; line-height: 1.5; font-family: inherit; outline: none; }
+.input-area textarea:focus { border-color: #534AB7; }
+.send-btn { width: 40px; height: 40px; border-radius: 50%; background: #534AB7; border: none; cursor: pointer; color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.send-btn:disabled { background: #ccc; }
+
+/* クイック質問 */
+.quick-btns { display: flex; gap: 6px; padding: 0 12px 8px; overflow-x: auto; flex-shrink: 0; }
+.quick-btns::-webkit-scrollbar { display: none; }
+.quick-btn { white-space: nowrap; padding: 5px 12px; border: 1.5px solid #AFA9EC; border-radius: 16px; background: #f0eeff; color: #534AB7; font-size: 12px; cursor: pointer; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🌿</div>
+  <div>
+    <div class="header-title">SGLアシスタント</div>
+    <div class="header-sub">Gemini AI</div>
+  </div>
+  <button class="btn-settings" onclick="showSettings()" title="設定">⚙️</button>
+</div>
+
+<!-- 設定画面 -->
+<div id="setup-screen">
+  <div style="font-size:48px">🤖</div>
+  <h2>Gemini APIキーを設定</h2>
+  <p>Google AI Studio で取得したAPIキーを入力してください。<br>キーはこのブラウザにのみ保存されます。</p>
+  <input type="password" id="key-input" placeholder="AIza... または AQ.Ab..." />
+  <button onclick="saveKey()">設定して始める</button>
+</div>
+
+<!-- チャット画面 -->
+<div id="chat-screen">
+  <div class="messages" id="messages"></div>
+  <div class="quick-btns" id="quick-btns">
+    <button class="quick-btn" onclick="sendQuick('スマシャキの今日の作業を教えて')">今日の作業は？</button>
+    <button class="quick-btn" onclick="sendQuick('播種から刈取まで何日かかる？')">播種→刈取日数</button>
+    <button class="quick-btn" onclick="sendQuick('室温の適温を教えて')">室温の適温</button>
+    <button class="quick-btn" onclick="sendQuick('LEDの管理方法を教えて')">LED管理</button>
+    <button class="quick-btn" onclick="sendQuick('ダメ株ってどんな状態？')">ダメ株とは？</button>
+    <button class="quick-btn" onclick="sendQuick('出荷基準を教えて')">出荷基準</button>
+  </div>
+  <div class="input-area">
+    <textarea id="msg-input" placeholder="質問を入力…" rows="1"
+      oninput="autoResize(this)"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendMsg()">↑</button>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `あなたはSGL（緑園都市農場）のスタッフ向けアシスタントです。
+スマシャキ（水耕栽培ハーブ）の栽培・出荷業務を支援します。
+
+【基本情報】
+- スマシャキ栽培サイクル: 播種→30穴移植(6〜7日後)→5穴移植(17日後)→刈取(31〜34日目)
+- バジル収穫: 播種35日目
+- ワイルドロケット収穫: 播種34日目
+- パクチー収穫: 播種32日目
+- 室温適温: 21〜23℃（棚1-Aのみ22.5〜24.5℃）
+- エアコン設定: 18℃冷房、風速は室温に応じて急/強/中/弱を選択
+- LED管理: 刈取3日前から100%点灯。毎朝「今日刈取区画→自動」「3日後区画→入」にする
+- 出荷基準: パッケージの相鉄マークの上までハーブが届く高さ（1株25g目安、目標40g）
+- ダメ株: チップバーン・ブラウンなど出荷できない株
+
+【チームメンバー】れみ、後藤、鷲山、かりまた、下田、まき、星野、布川、北島、前島、宮本
+
+【業務の流れ】
+- 朝: エアコン・換気扇・室温・LED・サイクルマーク確認（アプリでチェック、LINE報告不要）
+- 帰り: LEDサイクルマーク・エアコン・換気扇・バジルLED確認
+- 刈取報告: 株数・平均g・袋数・シェラトン用・ダメ株をアプリに入力
+
+日本語で簡潔に答えてください。スタッフが現場で使う実用的な回答を心がけてください。`;
+
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+let apiKey = localStorage.getItem('sgl_gemini_key') || '';
+let history = [];
+
+function init() {
+  if (apiKey) {
+    showChat();
+  } else {
+    document.getElementById('setup-screen').style.display = 'flex';
+  }
+}
+
+function saveKey() {
+  const key = document.getElementById('key-input').value.trim();
+  if (!key) return alert('キーを入力してください');
+  apiKey = key;
+  localStorage.setItem('sgl_gemini_key', key);
+  showChat();
+}
+
+function showSettings() {
+  document.getElementById('chat-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('key-input').value = apiKey;
+}
+
+function showChat() {
+  document.getElementById('setup-screen').style.display = 'none';
+  const cs = document.getElementById('chat-screen');
+  cs.style.display = 'flex';
+  if (history.length === 0) addBotMsg('こんにちは！SGLアシスタントです🌿\nスマシャキの栽培・出荷について何でも聞いてください！');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function addBotMsg(text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = `<div class="avatar">🌿</div><div class="bubble">${esc(text)}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addUserMsg(text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<div class="avatar" style="color:#fff">👤</div><div class="bubble">${esc(text)}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing-indicator';
+  div.innerHTML = `<div class="avatar">🌿</div><div class="bubble typing"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+
+async function sendMsg() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  await send(text);
+}
+
+async function sendQuick(text) { await send(text); }
+
+async function send(text) {
+  document.getElementById('send-btn').disabled = true;
+  addUserMsg(text);
+  history.push({ role: 'user', parts: [{ text }] });
+  showTyping();
+
+  try {
+    const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: history,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+      })
+    });
+    const data = await res.json();
+    hideTyping();
+
+    if (data.error) {
+      addBotMsg('エラーが発生しました: ' + data.error.message);
+      history.pop();
+    } else {
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '返答が取得できませんでした';
+      history.push({ role: 'model', parts: [{ text: reply }] });
+      addBotMsg(reply);
+    }
+  } catch(e) {
+    hideTyping();
+    addBotMsg('通信エラーが発生しました。\nネットワークを確認してください。');
+    history.pop();
+  }
+
+  document.getElementById('send-btn').disabled = false;
+}
+
+init();
+</script>
+</body>
+</html>

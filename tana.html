@@ -272,6 +272,7 @@ function trayStyle(crop, sowDate) {
 
 let currentShelf = 1;
 let lots = [];
+let lotNotesMap = {}; // key: sow_date → note texts[]
 let reflectors = {}; // key: "shelf-batch" → boolean
 let modalMode = 'add';
 let addCtx = {};
@@ -280,13 +281,19 @@ let selCrop = '';
 let selSpan = 2;
 
 async function init() {
-  const [lotsRes, refRes] = await Promise.all([
+  const [lotsRes, refRes, notesRes] = await Promise.all([
     db.from('shelf_lots').select('*'),
     db.from('shelf_reflectors').select('*'),
+    db.from('lot_notes').select('sow_date,note').eq('crop','sumashaqi'),
   ]);
   lots = lotsRes.data || [];
   reflectors = {};
   (refRes.data || []).forEach(r => { reflectors[`${r.shelf}-${r.row_num}-${r.batch}`] = r.has_reflector; });
+  lotNotesMap = {};
+  (notesRes.data || []).forEach(r => {
+    if (!lotNotesMap[r.sow_date]) lotNotesMap[r.sow_date] = [];
+    lotNotesMap[r.sow_date].push(r.note);
+  });
   renderGrid();
   renderAllReflectorRows();
 }
@@ -350,12 +357,15 @@ function buildRow(row) {
     if (lot) {
       for (let s = c + 1; s < c + lot.col_span; s++) skip.add(s);
       const st = trayStyle(lot.crop, lot.sow_date);
+      const schedNotes = (lotNotesMap[lot.sow_date] || []);
+      const schedHtml = schedNotes.map(n => `<div class="lot-note">💬 ${esc(n)}</div>`).join('');
       html += `<div class="cell-lot"
         style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${st.bd}"
         onclick="openEdit(${lot.id})">
         <div class="lot-crop">${esc(lot.crop)}</div>
         <div class="lot-date">${fmtDate(lot.sow_date)}</div>
         ${lot.note ? `<div class="lot-note">📝 ${esc(lot.note)}</div>` : ''}
+        ${schedHtml}
       </div>`;
     } else {
       html += `<div class="cell-empty" style="grid-column:${c}" onclick="openAdd(${row},${c})">+</div>`;

@@ -59,7 +59,7 @@ body { font-family: -apple-system, sans-serif; background: #f5f5f0; height: 100d
   <div class="header-icon">🌿</div>
   <div>
     <div class="header-title">SGLアシスタント</div>
-    <div class="header-sub">Gemini AI</div>
+    <div class="header-sub">Groq AI (Llama 3.1)</div>
   </div>
   <button class="btn-settings" onclick="showSettings()" title="設定">⚙️</button>
 </div>
@@ -67,9 +67,9 @@ body { font-family: -apple-system, sans-serif; background: #f5f5f0; height: 100d
 <!-- 設定画面 -->
 <div id="setup-screen">
   <div style="font-size:48px">🤖</div>
-  <h2>Gemini APIキーを設定</h2>
-  <p>Google AI Studio で取得したAPIキーを入力してください。<br>キーはこのブラウザにのみ保存されます。</p>
-  <input type="password" id="key-input" placeholder="AIza... または AQ.Ab..." />
+  <h2>Groq APIキーを設定</h2>
+  <p><strong>console.groq.com</strong> で無料取得したAPIキーを入力。<br>キーはこのブラウザにのみ保存されます。</p>
+  <input type="password" id="key-input" placeholder="gsk_..." />
   <button onclick="saveKey()">設定して始める</button>
 </div>
 
@@ -116,9 +116,10 @@ const SYSTEM_PROMPT = `あなたはSGL（緑園都市農場）のスタッフ向
 
 日本語で簡潔に答えてください。スタッフが現場で使う実用的な回答を心がけてください。`;
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama-3.1-8b-instant';
 
-let apiKey = localStorage.getItem('sgl_gemini_key') || '';
+let apiKey = localStorage.getItem('sgl_groq_key') || '';
 let history = [];
 
 function init() {
@@ -133,7 +134,7 @@ function saveKey() {
   const key = document.getElementById('key-input').value.trim();
   if (!key) return alert('キーを入力してください');
   apiKey = key;
-  localStorage.setItem('sgl_gemini_key', key);
+  localStorage.setItem('sgl_groq_key', key);
   showChat();
 }
 
@@ -203,23 +204,15 @@ async function sendQuick(text) { await send(text); }
 async function send(text) {
   document.getElementById('send-btn').disabled = true;
   addUserMsg(text);
-  history.push({ role: 'user', parts: [{ text }] });
+  history.push({ role: 'user', content: text });
   showTyping();
 
   try {
-    const isAQ = apiKey.startsWith('AQ.');
-    const url = isAQ ? GEMINI_URL : `${GEMINI_URL}?key=${apiKey}`;
-    const headers = { 'Content-Type': 'application/json' };
-    if (isAQ) headers['Authorization'] = `Bearer ${apiKey}`;
-    else headers['x-goog-api-key'] = apiKey;
-    const res = await fetch(url, {
+    const messages = [{ role: 'system', content: SYSTEM_PROMPT }, ...history];
+    const res = await fetch(GROQ_URL, {
       method: 'POST',
-      headers,
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: history,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
-      })
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7, max_tokens: 1024 })
     });
     const data = await res.json();
     hideTyping();
@@ -228,8 +221,8 @@ async function send(text) {
       addBotMsg('エラーが発生しました: ' + data.error.message);
       history.pop();
     } else {
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '返答が取得できませんでした';
-      history.push({ role: 'model', parts: [{ text: reply }] });
+      const reply = data.choices?.[0]?.message?.content || '返答が取得できませんでした';
+      history.push({ role: 'assistant', content: reply });
       addBotMsg(reply);
     }
   } catch(e) {

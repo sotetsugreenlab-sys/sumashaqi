@@ -853,12 +853,6 @@ async function loadEvents() {
   }
 }
 
-renderAll();
-loadEvents();
-loadShifts();
-loadLotNotes();
-initMorningCheck();
-
 const MC_ITEMS = [
   { id: 'ac',       label: 'エアコン 18℃・風速急 よし' },
   { id: 'fan',      label: '換気扇 よし' },
@@ -916,6 +910,12 @@ async function toggleMC(id) {
     if (data && data.length > 0) mcRowId = data[0].id;
   }
 }
+
+renderAll();
+loadEvents();
+loadShifts();
+loadLotNotes();
+initMorningCheck();
 </script>
 </body>
 </html>

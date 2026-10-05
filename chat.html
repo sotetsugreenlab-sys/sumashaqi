@@ -117,7 +117,7 @@ const SYSTEM_PROMPT = `あなたはSGL（緑園都市農場）のスタッフ向
 日本語で簡潔に答えてください。スタッフが現場で使う実用的な回答を心がけてください。`;
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.1-8b-instant';
+const GROQ_MODEL = 'llama3-8b-8192';
 
 let apiKey = localStorage.getItem('sgl_groq_key') || '';
 let history = [];

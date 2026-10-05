@@ -114,7 +114,13 @@ const SYSTEM_PROMPT = `あなたはSGL（緑園都市農場）のスタッフ向
 - 帰り: LEDサイクルマーク・エアコン・換気扇・バジルLED確認
 - 刈取報告: 株数・平均g・袋数・シェラトン用・ダメ株をアプリに入力
 
-日本語で**3〜4文以内**で答えてください。長い表や箇条書きは避け、要点だけ伝えてください。`;
+【アプリページURL】（該当する場合はリンクを案内してください）
+- スマシャキ日程・朝夕チェック: [スマシャキページ](https://sotetsugreenlab-sys.github.io/sumashaqi/sumashaqi_daily_schedule_v3.html)
+- 棚管理: [棚管理ページ](https://sotetsugreenlab-sys.github.io/sumashaqi/tana.html)
+- 引き継ぎ: [引き継ぎページ](https://sotetsugreenlab-sys.github.io/sumashaqi/handover.html)
+- マニュアル: [マニュアル](https://sotetsugreenlab-sys.github.io/sumashaqi/sumashaqi-manual.html)
+
+日本語で**3〜4文以内**で答えてください。長い表や箇条書きは避け、要点だけ伝えてください。リンクは [テキスト](URL) の形式で書いてください。`;
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'openai/gpt-oss-20b';
@@ -188,7 +194,12 @@ function hideTyping() {
   document.getElementById('typing-indicator')?.remove();
 }
 
-function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function esc(t) {
+  return t
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#534AB7;text-decoration:underline">$1</a>')
+    .replace(/\n/g,'<br>');
+}
 
 async function sendMsg() {
   const input = document.getElementById('msg-input');

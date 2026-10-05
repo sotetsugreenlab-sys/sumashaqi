@@ -116,7 +116,7 @@ const SYSTEM_PROMPT = `あなたはSGL（緑園都市農場）のスタッフ向
 
 日本語で簡潔に答えてください。スタッフが現場で使う実用的な回答を心がけてください。`;
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 let apiKey = localStorage.getItem('sgl_gemini_key') || '';
 let history = [];
@@ -209,7 +209,7 @@ async function send(text) {
   try {
     const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents: history,

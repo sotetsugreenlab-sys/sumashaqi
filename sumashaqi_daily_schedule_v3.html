@@ -872,25 +872,24 @@ function mcTodayStr() {
 }
 
 function renderAcRow(item, state, toggleFn) {
-  const kId = item.id + '_kyu', tId = item.id + '_tsu';
-  const kC = !!state[kId], tC = !!state[tId];
+  const speeds = [['_kyu','急'],['_tsu','強'],['_chu','中'],['_jaku','弱']];
+  const boxes = speeds.map(([sfx, label]) => {
+    const id = item.id + sfx, c = !!state[id];
+    return `<div class="mc-item" style="border:none;padding:0;margin:0" onclick="${toggleFn}('${id}')">
+      <div class="mc-box${c?' checked':''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">風速${label} よし</div>
+    </div>`;
+  }).join('');
   return `<div class="mc-item" style="flex-direction:column;align-items:flex-start;cursor:default">
     <div class="mc-label" style="font-weight:600;color:#444;margin-bottom:4px">${item.label}</div>
-    <div style="display:flex;gap:20px">
-      <div class="mc-item" style="border:none;padding:0;margin:0" onclick="${toggleFn}('${kId}')">
-        <div class="mc-box${kC?' checked':''}"><span class="mc-check">✓</span></div>
-        <div class="mc-label">風速急 よし</div>
-      </div>
-      <div class="mc-item" style="border:none;padding:0;margin:0" onclick="${toggleFn}('${tId}')">
-        <div class="mc-box${tC?' checked':''}"><span class="mc-check">✓</span></div>
-        <div class="mc-label">風速強 よし</div>
-      </div>
-    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px">${boxes}</div>
   </div>`;
 }
 
 function checkAllDone(items, state) {
-  return items.every(i => i.type === 'ac' ? (state[i.id+'_kyu'] || state[i.id+'_tsu']) : state[i.id]);
+  return items.every(i => i.type === 'ac'
+    ? ['_kyu','_tsu','_chu','_jaku'].some(s => state[i.id+s])
+    : state[i.id]);
 }
 
 function renderMorningCheck() {

@@ -243,6 +243,7 @@ const db = supabase.createClient(
 
 const CROPS = ['スマシャキ','スマシャキープ','バジル','ワイルドロケット','パクチー','ハーブキープ','その他'];
 const NO_DATE_CROPS = new Set(['スマシャキープ','ハーブキープ']);
+const CROP_HARVEST_DAYS = { 'スマシャキ': 34, 'バジル': 35, 'ワイルドロケット': 34, 'パクチー': 32 };
 const SPANS = [
   { label: '0.5', val: 1 },
   { label: '1',   val: 2 },
@@ -363,7 +364,7 @@ function buildRow(row) {
         style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${st.bd}"
         onclick="openEdit(${lot.id})">
         <div class="lot-crop">${esc(lot.crop)}</div>
-        <div class="lot-date">${fmtDate(lot.sow_date)}</div>
+        <div class="lot-date">${harvestDisplay(lot.crop, lot.sow_date)}</div>
         ${lot.note ? `<div class="lot-note">📝 ${esc(lot.note)}</div>` : ''}
         ${schedHtml}
       </div>`;
@@ -372,6 +373,16 @@ function buildRow(row) {
     }
   }
   return html;
+}
+
+function harvestDisplay(crop, sowDate) {
+  const days = CROP_HARVEST_DAYS[crop];
+  if (!days || !sowDate) return fmtDate(sowDate);
+  const sow = new Date(sowDate + 'T00:00:00');
+  const harv = new Date(sow.getTime() + days * 86400000);
+  const sm = sow.getMonth()+1, sd = sow.getDate();
+  const hm = harv.getMonth()+1, hd = harv.getDate();
+  return `${sm}/${sd}播種：${hm}/${hd}刈取(${days}日目)`;
 }
 
 function fmtDate(d) {

@@ -655,7 +655,7 @@ function makeCard(t, dayLabel, compact) {
   const hasAlert = manualAlert || autoAlert;
   let alertBanner = '';
   if (autoAlert) {
-    alertBanner = `<div class="card-alert-banner">⚠️ ${givenTotal}株前借り済・在庫注意</div>`;
+    alertBanner = `<div class="card-alert-banner">⚠️ ${givenTotal}株前借り済</div>`;
   } else if (manualAlert) {
     alertBanner = `<div class="card-alert-banner">⚠️ 注意ロット</div>`;
   }

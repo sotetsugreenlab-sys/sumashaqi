@@ -559,13 +559,13 @@ function toggleIrregular(dateStr, course) {
   }
 }
 
-async function submitIrregular(dateStr, course) {
-  const key = `${dateStr}_${course}`;
+async function submitIrregular(viewDateStr, sowDateStr, course) {
+  const key = `${viewDateStr}_${course}`;
   const fromDate = document.getElementById(`irr-from-${key}`)?.value;
   const count = parseInt(document.getElementById(`irr-count-${key}`)?.value) || 0;
   if (!fromDate || !count) { alert('日付と株数を入力してください'); return; }
 
-  // 前借り欄に入力して保存
+  // 前借り欄に入力して保存（キーは閲覧日_コース）
   if (!harvestCounts[key]) harvestCounts[key] = {};
   harvestCounts[key].maegari = count;
   const note = JSON.stringify({ maegari: count });
@@ -576,12 +576,12 @@ async function submitIrregular(dateStr, course) {
     if (data?.[0]) harvestCounts[key].id = data[0].id;
   }
 
-  // メモに追加
+  // メモはロットの播種日に追加
   const [fy, fm, fd] = fromDate.split('-').map(Number);
   const memoText = `${fm}/${fd}播種より${count}株前借り`;
-  const { data: md } = await db.from('lot_notes').insert({ crop: 'sumashaqi', sow_date: dateStr, note: memoText }).select('id');
-  if (!lotNotes[dateStr]) lotNotes[dateStr] = [];
-  lotNotes[dateStr].push({ id: md?.[0]?.id, note: memoText });
+  const { data: md } = await db.from('lot_notes').insert({ crop: 'sumashaqi', sow_date: sowDateStr, note: memoText }).select('id');
+  if (!lotNotes[sowDateStr]) lotNotes[sowDateStr] = [];
+  lotNotes[sowDateStr].push({ id: md?.[0]?.id, note: memoText });
 
   // フォームを閉じて再描画
   irregularForms[key].open = false;
@@ -680,6 +680,7 @@ function renderTasks() {
     const counts = harvestCounts[`${dateStr}_${c}`] || {};
     if (c === 33) {
       const irrKey = `${dateStr}_33`;
+      const sowDateStr33 = toDateStr(addDays(viewDate, -33));
       const irrOpen = !!(irregularForms[irrKey]?.open);
       const irrFormHtml = irrOpen ? `
         <div class="irregular-form">
@@ -689,7 +690,7 @@ function renderTasks() {
             <span style="font-size:11px;color:#666">播種から</span>
             <input type="number" min="0" id="irr-count-${irrKey}" class="hc-input" placeholder="0">
             <span class="hc-unit">株</span>
-            <button class="btn-irr-submit" onclick="submitIrregular('${dateStr}',33)">自動入力</button>
+            <button class="btn-irr-submit" onclick="submitIrregular('${dateStr}','${sowDateStr33}',33)">自動入力</button>
             <button class="btn-irr-cancel" onclick="toggleIrregular('${dateStr}',33)">✕</button>
           </div>
         </div>` : '';

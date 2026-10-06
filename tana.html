@@ -282,12 +282,14 @@ let selCrop = '';
 let selSpan = 2;
 
 let alertLotsMap = {}; // sow_date → true
+let irregularGivenMap = {}; // sow_date → total count given
 async function init() {
-  const [lotsRes, refRes, notesRes, alertRes] = await Promise.all([
+  const [lotsRes, refRes, notesRes, alertRes, irregularRes] = await Promise.all([
     db.from('shelf_lots').select('*'),
     db.from('shelf_reflectors').select('*'),
     db.from('lot_notes').select('sow_date,note').eq('crop','sumashaqi'),
     db.from('lot_notes').select('sow_date').eq('crop','sumashaqi_alert'),
+    db.from('lot_notes').select('sow_date,note').eq('crop','lot_irregular'),
   ]);
   lots = lotsRes.data || [];
   reflectors = {};
@@ -299,6 +301,13 @@ async function init() {
   });
   alertLotsMap = {};
   (alertRes.data || []).forEach(r => { alertLotsMap[r.sow_date] = true; });
+  irregularGivenMap = {};
+  (irregularRes.data || []).forEach(r => {
+    try {
+      const p = JSON.parse(r.note || '{}');
+      irregularGivenMap[r.sow_date] = (irregularGivenMap[r.sow_date] || 0) + (p.count || 0);
+    } catch(e) {}
+  });
   renderGrid();
   renderAllReflectorRows();
 }
@@ -364,7 +373,7 @@ function buildRow(row) {
       const st = trayStyle(lot.crop, lot.sow_date);
       const schedNotes = (lotNotesMap[lot.sow_date] || []);
       const schedHtml = schedNotes.map(n => `<div class="lot-note">💬 ${esc(n)}</div>`).join('');
-      const isAlert = alertLotsMap[lot.sow_date];
+      const isAlert = alertLotsMap[lot.sow_date] || (irregularGivenMap[lot.sow_date] || 0) >= 5;
       html += `<div class="cell-lot"
         style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${isAlert ? '#E24B4A' : st.bd};${isAlert ? 'border-width:2px;position:relative' : ''}"
         onclick="openEdit(${lot.id})">

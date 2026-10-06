@@ -366,12 +366,11 @@ function buildRow(row) {
       const schedHtml = schedNotes.map(n => `<div class="lot-note">💬 ${esc(n)}</div>`).join('');
       const isAlert = alertLotsMap[lot.sow_date];
       html += `<div class="cell-lot"
-        style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${isAlert ? '#E24B4A' : st.bd};${isAlert ? 'border-width:2px' : ''}"
+        style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${isAlert ? '#E24B4A' : st.bd};${isAlert ? 'border-width:2px;position:relative' : ''}"
         onclick="openEdit(${lot.id})">
-        ${isAlert ? `<div style="font-size:9px;font-weight:700;color:#E24B4A;margin-bottom:2px">⚠️ 注意</div>` : ''}
+        ${isAlert ? `<span style="position:absolute;top:3px;right:3px;font-size:10px">⚠️</span>` : ''}
         <div class="lot-crop">${esc(lot.crop)}</div>
         <div class="lot-date">${harvestDisplay(lot.crop, lot.sow_date)}</div>
-        ${lot.note ? `<div class="lot-note">📝 ${esc(lot.note)}</div>` : ''}
         ${schedHtml}
       </div>`;
     } else {

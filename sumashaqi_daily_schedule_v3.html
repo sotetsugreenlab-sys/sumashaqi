@@ -145,6 +145,8 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .irr-date-input { font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 6px; background: #fff; color: #1a1a1a; }
 .btn-irr-submit { font-size: 11px; padding: 4px 10px; background: #E8A020; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
 .btn-irr-cancel { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 4px; }
+.irr-received-row { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #854F0B; background: rgba(255,255,255,0.45); border-radius: 6px; padding: 3px 7px; margin-top: 3px; }
+.irr-given-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; background: #f0f0ee; color: #666; border-radius: 6px; padding: 2px 8px; margin-top: 3px; border: 1px solid #e0e0e0; }
 .card-alert-banner { display: flex; align-items: center; gap: 6px; background: #E24B4A; color: #fff; border-radius: 8px; padding: 5px 10px; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -372,9 +374,10 @@ function renderHeader() {
 let lotNotes = {};
 let alertLots = {}; // sow_date -> row id
 async function loadLotNotes() {
-  const [notesRes, alertRes] = await Promise.all([
+  const [notesRes, alertRes, irregularRes] = await Promise.all([
     db.from('lot_notes').select('id,sow_date,note').eq('crop', 'sumashaqi'),
     db.from('lot_notes').select('id,sow_date').eq('crop', 'sumashaqi_alert'),
+    db.from('lot_notes').select('id,sow_date,note').eq('crop', 'lot_irregular'),
   ]);
   lotNotes = {};
   (notesRes.data || []).forEach(r => {
@@ -383,6 +386,20 @@ async function loadLotNotes() {
   });
   alertLots = {};
   (alertRes.data || []).forEach(r => { alertLots[r.sow_date] = r.id; });
+  lotIrregularsGiven = {};
+  lotIrregularsReceived = {};
+  (irregularRes.data || []).forEach(r => {
+    try {
+      const p = JSON.parse(r.note || '{}');
+      const entry = { id: r.id, from_sow_date: r.sow_date, to_sow_date: p.to_sow_date, count: p.count };
+      if (!lotIrregularsGiven[r.sow_date]) lotIrregularsGiven[r.sow_date] = [];
+      lotIrregularsGiven[r.sow_date].push(entry);
+      if (p.to_sow_date) {
+        if (!lotIrregularsReceived[p.to_sow_date]) lotIrregularsReceived[p.to_sow_date] = [];
+        lotIrregularsReceived[p.to_sow_date].push(entry);
+      }
+    } catch(e) {}
+  });
   renderTasks();
 }
 async function toggleAlert(sowDateStr) {
@@ -500,6 +517,8 @@ db.channel('lot_notes_sumashaqi')
 let harvestCounts = {}; // key: `${dateStr}_${course}` -> { id, maegari, min_weight, avg_weight, w70, w75, yoku_bukuro, sheraton_count, sheraton_weight, chipburn }
 let hcDebounce = {};
 let irregularForms = {}; // key: `${dateStr}_${course}` -> {open: bool}
+let lotIrregularsGiven = {}; // from_sow_date -> [{id, from_sow_date, to_sow_date, count}]
+let lotIrregularsReceived = {}; // to_sow_date -> [{id, from_sow_date, to_sow_date, count}]
 
 const HC34_FIELDS = ['min_weight','avg_weight','w70','w75','yoku_bukuro','sheraton_count','sheraton_weight','chipburn'];
 
@@ -565,25 +584,16 @@ async function submitIrregular(viewDateStr, sowDateStr, course) {
   const count = parseInt(document.getElementById(`irr-count-${key}`)?.value) || 0;
   if (!fromDate || !count) { alert('日付と株数を入力してください'); return; }
 
-  // 前借り欄に入力して保存（キーは閲覧日_コース）
-  if (!harvestCounts[key]) harvestCounts[key] = {};
-  harvestCounts[key].maegari = count;
-  const note = JSON.stringify({ maegari: count });
-  if (harvestCounts[key].id) {
-    await db.from('lot_notes').update({ note }).eq('id', harvestCounts[key].id);
-  } else {
-    const { data } = await db.from('lot_notes').insert({ crop: 'harvest_count', sow_date: key, note }).select('id');
-    if (data?.[0]) harvestCounts[key].id = data[0].id;
-  }
+  // 提供元ロット(fromDate)が受取ロット(sowDateStr)に株を提供したことを記録
+  const note = JSON.stringify({ to_sow_date: sowDateStr, count });
+  const { data } = await db.from('lot_notes').insert({ crop: 'lot_irregular', sow_date: fromDate, note }).select('id');
 
-  // メモはロットの播種日に追加
-  const [fy, fm, fd] = fromDate.split('-').map(Number);
-  const memoText = `${fm}/${fd}播種より${count}株前借り`;
-  const { data: md } = await db.from('lot_notes').insert({ crop: 'sumashaqi', sow_date: sowDateStr, note: memoText }).select('id');
-  if (!lotNotes[sowDateStr]) lotNotes[sowDateStr] = [];
-  lotNotes[sowDateStr].push({ id: md?.[0]?.id, note: memoText });
+  const entry = { id: data?.[0]?.id, from_sow_date: fromDate, to_sow_date: sowDateStr, count };
+  if (!lotIrregularsGiven[fromDate]) lotIrregularsGiven[fromDate] = [];
+  lotIrregularsGiven[fromDate].push(entry);
+  if (!lotIrregularsReceived[sowDateStr]) lotIrregularsReceived[sowDateStr] = [];
+  lotIrregularsReceived[sowDateStr].push(entry);
 
-  // フォームを閉じて再描画
   irregularForms[key].open = false;
   renderTasks();
 }
@@ -694,12 +704,31 @@ function renderTasks() {
             <button class="btn-irr-cancel" onclick="toggleIrregular('${dateStr}',33)">✕</button>
           </div>
         </div>` : '';
+      // 今日この33日目ロットが受け取ったイレギュラー（他ロットから提供された）
+      const irrReceived = (lotIrregularsReceived[sowDateStr33] || []);
+      const irrReceivedHtml = irrReceived.map(e => {
+        const [, fm, fd] = e.from_sow_date.split('-').map(Number);
+        return `<div class="irr-received-row">
+          <span style="font-size:10px;font-weight:700">${fm}/${fd}播種</span>
+          <span>前借り</span>
+          <span style="font-size:13px;font-weight:700">${e.count}</span>
+          <span>株</span>
+        </div>`;
+      }).join('');
+      // このロット自身が他の日の出荷に提供済み（前借り済）
+      const irrGiven = (lotIrregularsGiven[sowDateStr33] || []);
+      const irrGivenHtml = irrGiven.map(e => {
+        const [, tm, td] = e.to_sow_date.split('-').map(Number);
+        return `<div class="irr-given-badge">⚠️ ${e.count}株 前借り済<span style="color:#aaa;margin-left:3px">（${tm}/${td}出荷分）</span></div>`;
+      }).join('');
       return `<div class="harvest-counts">
         <div class="hc-row">
           <span class="hc-label">前借り</span>
           <input type="number" min="0" id="hcount-33-maegari" class="hc-input" value="${counts.maegari || ''}" placeholder="0" oninput="onHarvestInput(33,'maegari')">
           <span class="hc-unit">株</span>
         </div>
+        ${irrReceivedHtml}
+        ${irrGivenHtml}
         <button class="btn-irregular${irrOpen ? ' open' : ''}" onclick="toggleIrregular('${dateStr}',33)">🔄 イレギュラー</button>
         ${irrFormHtml}
       </div>`;

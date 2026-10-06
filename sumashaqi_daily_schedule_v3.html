@@ -137,6 +137,14 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .note-delete-label { font-size: 11px; color: #E24B4A; }
 .btn-alert-toggle { font-size: 10px; background: none; border: 1px dashed #ccc; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-top: 3px; color: #aaa; }
 .btn-alert-toggle.on { border-color: #E24B4A; background: #FAECE7; color: #E24B4A; font-weight: 600; }
+.btn-irregular { font-size: 10px; background: none; border: 1px dashed #ccc; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-top: 3px; color: #aaa; }
+.btn-irregular.open { border-color: #E8A020; background: #FAEEDA; color: #854F0B; font-weight: 600; }
+.irregular-form { background: rgba(255,255,255,0.6); border-radius: 8px; padding: 8px; margin-top: 5px; }
+.irregular-form-title { font-size: 11px; color: #854F0B; font-weight: 600; margin-bottom: 6px; }
+.irregular-form-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.irr-date-input { font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 6px; background: #fff; color: #1a1a1a; }
+.btn-irr-submit { font-size: 11px; padding: 4px 10px; background: #E8A020; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.btn-irr-cancel { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 4px; }
 .card-alert-banner { display: flex; align-items: center; gap: 6px; background: #E24B4A; color: #fff; border-radius: 8px; padding: 5px 10px; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -491,6 +499,7 @@ db.channel('lot_notes_sumashaqi')
 // note = JSON文字列 {"maegari":5} or {"min_weight":0,"avg_weight":0,"w70":0,"w75":0,...}
 let harvestCounts = {}; // key: `${dateStr}_${course}` -> { id, maegari, min_weight, avg_weight, w70, w75, yoku_bukuro, sheraton_count, sheraton_weight, chipburn }
 let hcDebounce = {};
+let irregularForms = {}; // key: `${dateStr}_${course}` -> {open: bool}
 
 const HC34_FIELDS = ['min_weight','avg_weight','w70','w75','yoku_bukuro','sheraton_count','sheraton_weight','chipburn'];
 
@@ -538,6 +547,45 @@ function onHarvestInput(course, field) {
       if (data && data[0]) harvestCounts[key].id = data[0].id;
     }
   }, 600);
+}
+
+function toggleIrregular(dateStr, course) {
+  const key = `${dateStr}_${course}`;
+  if (!irregularForms[key]) irregularForms[key] = { open: false };
+  irregularForms[key].open = !irregularForms[key].open;
+  renderTasks();
+  if (irregularForms[key].open) {
+    setTimeout(() => document.getElementById(`irr-from-${key}`)?.focus(), 50);
+  }
+}
+
+async function submitIrregular(dateStr, course) {
+  const key = `${dateStr}_${course}`;
+  const fromDate = document.getElementById(`irr-from-${key}`)?.value;
+  const count = parseInt(document.getElementById(`irr-count-${key}`)?.value) || 0;
+  if (!fromDate || !count) { alert('日付と株数を入力してください'); return; }
+
+  // 前借り欄に入力して保存
+  if (!harvestCounts[key]) harvestCounts[key] = {};
+  harvestCounts[key].maegari = count;
+  const note = JSON.stringify({ maegari: count });
+  if (harvestCounts[key].id) {
+    await db.from('lot_notes').update({ note }).eq('id', harvestCounts[key].id);
+  } else {
+    const { data } = await db.from('lot_notes').insert({ crop: 'harvest_count', sow_date: key, note }).select('id');
+    if (data?.[0]) harvestCounts[key].id = data[0].id;
+  }
+
+  // メモに追加
+  const [fy, fm, fd] = fromDate.split('-').map(Number);
+  const memoText = `${fm}/${fd}播種より${count}株前借り`;
+  const { data: md } = await db.from('lot_notes').insert({ crop: 'sumashaqi', sow_date: dateStr, note: memoText }).select('id');
+  if (!lotNotes[dateStr]) lotNotes[dateStr] = [];
+  lotNotes[dateStr].push({ id: md?.[0]?.id, note: memoText });
+
+  // フォームを閉じて再描画
+  irregularForms[key].open = false;
+  renderTasks();
 }
 
 db.channel('harvest_count_notes')
@@ -631,12 +679,28 @@ function renderTasks() {
   function harvestInputsHtml(c) {
     const counts = harvestCounts[`${dateStr}_${c}`] || {};
     if (c === 33) {
+      const irrKey = `${dateStr}_33`;
+      const irrOpen = !!(irregularForms[irrKey]?.open);
+      const irrFormHtml = irrOpen ? `
+        <div class="irregular-form">
+          <div class="irregular-form-title">🔄 イレギュラー前借り</div>
+          <div class="irregular-form-row">
+            <input type="date" id="irr-from-${irrKey}" class="irr-date-input">
+            <span style="font-size:11px;color:#666">播種から</span>
+            <input type="number" min="0" id="irr-count-${irrKey}" class="hc-input" placeholder="0">
+            <span class="hc-unit">株</span>
+            <button class="btn-irr-submit" onclick="submitIrregular('${dateStr}',33)">自動入力</button>
+            <button class="btn-irr-cancel" onclick="toggleIrregular('${dateStr}',33)">✕</button>
+          </div>
+        </div>` : '';
       return `<div class="harvest-counts">
         <div class="hc-row">
           <span class="hc-label">前借り</span>
           <input type="number" min="0" id="hcount-33-maegari" class="hc-input" value="${counts.maegari || ''}" placeholder="0" oninput="onHarvestInput(33,'maegari')">
           <span class="hc-unit">株</span>
         </div>
+        <button class="btn-irregular${irrOpen ? ' open' : ''}" onclick="toggleIrregular('${dateStr}',33)">🔄 イレギュラー</button>
+        ${irrFormHtml}
       </div>`;
     }
     return `<div class="harvest-counts">

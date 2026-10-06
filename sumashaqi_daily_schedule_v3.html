@@ -631,6 +631,10 @@ function sowTrayBg(sow) {
   return TRAY_COLORS[((diff % 5) + 5) % 5];
 }
 
+function irregularGivenTotal(sowStr) {
+  return (lotIrregularsGiven[sowStr] || []).reduce((s, e) => s + (e.count || 0), 0);
+}
+
 function makeCard(t, dayLabel, compact) {
   const cls = compact ? `card ${t.cls} compact` : `card ${t.cls}`;
   const bg = sowTrayBg(t.sow);
@@ -645,10 +649,19 @@ function makeCard(t, dayLabel, compact) {
     histHtml += '</div>';
   }
   const sowStr = toDateStr(t.sow);
-  const alertBanner = alertLots[sowStr]
-    ? `<div class="card-alert-banner">⚠️ 注意ロット</div>` : '';
+  const manualAlert = !!(alertLots[sowStr]);
+  const givenTotal = irregularGivenTotal(sowStr);
+  const autoAlert = givenTotal >= 5;
+  const hasAlert = manualAlert || autoAlert;
+  let alertBanner = '';
+  if (autoAlert) {
+    alertBanner = `<div class="card-alert-banner">⚠️ ${givenTotal}株前借り済・在庫注意</div>`;
+  } else if (manualAlert) {
+    alertBanner = `<div class="card-alert-banner">⚠️ 注意ロット</div>`;
+  }
+  const outlineStyle = hasAlert ? ';outline:2px solid #E24B4A' : '';
   if (compact) {
-    return `<div class="${cls}" style="background:${bg}${alertLots[sowStr] ? ';outline:2px solid #E24B4A' : ''}">
+    return `<div class="${cls}" style="background:${bg}${outlineStyle}">
       ${alertBanner}
       <div class="card-task">${t.label}</div>
       <div class="card-sow">${fmtShort(t.sow)}播種</div>
@@ -657,7 +670,7 @@ function makeCard(t, dayLabel, compact) {
       ${notesHtml(sowStr)}
     </div>`;
   }
-  return `<div class="${cls}" style="background:${bg}${alertLots[sowStr] ? ';outline:2px solid #E24B4A' : ''}">
+  return `<div class="${cls}" style="background:${bg}${outlineStyle}">
     ${alertBanner}
     <div class="card-top">
       <div>

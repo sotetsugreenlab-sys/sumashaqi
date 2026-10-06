@@ -220,7 +220,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; }
     <div id="goto-cultivation" style="display:none; margin-top:12px;">
       <button id="goto-cultivation-link" onclick="gotoHarvest()"
         style="width:100%;text-align:center;padding:11px;background:#f0eeff;color:#534AB7;border-radius:12px;font-size:14px;font-weight:700;border:none;cursor:pointer;">
-        🌱 刈取日（33日目）で見る
+        🌱 刈取日（34日目）で見る
       </button>
     </div>
 
@@ -281,11 +281,13 @@ let editId = null;
 let selCrop = '';
 let selSpan = 2;
 
+let alertLotsMap = {}; // sow_date → true
 async function init() {
-  const [lotsRes, refRes, notesRes] = await Promise.all([
+  const [lotsRes, refRes, notesRes, alertRes] = await Promise.all([
     db.from('shelf_lots').select('*'),
     db.from('shelf_reflectors').select('*'),
     db.from('lot_notes').select('sow_date,note').eq('crop','sumashaqi'),
+    db.from('lot_notes').select('sow_date').eq('crop','sumashaqi_alert'),
   ]);
   lots = lotsRes.data || [];
   reflectors = {};
@@ -295,6 +297,8 @@ async function init() {
     if (!lotNotesMap[r.sow_date]) lotNotesMap[r.sow_date] = [];
     lotNotesMap[r.sow_date].push(r.note);
   });
+  alertLotsMap = {};
+  (alertRes.data || []).forEach(r => { alertLotsMap[r.sow_date] = true; });
   renderGrid();
   renderAllReflectorRows();
 }
@@ -360,9 +364,11 @@ function buildRow(row) {
       const st = trayStyle(lot.crop, lot.sow_date);
       const schedNotes = (lotNotesMap[lot.sow_date] || []);
       const schedHtml = schedNotes.map(n => `<div class="lot-note">💬 ${esc(n)}</div>`).join('');
+      const isAlert = alertLotsMap[lot.sow_date];
       html += `<div class="cell-lot"
-        style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${st.bd}"
+        style="grid-column:${c}/span ${lot.col_span};background:${st.bg};border-color:${isAlert ? '#E24B4A' : st.bd};${isAlert ? 'border-width:2px' : ''}"
         onclick="openEdit(${lot.id})">
+        ${isAlert ? `<div style="font-size:9px;font-weight:700;color:#E24B4A;margin-bottom:2px">⚠️ 注意</div>` : ''}
         <div class="lot-crop">${esc(lot.crop)}</div>
         <div class="lot-date">${harvestDisplay(lot.crop, lot.sow_date)}</div>
         ${lot.note ? `<div class="lot-note">📝 ${esc(lot.note)}</div>` : ''}
@@ -431,7 +437,7 @@ function openEdit(id) {
   document.getElementById('goto-cultivation').style.display = showGoto ? 'block' : 'none';
   if (showGoto) {
     const harvestDate = new Date(lot.sow_date + 'T00:00:00');
-    harvestDate.setDate(harvestDate.getDate() + 32);
+    harvestDate.setDate(harvestDate.getDate() + 33);
     const y = harvestDate.getFullYear(), m = String(harvestDate.getMonth()+1).padStart(2,'0'), d = String(harvestDate.getDate()).padStart(2,'0');
     document.getElementById('goto-cultivation-link').dataset.url = `sumashaqi_daily_schedule_v3.html?date=${y}-${m}-${d}`;
   }

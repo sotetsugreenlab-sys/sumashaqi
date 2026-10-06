@@ -135,6 +135,9 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .btn-note-edit { font-size: 10px; color: #aaa; background: none; border: none; cursor: pointer; margin-left: 4px; text-decoration: underline; }
 .note-delete-confirm { display: none; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
 .note-delete-label { font-size: 11px; color: #E24B4A; }
+.btn-alert-toggle { font-size: 10px; background: none; border: 1px dashed #ccc; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-top: 3px; color: #aaa; }
+.btn-alert-toggle.on { border-color: #E24B4A; background: #FAECE7; color: #E24B4A; font-weight: 600; }
+.card-alert-banner { display: flex; align-items: center; gap: 6px; background: #E24B4A; color: #fff; border-radius: 8px; padding: 5px 10px; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -359,13 +362,29 @@ function renderHeader() {
 }
 
 let lotNotes = {};
+let alertLots = {}; // sow_date -> row id
 async function loadLotNotes() {
-  const { data } = await db.from('lot_notes').select('id,sow_date,note').eq('crop', 'sumashaqi');
+  const [notesRes, alertRes] = await Promise.all([
+    db.from('lot_notes').select('id,sow_date,note').eq('crop', 'sumashaqi'),
+    db.from('lot_notes').select('id,sow_date').eq('crop', 'sumashaqi_alert'),
+  ]);
   lotNotes = {};
-  (data || []).forEach(r => {
+  (notesRes.data || []).forEach(r => {
     if (!lotNotes[r.sow_date]) lotNotes[r.sow_date] = [];
     lotNotes[r.sow_date].push({ id: r.id, note: r.note });
   });
+  alertLots = {};
+  (alertRes.data || []).forEach(r => { alertLots[r.sow_date] = r.id; });
+  renderTasks();
+}
+async function toggleAlert(sowDateStr) {
+  if (alertLots[sowDateStr]) {
+    await db.from('lot_notes').delete().eq('id', alertLots[sowDateStr]);
+    delete alertLots[sowDateStr];
+  } else {
+    const { data } = await db.from('lot_notes').insert({ crop: 'sumashaqi_alert', sow_date: sowDateStr, note: '1' }).select('id');
+    if (data?.[0]) alertLots[sowDateStr] = data[0].id;
+  }
   renderTasks();
 }
 function openNote(id) {
@@ -447,7 +466,10 @@ function notesHtml(sowDateStr) {
       <button class="btn-note-save" onclick="submitNote('sumashaqi','${sowDateStr}')">保存</button>
       <button class="btn-note-cancel" onclick="closeNote('${id}')">✕</button>
     </div>
-    <button class="btn-note-add" onclick="openNote('${id}')">＋ メモ</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn-note-add" onclick="openNote('${id}')">＋ メモ</button>
+      <button class="btn-alert-toggle${alertLots[sowDateStr] ? ' on' : ''}" onclick="toggleAlert('${sowDateStr}')">⚠️ 注意</button>
+    </div>
   </div>`;
 }
 
@@ -565,8 +587,11 @@ function makeCard(t, dayLabel, compact) {
     histHtml += '</div>';
   }
   const sowStr = toDateStr(t.sow);
+  const alertBanner = alertLots[sowStr]
+    ? `<div class="card-alert-banner">⚠️ 注意ロット</div>` : '';
   if (compact) {
-    return `<div class="${cls}" style="background:${bg}">
+    return `<div class="${cls}" style="background:${bg}${alertLots[sowStr] ? ';outline:2px solid #E24B4A' : ''}">
+      ${alertBanner}
       <div class="card-task">${t.label}</div>
       <div class="card-sow">${fmtShort(t.sow)}播種</div>
       <div class="card-sub">${t.days}日目</div>
@@ -574,7 +599,8 @@ function makeCard(t, dayLabel, compact) {
       ${notesHtml(sowStr)}
     </div>`;
   }
-  return `<div class="${cls}" style="background:${bg}">
+  return `<div class="${cls}" style="background:${bg}${alertLots[sowStr] ? ';outline:2px solid #E24B4A' : ''}">
+    ${alertBanner}
     <div class="card-top">
       <div>
         <div class="card-task">${dayLabel}${t.label}</div>

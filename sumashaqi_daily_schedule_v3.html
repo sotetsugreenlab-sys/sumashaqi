@@ -536,18 +536,25 @@ let harvestIrrFormOpen = false;
 const HC34_FIELDS = ['min_weight','avg_weight','w70','w75','yoku_bukuro','sheraton_count','sheraton_weight','chipburn'];
 
 async function loadHarvestCounts(dateStr) {
+  harvestCounts = {};
+  const sowDate34 = toDateStr(addDays(viewDate, -34));
+  const irrRec = harvestOrderIrr[dateStr];
+  const irrMainSow = irrRec?.main_sow;
+  const keys = [`${dateStr}_33`, `${sowDate34}_34`];
+  if (irrMainSow) keys.push(`${irrMainSow}_irr`);
   const { data } = await db.from('lot_notes')
     .select('id,sow_date,note')
     .eq('crop', 'harvest_count')
-    .like('sow_date', `${dateStr}_%`);
+    .in('sow_date', keys);
   (data || []).forEach(r => {
     try {
       const parsed = JSON.parse(r.note || '{}');
       harvestCounts[r.sow_date] = { id: r.id, ...parsed };
     } catch(e) {}
   });
-  [33, 34, 'irr'].forEach(c => {
-    const key = `${dateStr}_${c}`;
+  const courses = irrMainSow ? [33, 34, 'irr'] : [33, 34];
+  courses.forEach(c => {
+    const key = c === 'irr' ? `${irrMainSow}_irr` : c === 34 ? `${sowDate34}_34` : `${dateStr}_33`;
     const counts = harvestCounts[key] || {};
     const fields = c === 33 ? ['maegari'] : HC34_FIELDS;
     fields.forEach(f => {
@@ -557,9 +564,11 @@ async function loadHarvestCounts(dateStr) {
   });
 }
 
-function onHarvestInput(course, field) {
+function onHarvestInput(course, field, keySowDate) {
   const dateStr = toDateStr(viewDate);
-  const key = `${dateStr}_${course}`;
+  const key = keySowDate ? `${keySowDate}_${course}`
+    : course === 34 ? `${toDateStr(addDays(viewDate,-34))}_34`
+    : `${dateStr}_${course}`;
   const debKey = `${key}_${field}`;
   clearTimeout(hcDebounce[debKey]);
   hcDebounce[debKey] = setTimeout(async () => {
@@ -669,11 +678,14 @@ db.channel('harvest_count_notes')
     const r = payload.new;
     if (!r) return;
     const dateStr = toDateStr(viewDate);
-    if (!r.sow_date.startsWith(dateStr)) return;
+    const sowDate34 = toDateStr(addDays(viewDate, -34));
+    const irrMainSow = harvestOrderIrr[dateStr]?.main_sow;
+    const validKeys = [`${dateStr}_33`, `${sowDate34}_34`, ...(irrMainSow ? [`${irrMainSow}_irr`] : [])];
+    if (!validKeys.includes(r.sow_date)) return;
     try {
       const parsed = JSON.parse(r.note || '{}');
       harvestCounts[r.sow_date] = { id: r.id, ...parsed };
-      const course = parseInt(r.sow_date.split('_')[1]);
+      const course = r.sow_date.endsWith('_33') ? 33 : r.sow_date.endsWith('_irr') ? 'irr' : 34;
       const fields = course === 33 ? ['maegari'] : HC34_FIELDS;
       fields.forEach(f => {
         const el = document.getElementById(`hcount-${course}-${f}`);
@@ -816,94 +828,97 @@ function renderTasks() {
         ${irrFormHtml}
       </div>`;
     }
+    const sowDate34Str = toDateStr(addDays(viewDate, -34));
+    const c34 = harvestCounts[`${sowDate34Str}_34`] || {};
     return `<div class="harvest-counts">
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">最低</span>
-        <input type="number" min="0" id="hcount-34-min_weight" class="hc-input" value="${counts.min_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'min_weight')">
+        <input type="number" min="0" id="hcount-34-min_weight" class="hc-input" value="${c34.min_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'min_weight','${sowDate34Str}')">
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">平均</span>
-        <input type="number" min="0" id="hcount-34-avg_weight" class="hc-input" value="${counts.avg_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'avg_weight')">
+        <input type="number" min="0" id="hcount-34-avg_weight" class="hc-input" value="${c34.avg_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'avg_weight','${sowDate34Str}')">
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">70g</span>
-        <input type="number" min="0" id="hcount-34-w70" class="hc-input" value="${counts.w70 || ''}" placeholder="0" oninput="onHarvestInput(34,'w70')">
+        <input type="number" min="0" id="hcount-34-w70" class="hc-input" value="${c34.w70 || ''}" placeholder="0" oninput="onHarvestInput(34,'w70','${sowDate34Str}')">
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">75g</span>
-        <input type="number" min="0" id="hcount-34-w75" class="hc-input" value="${counts.w75 || ''}" placeholder="0" oninput="onHarvestInput(34,'w75')">
+        <input type="number" min="0" id="hcount-34-w75" class="hc-input" value="${c34.w75 || ''}" placeholder="0" oninput="onHarvestInput(34,'w75','${sowDate34Str}')">
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
         <span class="hc-label" style="font-size:10px">翌日袋</span>
-        <input type="number" min="0" id="hcount-34-yoku_bukuro" class="hc-input" value="${counts.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput(34,'yoku_bukuro');updateBatchTotal(34)">
+        <input type="number" min="0" id="hcount-34-yoku_bukuro" class="hc-input" value="${c34.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput(34,'yoku_bukuro','${sowDate34Str}');updateBatchTotal(34)">
         <span class="hc-unit">袋</span>
       </div>
       <div style="font-size:9px;color:#8B6D11;font-weight:600;margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">重量不足</div>
       <div class="hc-row" style="margin-top:3px">
         <span class="hc-label" style="font-size:9px;color:#8B6D11">ｼｪﾗﾄﾝ</span>
-        <input type="number" min="0" id="hcount-34-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_count');updateSheratonAvg();updateBatchTotal(34)">
+        <input type="number" min="0" id="hcount-34-sheraton_count" class="hc-input" value="${c34.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_count','${sowDate34Str}');updateSheratonAvg();updateBatchTotal(34)">
         <span class="hc-unit">株</span>
         <span class="hc-label" style="font-size:9px;color:#8B6D11">合計</span>
-        <input type="number" min="0" id="hcount-34-sheraton_weight" class="hc-input" value="${counts.sheraton_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_weight');updateSheratonAvg()">
+        <input type="number" min="0" id="hcount-34-sheraton_weight" class="hc-input" value="${c34.sheraton_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_weight','${sowDate34Str}');updateSheratonAvg()">
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row" style="margin-top:2px">
         <span class="hc-label" style="font-size:9px;color:#8B6D11">1株平均</span>
-        <span id="sheraton-avg" style="font-size:13px;font-weight:700;color:#8B6D11;min-width:32px;text-align:right">${(counts.sheraton_count && counts.sheraton_weight) ? Math.round(counts.sheraton_weight / counts.sheraton_count) : '-'}</span>
+        <span id="sheraton-avg" style="font-size:13px;font-weight:700;color:#8B6D11;min-width:32px;text-align:right">${(c34.sheraton_count && c34.sheraton_weight) ? Math.round(c34.sheraton_weight / c34.sheraton_count) : '-'}</span>
         <span class="hc-unit">g</span>
         <span style="font-size:9px;color:#aaa">（自動計算）</span>
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:9px;color:#993C1D">ダメ株</span>
-        <input type="number" min="0" id="hcount-34-chipburn" class="hc-input" value="${counts.chipburn || ''}" placeholder="0" oninput="onHarvestInput(34,'chipburn');updateBatchTotal(34)">
+        <input type="number" min="0" id="hcount-34-chipburn" class="hc-input" value="${c34.chipburn || ''}" placeholder="0" oninput="onHarvestInput(34,'chipburn','${sowDate34Str}');updateBatchTotal(34)">
         <span class="hc-unit">株</span>
         <span style="font-size:9px;color:#aaa">ﾁｯﾌﾟﾊﾞｰﾝ・ﾌﾞﾗｳﾝ等</span>
       </div>
       <div id="batch-total-34" style="font-size:9px;color:#888;margin-top:4px;line-height:1.5;padding:4px 6px;background:#f7f7f5;border-radius:6px">
-        ${(() => { const b=counts.yoku_bukuro||0,s=counts.sheraton_count||0,d=counts.chipburn||0; return `翌日袋${b} ＋ シェラトン${s} ＋ ダメ株${d} ＋ ローゼン161 ＝ <strong style="color:#444">${161+b+s+d}株</strong>（1バッチ分）`; })()}
+        ${(() => { const b=c34.yoku_bukuro||0,s=c34.sheraton_count||0,d=c34.chipburn||0; return `翌日袋${b} ＋ シェラトン${s} ＋ ダメ株${d} ＋ ローゼン161 ＝ <strong style="color:#444">${161+b+s+d}株</strong>（1バッチ分）`; })()}
       </div>
     </div>`;
   }
 
   function irrHarvestInputsHtml() {
-    const counts = harvestCounts[`${dateStr}_irr`] || {};
+    const mainSow = irrRecord.main_sow;
+    const counts = harvestCounts[`${mainSow}_irr`] || {};
     return `<div class="harvest-counts">
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">最低</span>
-        <input type="number" min="0" id="hcount-irr-min_weight" class="hc-input" value="${counts.min_weight || ''}" placeholder="0" oninput="onHarvestInput('irr','min_weight')">
+        <input type="number" min="0" id="hcount-irr-min_weight" class="hc-input" value="${counts.min_weight || ''}" placeholder="0" oninput="onHarvestInput('irr','min_weight','${mainSow}')">
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">平均</span>
-        <input type="number" min="0" id="hcount-irr-avg_weight" class="hc-input" value="${counts.avg_weight || ''}" placeholder="0" oninput="onHarvestInput('irr','avg_weight')">
+        <input type="number" min="0" id="hcount-irr-avg_weight" class="hc-input" value="${counts.avg_weight || ''}" placeholder="0" oninput="onHarvestInput('irr','avg_weight','${mainSow}')">
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">70g</span>
-        <input type="number" min="0" id="hcount-irr-w70" class="hc-input" value="${counts.w70 || ''}" placeholder="0" oninput="onHarvestInput('irr','w70')">
+        <input type="number" min="0" id="hcount-irr-w70" class="hc-input" value="${counts.w70 || ''}" placeholder="0" oninput="onHarvestInput('irr','w70','${mainSow}')">
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">75g</span>
-        <input type="number" min="0" id="hcount-irr-w75" class="hc-input" value="${counts.w75 || ''}" placeholder="0" oninput="onHarvestInput('irr','w75')">
+        <input type="number" min="0" id="hcount-irr-w75" class="hc-input" value="${counts.w75 || ''}" placeholder="0" oninput="onHarvestInput('irr','w75','${mainSow}')">
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
         <span class="hc-label" style="font-size:10px">翌日袋</span>
-        <input type="number" min="0" id="hcount-irr-yoku_bukuro" class="hc-input" value="${counts.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput('irr','yoku_bukuro');updateBatchTotal('irr')">
+        <input type="number" min="0" id="hcount-irr-yoku_bukuro" class="hc-input" value="${counts.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput('irr','yoku_bukuro','${mainSow}');updateBatchTotal('irr')">
         <span class="hc-unit">袋</span>
       </div>
       <div style="font-size:9px;color:#8B6D11;font-weight:600;margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">重量不足</div>
       <div class="hc-row" style="margin-top:3px">
         <span class="hc-label" style="font-size:9px;color:#8B6D11">ｼｪﾗﾄﾝ</span>
-        <input type="number" min="0" id="hcount-irr-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput('irr','sheraton_count');updateSheratonAvgIrr();updateBatchTotal('irr')">
+        <input type="number" min="0" id="hcount-irr-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput('irr','sheraton_count','${mainSow}');updateSheratonAvgIrr();updateBatchTotal('irr')">
         <span class="hc-unit">株</span>
         <span class="hc-label" style="font-size:9px;color:#8B6D11">合計</span>
-        <input type="number" min="0" id="hcount-irr-sheraton_weight" class="hc-input" value="${counts.sheraton_weight || ''}" placeholder="0" oninput="onHarvestInput('irr','sheraton_weight');updateSheratonAvgIrr()">
+        <input type="number" min="0" id="hcount-irr-sheraton_weight" class="hc-input" value="${counts.sheraton_weight || ''}" placeholder="0" oninput="onHarvestInput('irr','sheraton_weight','${mainSow}');updateSheratonAvgIrr()">
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row" style="margin-top:2px">
@@ -914,7 +929,7 @@ function renderTasks() {
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:9px;color:#993C1D">ダメ株</span>
-        <input type="number" min="0" id="hcount-irr-chipburn" class="hc-input" value="${counts.chipburn || ''}" placeholder="0" oninput="onHarvestInput('irr','chipburn');updateBatchTotal('irr')">
+        <input type="number" min="0" id="hcount-irr-chipburn" class="hc-input" value="${counts.chipburn || ''}" placeholder="0" oninput="onHarvestInput('irr','chipburn','${mainSow}');updateBatchTotal('irr')">
         <span class="hc-unit">株</span>
         <span style="font-size:9px;color:#aaa">ﾁｯﾌﾟﾊﾞｰﾝ・ﾌﾞﾗｳﾝ等</span>
       </div>

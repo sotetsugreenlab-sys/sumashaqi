@@ -824,8 +824,8 @@ function renderTasks() {
       // このロット自身が他の日の出荷に提供済み（前借り済）
       const irrGiven = (lotIrregularsGiven[sowDateStr33] || []);
       const irrGivenHtml = irrGiven.map(e => {
-        const [, tm, td] = e.to_sow_date.split('-').map(Number);
-        return `<div class="irr-given-badge">⚠️ ${e.count}株 前借り済<span style="color:#aaa;margin-left:3px">（${tm}/${td}出荷分）</span></div>`;
+        const dateLabel = e.harvest_date ? fmtShort(new Date(e.harvest_date + 'T00:00:00')) : '?';
+        return `<div class="irr-given-badge">⚠️ ${e.count}株 前借り済<span style="color:#aaa;margin-left:3px">（${dateLabel}刈取）</span></div>`;
       }).join('');
       return `<div class="harvest-counts">
         <div class="hc-row">

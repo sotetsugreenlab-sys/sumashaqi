@@ -611,6 +611,13 @@ async function submitIrregular(viewDateStr, sowDateStr, course) {
   renderTasks();
 }
 
+function updateSheratonAvg() {
+  const count = parseFloat(document.getElementById('hcount-34-sheraton_count')?.value) || 0;
+  const weight = parseFloat(document.getElementById('hcount-34-sheraton_weight')?.value) || 0;
+  const el = document.getElementById('sheraton-avg');
+  if (el) el.textContent = (count && weight) ? Math.round(weight / count) : '-';
+}
+
 async function toggleHarvestIrr(dateStr) {
   if (harvestOrderIrr[dateStr]) {
     await db.from('lot_notes').delete().eq('id', harvestOrderIrr[dateStr].id);
@@ -813,13 +820,20 @@ function renderTasks() {
         <input type="number" min="0" id="hcount-34-yoku_bukuro" class="hc-input" value="${counts.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput(34,'yoku_bukuro')">
         <span class="hc-unit">袋</span>
       </div>
-      <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
+      <div style="font-size:9px;color:#8B6D11;font-weight:600;margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">重量不足</div>
+      <div class="hc-row" style="margin-top:3px">
         <span class="hc-label" style="font-size:9px;color:#8B6D11">ｼｪﾗﾄﾝ</span>
-        <input type="number" min="0" id="hcount-34-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_count')">
+        <input type="number" min="0" id="hcount-34-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_count');updateSheratonAvg()">
         <span class="hc-unit">株</span>
-        <input type="number" min="0" id="hcount-34-sheraton_weight" class="hc-input" value="${counts.sheraton_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_weight')">
+        <span class="hc-label" style="font-size:9px;color:#8B6D11">合計</span>
+        <input type="number" min="0" id="hcount-34-sheraton_weight" class="hc-input" value="${counts.sheraton_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_weight');updateSheratonAvg()">
         <span class="hc-unit">g</span>
-        <span style="font-size:9px;color:#aaa">重量不足株</span>
+      </div>
+      <div class="hc-row" style="margin-top:2px">
+        <span class="hc-label" style="font-size:9px;color:#8B6D11">1株平均</span>
+        <span id="sheraton-avg" style="font-size:13px;font-weight:700;color:#8B6D11;min-width:32px;text-align:right">${(counts.sheraton_count && counts.sheraton_weight) ? Math.round(counts.sheraton_weight / counts.sheraton_count) : '-'}</span>
+        <span class="hc-unit">g</span>
+        <span style="font-size:9px;color:#aaa">（自動計算）</span>
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:9px;color:#993C1D">ダメ株</span>

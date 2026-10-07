@@ -631,7 +631,7 @@ function updateBatchTotal(course) {
   const chipburn = parseInt(document.getElementById(`hcount-${course}-chipburn`)?.value) || 0;
   const total = 161 + bukuro + sheraton + chipburn;
   const el = document.getElementById(`batch-total-${course}`);
-  if (el) el.textContent = `ローゼン161 ＋ 翌日袋${bukuro} ＋ シェラトン${sheraton} ＋ ダメ株${chipburn} ＝ ${total}株`;
+  if (el) el.innerHTML = `翌日袋${bukuro} ＋ シェラトン${sheraton} ＋ ダメ株${chipburn} ＋ ローゼン161 ＝ <strong style="color:#444">${total}株</strong>（1バッチ分）`;
 }
 
 async function toggleHarvestIrr(dateStr) {
@@ -863,8 +863,8 @@ function renderTasks() {
         <span class="hc-unit">株</span>
         <span style="font-size:9px;color:#aaa">ﾁｯﾌﾟﾊﾞｰﾝ・ﾌﾞﾗｳﾝ等</span>
       </div>
-      <div id="batch-total-34" style="font-size:10px;color:#534AB7;font-weight:600;margin-top:4px;line-height:1.5;padding:4px 6px;background:#EEEDFE;border-radius:6px">
-        ${(() => { const b=counts.yoku_bukuro||0,s=counts.sheraton_count||0,d=counts.chipburn||0; return `ローゼン161 ＋ 翌日袋${b} ＋ シェラトン${s} ＋ ダメ株${d} ＝ ${161+b+s+d}株`; })()}
+      <div id="batch-total-34" style="font-size:9px;color:#888;margin-top:4px;line-height:1.5;padding:4px 6px;background:#f7f7f5;border-radius:6px">
+        ${(() => { const b=counts.yoku_bukuro||0,s=counts.sheraton_count||0,d=counts.chipburn||0; return `翌日袋${b} ＋ シェラトン${s} ＋ ダメ株${d} ＋ ローゼン161 ＝ <strong style="color:#444">${161+b+s+d}株</strong>（1バッチ分）`; })()}
       </div>
     </div>`;
   }
@@ -918,8 +918,8 @@ function renderTasks() {
         <span class="hc-unit">株</span>
         <span style="font-size:9px;color:#aaa">ﾁｯﾌﾟﾊﾞｰﾝ・ﾌﾞﾗｳﾝ等</span>
       </div>
-      <div id="batch-total-irr" style="font-size:10px;color:#534AB7;font-weight:600;margin-top:4px;line-height:1.5;padding:4px 6px;background:#EEEDFE;border-radius:6px">
-        ${(() => { const b=counts.yoku_bukuro||0,s=counts.sheraton_count||0,d=counts.chipburn||0; return `ローゼン161 ＋ 翌日袋${b} ＋ シェラトン${s} ＋ ダメ株${d} ＝ ${161+b+s+d}株`; })()}
+      <div id="batch-total-irr" style="font-size:9px;color:#888;margin-top:4px;line-height:1.5;padding:4px 6px;background:#f7f7f5;border-radius:6px">
+        ${(() => { const b=counts.yoku_bukuro||0,s=counts.sheraton_count||0,d=counts.chipburn||0; return `翌日袋${b} ＋ シェラトン${s} ＋ ダメ株${d} ＋ ローゼン161 ＝ <strong style="color:#444">${161+b+s+d}株</strong>（1バッチ分）`; })()}
       </div>
     </div>`;
   }

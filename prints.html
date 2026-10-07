@@ -221,6 +221,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
       <label>メモ（任意）</label>
       <input type="text" id="input-desc" placeholder="例：毎週月曜に印刷">
     </div>
+    <div id="form-error" style="display:none;background:#FAECE7;color:#993C1D;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:8px"></div>
     <div class="form-actions">
       <button class="btn-cancel" onclick="closeForm()">キャンセル</button>
       <button class="btn-submit" id="btn-submit" onclick="addPdf()">追加する</button>
@@ -378,7 +379,7 @@ function setFile(file) {
 // ── GitHubアップロード ────────────────────
 async function uploadToGitHub(file) {
   const token = getToken();
-  if (!token) { alert('GitHubトークンを設定してください（右上 ⚙️）'); return null; }
+  if (!token) { showFormError('GitHubトークンを設定してください（右上 ⚙️）'); return null; }
 
   const progress = document.getElementById('upload-progress');
   progress.textContent = 'アップロード中...';
@@ -405,8 +406,8 @@ async function uploadToGitHub(file) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    if (res.status === 401) alert('GitHubトークンが無効です。⚙️ から再設定してください。');
-    else alert(`アップロード失敗: ${err.message || res.status}`);
+    if (res.status === 401) showFormError('GitHubトークンが無効です。⚙️ から再設定してください。');
+    else showFormError(`アップロード失敗: ${err.message || res.status}`);
     return null;
   }
 
@@ -422,23 +423,34 @@ function fileToBase64(file) {
   });
 }
 
+function showFormError(msg) {
+  const el = document.getElementById('form-error');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
 // ── PDF追加 ───────────────────────────────
 async function addPdf() {
+  showFormError('');
   const title = document.getElementById('input-title').value.trim();
   const desc  = document.getElementById('input-desc').value.trim();
   let url     = document.getElementById('input-url').value.trim();
 
-  if (!title) { alert('タイトルを入力してください'); return; }
+  if (!title) { showFormError('タイトルを入力してください'); return; }
 
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
+  btn.textContent = '処理中...';
 
   if (selectedFile) {
     url = await uploadToGitHub(selectedFile);
-    if (!url) { btn.disabled = false; return; }
+    if (!url) { btn.disabled = false; btn.textContent = '追加する'; return; }
   }
 
-  if (!url) { alert('PDFファイルを選ぶか、URLを入力してください'); btn.disabled = false; return; }
+  if (!url) {
+    showFormError('PDFファイルを選ぶか、URLを入力してください');
+    btn.disabled = false; btn.textContent = '追加する'; return;
+  }
 
   const key = 'print_' + Date.now();
   const { error } = await db.from('lot_notes').insert({
@@ -447,7 +459,8 @@ async function addPdf() {
   });
 
   btn.disabled = false;
-  if (error) { alert('保存に失敗しました'); return; }
+  btn.textContent = '追加する';
+  if (error) { showFormError('保存に失敗しました: ' + error.message); return; }
   closeForm();
   await loadDocs();
 }

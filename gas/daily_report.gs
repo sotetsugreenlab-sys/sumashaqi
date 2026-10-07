@@ -20,7 +20,7 @@ function dailyReport() {
   const ec  = parseNote(fetchOne('evening_check', today));
   const hc33 = parseNote(fetchOne('harvest_count', today + '_33'));
   const hc34 = parseNote(fetchOne('harvest_count', sow34date + '_harvest'));
-  const liquidTotal = fetchLiquidToday(today);
+  const liquidTotal = fetchLiquidAmount();
 
   const ekihiLabel = getEkihiLabel(today);
   const memos      = fetchMemos();
@@ -46,7 +46,7 @@ function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
       '帰:AC温度', '帰:AC風速',
       '前借播種日', '前借数(33日)',
       'メイン播種日', '最小重量(g)', '平均重量(g)', '70g以上', '75g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
-      '貯液(L)', '液肥'
+      '貯液残量(L)', '液肥'
     ];
     sheet.appendRow(headers);
     const headerRange = sheet.getRange(1, 1, 1, headers.length);
@@ -125,7 +125,7 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
     ].join(''))}
 
     ${section('#185FA5', '&#128167;', '貯液', [
-      row('貯液量（当日累計）', liquidTotal + ' L')
+      row('貯液量（現在残量）', liquidTotal + ' L')
     ].join(''))}
 
     <div style="margin-bottom:20px;">
@@ -193,13 +193,8 @@ function fetchOne(crop, sowDate) {
   } catch(e) { return null; }
 }
 
-function fetchLiquidToday(today) {
-  // Supabase の created_at は UTC。JST の today 00:00〜23:59 = UTC の前日 15:00〜当日 14:59
-  const prev = offsetDate(today, -1);
-  const url = SUPABASE_URL + '/rest/v1/liquid_log'
-    + '?created_at=gte.' + prev + 'T15:00:00Z'
-    + '&created_at=lt.'  + today + 'T15:00:00Z'
-    + '&select=delta';
+function fetchLiquidAmount() {
+  const url = SUPABASE_URL + '/rest/v1/liquid_log?select=delta';
   try {
     const res = UrlFetchApp.fetch(url, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },

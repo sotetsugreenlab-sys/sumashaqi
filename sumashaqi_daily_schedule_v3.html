@@ -1174,8 +1174,8 @@ const MC_ITEMS = [
   { id: 'ac',       type: 'ac', label: 'エアコン' },
   { id: 'fan',      label: '換気扇 よし' },
   { id: 'temp',     label: '室温 確認（21〜23℃、棚1-A は22.5〜24.5℃）' },
-  { id: 'led_auto', label: 'LED：今日の区画 → 自動 に戻した' },
-  { id: 'led_on',   label: 'LED：3日後の区画 → 入 にした' },
+  { id: 'led_auto', type: 'led_auto', label: 'LED：今日の区画 → 自動 に戻した' },
+  { id: 'led_on',   type: 'led_on',   label: 'LED：3日後の区画 → 入 にした' },
   { id: 'cycle',    label: 'サイクルマーク よし' },
 ];
 
@@ -1213,12 +1213,23 @@ function checkAllDone(items, state) {
 
 function renderMorningCheck() {
   const wrap = document.getElementById('morning-check-wrap');
+  const dateStr = toDateStr(viewDate);
+  const irrRec = harvestOrderIrr[dateStr];
+  const autoSow = irrRec ? new Date(irrRec.main_sow + 'T00:00:00') : addDays(viewDate, -34);
+  const onSow = addDays(viewDate, -31);
+  function ledLabel(sow, suffix) {
+    const [,m,d] = toDateStr(sow).split('-').map(Number);
+    return `${m}/${d}播種 → ${suffix}`;
+  }
   const itemsHtml = MC_ITEMS.map(item => {
     if (item.type === 'ac') return renderAcRow(item, mcState, 'toggleMC');
     const checked = !!mcState[item.id];
+    const label = item.type === 'led_auto' ? `LED ${ledLabel(autoSow,'自動 に戻した')}`
+                : item.type === 'led_on'   ? `LED ${ledLabel(onSow,'入 にした')}`
+                : item.label;
     return `<div class="mc-item${checked ? ' checked' : ''}" onclick="toggleMC('${item.id}')">
       <div class="mc-box${checked ? ' checked' : ''}"><span class="mc-check">✓</span></div>
-      <div class="mc-label">${item.label}</div>
+      <div class="mc-label">${label}</div>
     </div>`;
   }).join('');
   const allDone = checkAllDone(MC_ITEMS, mcState);

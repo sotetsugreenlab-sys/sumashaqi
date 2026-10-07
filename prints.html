@@ -14,15 +14,37 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 
 .header {
   display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.75rem 1rem 0.75rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid #e5e5e3;
   background: #fff;
   position: sticky; top: 0; z-index: 10;
 }
 .back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
 .header-title { font-size: 17px; font-weight: 700; color: #1a1a1a; flex: 1; }
+.btn-settings { background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px; }
 
 .content { padding: 1rem; max-width: 480px; margin: 0 auto; }
+
+/* トークン設定バナー */
+.token-banner {
+  background: #FFF9EC; border: 1px solid #F5D67B; border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 12px; display: none;
+}
+.token-banner.show { display: block; }
+.token-banner-title { font-size: 13px; font-weight: 700; color: #8B6D11; margin-bottom: 6px; }
+.token-banner-desc { font-size: 12px; color: #8B6D11; line-height: 1.6; margin-bottom: 10px; }
+.token-banner-desc a { color: #534AB7; }
+.token-input-row { display: flex; gap: 8px; }
+.token-input {
+  flex: 1; border: 1px solid #e5e5e3; border-radius: 8px;
+  padding: 8px 10px; font-size: 13px; outline: none;
+}
+.token-input:focus { border-color: #534AB7; }
+.btn-token-save {
+  background: #534AB7; color: #fff; border: none;
+  border-radius: 8px; padding: 8px 14px; font-size: 13px;
+  font-weight: 600; cursor: pointer; white-space: nowrap;
+}
 
 /* カード */
 .pdf-card {
@@ -45,12 +67,10 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
   cursor: pointer; white-space: nowrap;
 }
 .btn-print:active { opacity: 0.8; }
-
 .btn-delete {
   background: none; color: #ccc;
   border: 1px solid #e5e5e3; border-radius: 10px;
-  padding: 8px 10px; font-size: 14px;
-  cursor: pointer;
+  padding: 8px 10px; font-size: 14px; cursor: pointer;
 }
 .btn-delete:active { color: #DC2626; border-color: #DC2626; }
 
@@ -72,23 +92,44 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
   display: none;
 }
 .add-form.open { display: block; }
-.form-title { font-size: 14px; font-weight: 700; color: #534AB7; margin-bottom: 10px; }
+.form-title { font-size: 14px; font-weight: 700; color: #534AB7; margin-bottom: 12px; }
 .form-field { margin-bottom: 10px; }
 .form-field label { font-size: 11px; color: #aaa; font-weight: 600; display: block; margin-bottom: 4px; }
-.form-field input, .form-field textarea {
+.form-field input {
   width: 100%; border: 1px solid #e5e5e3; border-radius: 8px;
   padding: 8px 10px; font-size: 14px; color: #1a1a1a;
   outline: none; font-family: sans-serif;
 }
-.form-field input:focus, .form-field textarea:focus { border-color: #534AB7; }
-.form-field textarea { resize: vertical; height: 60px; }
-.form-actions { display: flex; gap: 8px; }
+.form-field input:focus { border-color: #534AB7; }
+
+/* ファイル選択 */
+.file-drop {
+  border: 2px dashed #d0cef5; border-radius: 10px;
+  padding: 20px; text-align: center; cursor: pointer;
+  color: #888; font-size: 13px; line-height: 1.6;
+  transition: background 0.15s;
+}
+.file-drop:active, .file-drop.dragover { background: #f5f4ff; border-color: #534AB7; }
+.file-drop .drop-icon { font-size: 32px; margin-bottom: 6px; }
+.file-drop input[type=file] { display: none; }
+.file-selected { background: #f5f4ff; border-color: #534AB7; color: #534AB7; }
+.file-selected .file-name { font-weight: 700; }
+
+.upload-progress {
+  display: none; margin-top: 8px;
+  font-size: 12px; color: #534AB7; text-align: center;
+}
+.upload-progress.show { display: block; }
+
+.form-or { text-align: center; font-size: 12px; color: #bbb; margin: 10px 0; }
+
+.form-actions { display: flex; gap: 8px; margin-top: 12px; }
 .btn-submit {
   flex: 1; background: #534AB7; color: #fff;
   border: none; border-radius: 10px;
   padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.btn-submit:disabled { opacity: 0.5; }
+.btn-submit:disabled { opacity: 0.4; cursor: default; }
 .btn-cancel {
   background: none; color: #999; border: 1px solid #e5e5e3;
   border-radius: 10px; padding: 10px 16px; font-size: 14px; cursor: pointer;
@@ -106,8 +147,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 }
 .modal-title { color: #fff; font-size: 15px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .btn-modal-print {
-  background: #534AB7; color: #fff;
-  border: none; border-radius: 8px;
+  background: #534AB7; color: #fff; border: none; border-radius: 8px;
   padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
 .btn-modal-close {
@@ -121,7 +161,6 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 .empty-state { text-align: center; padding: 3rem 1rem; color: #bbb; font-size: 14px; }
 .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
 
-/* ローディング */
 .loading { text-align: center; padding: 2rem; color: #bbb; font-size: 14px; }
 </style>
 </head>
@@ -130,22 +169,53 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-
 <div class="header">
   <a class="back-btn" href="index.html">← 戻る</a>
   <div class="header-title">🖨️ 印刷物</div>
+  <button class="btn-settings" onclick="toggleSettings()" title="GitHub設定">⚙️</button>
 </div>
 
 <div class="content">
+  <!-- トークン設定バナー -->
+  <div class="token-banner" id="token-banner">
+    <div class="token-banner-title">🔑 GitHubトークンを設定してください</div>
+    <div class="token-banner-desc">
+      PDFファイルをアップロードするにはGitHubトークンが必要です。<br>
+      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">こちら</a>で作成 →
+      Repository: <strong>sotetsugreenlab-sys/sumashaqi</strong>、
+      Permission: <strong>Contents → Read and Write</strong>
+    </div>
+    <div class="token-input-row">
+      <input type="password" class="token-input" id="token-input" placeholder="github_pat_...">
+      <button class="btn-token-save" onclick="saveToken()">保存</button>
+    </div>
+  </div>
+
   <div id="loading" class="loading">読み込み中...</div>
   <div id="list"></div>
 
   <!-- 追加フォーム -->
   <div class="add-form" id="add-form">
     <div class="form-title">＋ PDFを追加</div>
+
+    <!-- ファイルアップロード -->
+    <div class="form-field">
+      <label>PDFファイルを選ぶ</label>
+      <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()" ondragover="onDragOver(event)" ondrop="onDrop(event)">
+        <input type="file" id="file-input" accept=".pdf,application/pdf" onchange="onFileSelected(event)">
+        <div class="drop-icon">📄</div>
+        <div id="drop-label">タップしてPDFを選ぶ</div>
+      </div>
+      <div class="upload-progress" id="upload-progress">アップロード中...</div>
+    </div>
+
+    <div class="form-or">── または URL を直接貼る ──</div>
+
+    <div class="form-field">
+      <label>PDF の URL</label>
+      <input type="url" id="input-url" placeholder="https://...">
+    </div>
+
     <div class="form-field">
       <label>タイトル（必須）</label>
       <input type="text" id="input-title" placeholder="例：スマシャキ週次報告書">
-    </div>
-    <div class="form-field">
-      <label>PDF の URL（必須）</label>
-      <input type="url" id="input-url" placeholder="https://...">
     </div>
     <div class="form-field">
       <label>メモ（任意）</label>
@@ -181,8 +251,37 @@ const db = supabase.createClient(
   'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
 );
 
-let docs = [];
+const REPO = 'sotetsugreenlab-sys/sumashaqi';
+const BRANCH = 'main';
 
+let docs = [];
+let selectedFile = null;
+
+// ── トークン管理 ──────────────────────────
+function getToken() {
+  try { return localStorage.getItem('gh_prints_token') || ''; } catch(e) { return ''; }
+}
+function saveToken() {
+  const val = document.getElementById('token-input').value.trim();
+  if (!val) return;
+  try { localStorage.setItem('gh_prints_token', val); } catch(e) {}
+  document.getElementById('token-banner').classList.remove('show');
+  alert('保存しました！');
+}
+function toggleSettings() {
+  const banner = document.getElementById('token-banner');
+  if (banner.classList.contains('show')) {
+    banner.classList.remove('show');
+  } else {
+    document.getElementById('token-input').value = getToken();
+    banner.classList.add('show');
+  }
+}
+function checkToken() {
+  if (!getToken()) document.getElementById('token-banner').classList.add('show');
+}
+
+// ── Supabaseリスト ────────────────────────
 async function loadDocs() {
   const { data } = await db.from('lot_notes')
     .select('id,sow_date,note')
@@ -220,10 +319,16 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+async function deletePdf(key) {
+  if (!confirm('このPDFを削除しますか？')) return;
+  await db.from('lot_notes').delete().eq('crop', 'print_document').eq('sow_date', key);
+  await loadDocs();
+}
+
+// ── フォーム ──────────────────────────────
 function openForm() {
   document.getElementById('add-form').classList.add('open');
   document.getElementById('btn-add').style.display = 'none';
-  document.getElementById('input-title').focus();
 }
 
 function closeForm() {
@@ -232,30 +337,122 @@ function closeForm() {
   document.getElementById('input-title').value = '';
   document.getElementById('input-url').value = '';
   document.getElementById('input-desc').value = '';
+  selectedFile = null;
+  resetFileDrop();
 }
 
+function resetFileDrop() {
+  const drop = document.getElementById('file-drop');
+  drop.classList.remove('file-selected');
+  document.getElementById('drop-label').innerHTML = 'タップしてPDFを選ぶ';
+  document.getElementById('file-input').value = '';
+  document.getElementById('upload-progress').classList.remove('show');
+}
+
+// ── ファイル選択 ──────────────────────────
+function onFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  setFile(file);
+}
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.add('dragover');
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') setFile(file);
+}
+function setFile(file) {
+  selectedFile = file;
+  const drop = document.getElementById('file-drop');
+  drop.classList.add('file-selected');
+  document.getElementById('drop-label').innerHTML = `<div class="file-name">📎 ${escHtml(file.name)}</div><div style="font-size:11px;margin-top:2px">${(file.size/1024/1024).toFixed(1)} MB</div>`;
+  if (!document.getElementById('input-title').value) {
+    document.getElementById('input-title').value = file.name.replace(/\.pdf$/i, '');
+  }
+}
+
+// ── GitHubアップロード ────────────────────
+async function uploadToGitHub(file) {
+  const token = getToken();
+  if (!token) { alert('GitHubトークンを設定してください（右上 ⚙️）'); return null; }
+
+  const progress = document.getElementById('upload-progress');
+  progress.textContent = 'アップロード中...';
+  progress.classList.add('show');
+
+  const filename = `prints/${Date.now()}_${file.name.replace(/[^\w.\-]/g, '_')}`;
+  const base64 = await fileToBase64(file);
+
+  const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${filename}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/vnd.github+json',
+    },
+    body: JSON.stringify({
+      message: `印刷物追加: ${file.name}`,
+      content: base64,
+      branch: BRANCH,
+    }),
+  });
+
+  progress.classList.remove('show');
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    if (res.status === 401) alert('GitHubトークンが無効です。⚙️ から再設定してください。');
+    else alert(`アップロード失敗: ${err.message || res.status}`);
+    return null;
+  }
+
+  return `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${filename}`;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── PDF追加 ───────────────────────────────
 async function addPdf() {
   const title = document.getElementById('input-title').value.trim();
-  const url   = document.getElementById('input-url').value.trim();
   const desc  = document.getElementById('input-desc').value.trim();
-  if (!title || !url) { alert('タイトルとURLは必須です'); return; }
+  let url     = document.getElementById('input-url').value.trim();
+
+  if (!title) { alert('タイトルを入力してください'); return; }
+
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
+
+  if (selectedFile) {
+    url = await uploadToGitHub(selectedFile);
+    if (!url) { btn.disabled = false; return; }
+  }
+
+  if (!url) { alert('PDFファイルを選ぶか、URLを入力してください'); btn.disabled = false; return; }
+
   const key = 'print_' + Date.now();
-  const note = JSON.stringify({ title, url, desc });
-  const { error } = await db.from('lot_notes').insert({ crop: 'print_document', sow_date: key, note });
+  const { error } = await db.from('lot_notes').insert({
+    crop: 'print_document', sow_date: key,
+    note: JSON.stringify({ title, url, desc }),
+  });
+
   btn.disabled = false;
-  if (error) { alert('追加に失敗しました'); return; }
+  if (error) { alert('保存に失敗しました'); return; }
   closeForm();
   await loadDocs();
 }
 
-async function deletePdf(key) {
-  if (!confirm('このPDFを削除しますか？')) return;
-  await db.from('lot_notes').delete().eq('crop', 'print_document').eq('sow_date', key);
-  await loadDocs();
-}
-
+// ── 印刷モーダル ──────────────────────────
 let currentPdfUrl = '';
 
 function openModal(title, url) {
@@ -278,11 +475,12 @@ function doPrint() {
     iframe.contentWindow.focus();
     iframe.contentWindow.print();
   } catch(e) {
-    // 別タブで開いて印刷
     window.open(currentPdfUrl, '_blank');
   }
 }
 
+// ── 初期化 ────────────────────────────────
+checkToken();
 loadDocs();
 </script>
 </body>

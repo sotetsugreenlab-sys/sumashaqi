@@ -145,6 +145,12 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
 .irr-date-input { font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 6px; background: #fff; color: #1a1a1a; }
 .btn-irr-submit { font-size: 11px; padding: 4px 10px; background: #E8A020; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
 .btn-irr-cancel { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 4px; }
+.btn-harvest-irr { font-size: 11px; background: none; border: 1px dashed #aaa; border-radius: 10px; padding: 3px 10px; cursor: pointer; color: #888; margin-bottom: 6px; }
+.btn-harvest-irr.active { border-color: #534AB7; border-style: solid; background: #EEEDFE; color: #534AB7; font-weight: 600; }
+.harvest-irr-banner { background: #EEEDFE; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #534AB7; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+.harvest-irr-form { background: #f5f4ff; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12px; }
+.irr-main-badge { display: inline-block; background: #534AB7; color: white; font-size: 10px; font-weight: 700; border-radius: 6px; padding: 2px 7px; margin-bottom: 4px; }
+.card-irr-main { outline: 2px solid #534AB7; }
 .irr-received-row { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #854F0B; background: rgba(255,255,255,0.45); border-radius: 6px; padding: 3px 7px; margin-top: 3px; }
 .irr-given-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; background: #f0f0ee; color: #666; border-radius: 6px; padding: 2px 8px; margin-top: 3px; border: 1px solid #e0e0e0; }
 .card-alert-banner { display: flex; align-items: center; gap: 6px; background: #E24B4A; color: #fff; border-radius: 8px; padding: 5px 10px; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
@@ -374,10 +380,11 @@ function renderHeader() {
 let lotNotes = {};
 let alertLots = {}; // sow_date -> row id
 async function loadLotNotes() {
-  const [notesRes, alertRes, irregularRes] = await Promise.all([
+  const [notesRes, alertRes, irregularRes, harvestOrdRes] = await Promise.all([
     db.from('lot_notes').select('id,sow_date,note').eq('crop', 'sumashaqi'),
     db.from('lot_notes').select('id,sow_date').eq('crop', 'sumashaqi_alert'),
     db.from('lot_notes').select('id,sow_date,note').eq('crop', 'lot_irregular'),
+    db.from('lot_notes').select('id,sow_date,note').eq('crop', 'harvest_order_irregular'),
   ]);
   lotNotes = {};
   (notesRes.data || []).forEach(r => {
@@ -386,6 +393,10 @@ async function loadLotNotes() {
   });
   alertLots = {};
   (alertRes.data || []).forEach(r => { alertLots[r.sow_date] = r.id; });
+  harvestOrderIrr = {};
+  (harvestOrdRes.data || []).forEach(r => {
+    try { harvestOrderIrr[r.sow_date] = { id: r.id, ...JSON.parse(r.note || '{}') }; } catch(e) {}
+  });
   lotIrregularsGiven = {};
   lotIrregularsReceived = {};
   (irregularRes.data || []).forEach(r => {
@@ -519,6 +530,8 @@ let hcDebounce = {};
 let irregularForms = {}; // key: `${dateStr}_${course}` -> {open: bool}
 let lotIrregularsGiven = {}; // from_sow_date -> [{id, from_sow_date, to_sow_date, count}]
 let lotIrregularsReceived = {}; // to_sow_date -> [{id, from_sow_date, to_sow_date, count}]
+let harvestOrderIrr = {}; // dateStr -> { id, main_sow }
+let harvestIrrFormOpen = false;
 
 const HC34_FIELDS = ['min_weight','avg_weight','w70','w75','yoku_bukuro','sheraton_count','sheraton_weight','chipburn'];
 
@@ -598,6 +611,29 @@ async function submitIrregular(viewDateStr, sowDateStr, course) {
   renderTasks();
 }
 
+async function toggleHarvestIrr(dateStr) {
+  if (harvestOrderIrr[dateStr]) {
+    await db.from('lot_notes').delete().eq('id', harvestOrderIrr[dateStr].id);
+    delete harvestOrderIrr[dateStr];
+    harvestIrrFormOpen = false;
+    renderTasks();
+  } else {
+    harvestIrrFormOpen = !harvestIrrFormOpen;
+    renderTasks();
+  }
+}
+
+async function submitHarvestIrr(dateStr, mainSow) {
+  const note = JSON.stringify({ main_sow: mainSow });
+  const { data } = await db.from('lot_notes').insert({ crop: 'harvest_order_irregular', sow_date: dateStr, note }).select('id');
+  harvestOrderIrr[dateStr] = { id: data?.[0]?.id, main_sow: mainSow };
+  harvestIrrFormOpen = false;
+  renderTasks();
+  // 該当カードへスクロール
+  const cards = document.querySelectorAll('.card-刈取');
+  cards.forEach(el => { if (el.dataset.sow === mainSow) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+}
+
 db.channel('harvest_count_notes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'lot_notes',
       filter: 'crop=eq.harvest_count' }, payload => {
@@ -653,15 +689,19 @@ function makeCard(t, dayLabel, compact) {
   const givenTotal = irregularGivenTotal(sowStr);
   const autoAlert = givenTotal >= 5;
   const hasAlert = manualAlert || autoAlert;
+  const dateStr = toDateStr(viewDate);
+  const isIrrMain = harvestOrderIrr[dateStr]?.main_sow === sowStr;
   let alertBanner = '';
   if (autoAlert) {
     alertBanner = `<div class="card-alert-banner">⚠️ ${givenTotal}株前借り済</div>`;
   } else if (manualAlert) {
     alertBanner = `<div class="card-alert-banner">⚠️ 注意ロット</div>`;
   }
-  const outlineStyle = hasAlert ? ';outline:2px solid #E24B4A' : '';
+  const irrMainBadge = isIrrMain ? `<div class="irr-main-badge">🔀 本日メイン刈取</div>` : '';
+  const outlineStyle = isIrrMain ? ';outline:2px solid #534AB7' : hasAlert ? ';outline:2px solid #E24B4A' : '';
   if (compact) {
-    return `<div class="${cls}" style="background:${bg}${outlineStyle}">
+    return `<div class="${cls}" style="background:${bg}${outlineStyle}" data-sow="${sowStr}">
+      ${irrMainBadge}
       ${alertBanner}
       <div class="card-task">${t.label}</div>
       <div class="card-sow">${fmtShort(t.sow)}播種</div>
@@ -670,7 +710,8 @@ function makeCard(t, dayLabel, compact) {
       ${notesHtml(sowStr)}
     </div>`;
   }
-  return `<div class="${cls}" style="background:${bg}${outlineStyle}">
+  return `<div class="${cls}" style="background:${bg}${outlineStyle}" data-sow="${sowStr}">
+    ${irrMainBadge}
     ${alertBanner}
     <div class="card-top">
       <div>
@@ -742,7 +783,7 @@ function renderTasks() {
         </div>
         ${irrReceivedHtml}
         ${irrGivenHtml}
-        <button class="btn-irregular${irrOpen ? ' open' : ''}" onclick="toggleIrregular('${dateStr}',33)">🔄 イレギュラー</button>
+        <button class="btn-irregular${irrOpen ? ' open' : ''}" onclick="toggleIrregular('${dateStr}',33)">🔄 前借日イレギュラー</button>
         ${irrFormHtml}
       </div>`;
     }
@@ -792,9 +833,32 @@ function renderTasks() {
     </div>`;
   }
 
+  const irrRecord = harvestOrderIrr[dateStr];
+  const irrBannerHtml = irrRecord ? (() => {
+    const [,m,d] = irrRecord.main_sow.split('-').map(Number);
+    return `<div class="harvest-irr-banner">🔀 本日メイン刈取：${m}/${d}播種
+      <button style="font-size:10px;background:none;border:none;color:#534AB7;cursor:pointer" onclick="toggleHarvestIrr('${dateStr}')">取消</button>
+    </div>`;
+  })() : '';
+  const irrFormHtml = (!irrRecord && harvestIrrFormOpen) ? `
+    <div class="harvest-irr-form">
+      <div style="margin-bottom:6px;font-weight:600;color:#534AB7">🔀 メインの刈取ロットを選択</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${courses.map(c => {
+          const sow = addDays(viewDate, -c);
+          const sowStr2 = toDateStr(sow);
+          const [,m,d] = sowStr2.split('-').map(Number);
+          return `<button style="padding:6px 12px;border-radius:8px;border:2px solid #534AB7;background:#EEEDFE;color:#534AB7;font-weight:600;cursor:pointer" onclick="submitHarvestIrr('${dateStr}','${sowStr2}')">${m}/${d}播種（${c}日目）</button>`;
+        }).join('')}
+      </div>
+      <button style="margin-top:6px;font-size:11px;color:#aaa;background:none;border:none;cursor:pointer" onclick="toggleHarvestIrr('${dateStr}')">キャンセル</button>
+    </div>` : '';
+
   let html = `<div class="col-header">
     ${courses.map(c => `<div class="col-label" style="background:#f0f0ee;color:#555">${c}日目刈取</div>`).join('')}
   </div>
+  ${irrBannerHtml}${irrFormHtml}
+  ${!irrRecord ? `<div style="text-align:right;margin-bottom:4px"><button class="btn-harvest-irr${harvestIrrFormOpen?' active':''}" onclick="toggleHarvestIrr('${dateStr}')">🔀 イレギュラー刈取</button></div>` : ''}
   <div class="stage-row">
     ${courses.map(c => `<div class="stage-cell">${makeCard({label:'刈取', cls:'card-刈取', days:c, sow:addDays(viewDate,-c), history:hist}, dayLabel, true)}${harvestInputsHtml(c)}</div>`).join('')}
   </div>`;
@@ -990,7 +1054,7 @@ async function loadEvents() {
 }
 
 const MC_ITEMS = [
-  { id: 'ac',       type: 'ac', label: 'エアコン 18℃' },
+  { id: 'ac',       type: 'ac', label: 'エアコン 19℃' },
   { id: 'fan',      label: '換気扇 よし' },
   { id: 'temp',     label: '室温 確認（21〜23℃、棚1-A は22.5〜24.5℃）' },
   { id: 'led_auto', label: 'LED：今日の区画 → 自動 に戻した' },
@@ -1069,7 +1133,7 @@ async function toggleMC(id) {
 
 const EC_ITEMS = [
   { id: 'ec_cycle', label: 'LEDサイクルマーク よし' },
-  { id: 'ec_ac',    type: 'ac', label: 'エアコン 18℃' },
+  { id: 'ec_ac',    type: 'ac', label: 'エアコン 19℃' },
   { id: 'ec_fan',   label: '換気扇 よし' },
   { id: 'ec_basil', label: 'バジルLED よし' },
 ];

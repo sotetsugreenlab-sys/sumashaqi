@@ -1219,13 +1219,13 @@ function renderMorningCheck() {
   const onSow = addDays(viewDate, -31);
   function ledLabel(sow, suffix) {
     const [,m,d] = toDateStr(sow).split('-').map(Number);
-    return `${m}/${d}播種 → ${suffix}`;
+    return `${m}/${d}播種 ${suffix}`;
   }
   const itemsHtml = MC_ITEMS.map(item => {
     if (item.type === 'ac') return renderAcRow(item, mcState, 'toggleMC');
     const checked = !!mcState[item.id];
-    const label = item.type === 'led_auto' ? `LED ${ledLabel(autoSow,'自動 に戻した')}`
-                : item.type === 'led_on'   ? `LED ${ledLabel(onSow,'入 にした')}`
+    const label = item.type === 'led_auto' ? `LED ${ledLabel(autoSow,'自動')}`
+                : item.type === 'led_on'   ? `LED ${ledLabel(onSow,'入り')}`
                 : item.label;
     return `<div class="mc-item${checked ? ' checked' : ''}" onclick="toggleMC('${item.id}')">
       <div class="mc-box${checked ? ' checked' : ''}"><span class="mc-check">✓</span></div>

@@ -402,7 +402,7 @@ async function loadLotNotes() {
   (irregularRes.data || []).forEach(r => {
     try {
       const p = JSON.parse(r.note || '{}');
-      const entry = { id: r.id, from_sow_date: r.sow_date, to_sow_date: p.to_sow_date, count: p.count };
+      const entry = { id: r.id, from_sow_date: r.sow_date, to_sow_date: p.to_sow_date, count: p.count, harvest_date: p.harvest_date || null };
       if (!lotIrregularsGiven[r.sow_date]) lotIrregularsGiven[r.sow_date] = [];
       lotIrregularsGiven[r.sow_date].push(entry);
       if (p.to_sow_date) {
@@ -610,10 +610,10 @@ async function submitIrregular(viewDateStr, sowDateStr, course) {
   if (!fromDate || !count) { alert('日付と株数を入力してください'); return; }
 
   // 提供元ロット(fromDate)が受取ロット(sowDateStr)に株を提供したことを記録
-  const note = JSON.stringify({ to_sow_date: sowDateStr, count });
+  const note = JSON.stringify({ to_sow_date: sowDateStr, count, harvest_date: viewDateStr });
   const { data } = await db.from('lot_notes').insert({ crop: 'lot_irregular', sow_date: fromDate, note }).select('id');
 
-  const entry = { id: data?.[0]?.id, from_sow_date: fromDate, to_sow_date: sowDateStr, count };
+  const entry = { id: data?.[0]?.id, from_sow_date: fromDate, to_sow_date: sowDateStr, count, harvest_date: viewDateStr };
   if (!lotIrregularsGiven[fromDate]) lotIrregularsGiven[fromDate] = [];
   lotIrregularsGiven[fromDate].push(entry);
   if (!lotIrregularsReceived[sowDateStr]) lotIrregularsReceived[sowDateStr] = [];
@@ -730,14 +730,22 @@ function makeCard(t, dayLabel, compact) {
   }
   const sowStr = toDateStr(t.sow);
   const manualAlert = !!(alertLots[sowStr]);
-  const givenTotal = irregularGivenTotal(sowStr);
+  const givenEntries = lotIrregularsGiven[sowStr] || [];
+  const givenTotal = givenEntries.reduce((s, e) => s + (e.count || 0), 0);
   const autoAlert = givenTotal >= 5;
   const hasAlert = manualAlert || autoAlert;
   const dateStr = toDateStr(viewDate);
   const isIrrMain = harvestOrderIrr[dateStr]?.main_sow === sowStr;
   let alertBanner = '';
   if (autoAlert) {
-    alertBanner = `<div class="card-alert-banner">⚠️ ${givenTotal}株前借り済</div>`;
+    const today = toDateStr(viewDate);
+    const lines = givenEntries.map(e => {
+      const dateLabel = e.harvest_date ? fmtShort(new Date(e.harvest_date + 'T00:00:00')) : '?';
+      const todayMark = e.harvest_date === today ? '・今日の入力分' : '';
+      return `<div>⚠️ ${e.count}株前借り済（${dateLabel}${todayMark}）</div>`;
+    }).join('');
+    const remaining = 180 - givenTotal;
+    alertBanner = `<div class="card-alert-banner">${lines}<div>残り ${remaining}株</div></div>`;
   } else if (manualAlert) {
     alertBanner = `<div class="card-alert-banner">⚠️ 注意ロット</div>`;
   }

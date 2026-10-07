@@ -99,21 +99,21 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
 
   <div style="background:#f7f7f5;padding:20px;">
 
-    ${section('#3D7A50', '🌅', '朝チェック', [
+    ${section('#3D7A50', '&#127749;', '朝チェック', [
       row('エアコン温度', c(mc.ac_temp) + ' ℃'),
       row('エアコン風速', acMode(mc, 'ac'))
     ].join(''))}
 
-    ${section('#185FA5', '🌆', '帰り際チェック', [
+    ${section('#185FA5', '&#127750;', '帰り際チェック', [
       row('エアコン温度', c(ec.ec_ac_temp) + ' ℃'),
       row('エアコン風速', acMode(ec, 'ec_ac'))
     ].join(''))}
 
-    ${section('#8B5A00', '✂️', `前借数（33日目刈取 / 播種 ${sow33}）`, [
+    ${section('#8B5A00', '&#9986;', `前借数（33日目刈取 / 播種 ${sow33}）`, [
       row('前借数', c(hc33.maegari))
     ].join(''))}
 
-    ${section('#8B5A00', '📦', `メイン刈取（34日目刈取 / 播種 ${sow34}）`, [
+    ${section('#8B5A00', '&#128230;', `メイン刈取（34日目刈取 / 播種 ${sow34}）`, [
       row('最小重量', c(hc34.min_weight) + ' g'),
       row('平均重量', c(hc34.avg_weight) + ' g'),
       row('70g 以上', c(hc34.w70)),
@@ -124,12 +124,12 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
       row('チップバーン', c(hc34.chipburn))
     ].join(''))}
 
-    ${section('#185FA5', '💧', '貯液', [
+    ${section('#185FA5', '&#128167;', '貯液', [
       row('貯液量（当日累計）', liquidTotal + ' L')
     ].join(''))}
 
     <div style="margin-bottom:20px;">
-      <div style="font-size:14px;font-weight:700;color:#6B7280;margin-bottom:6px;">🪜 棚管理</div>
+      <div style="font-size:14px;font-weight:700;color:#6B7280;margin-bottom:6px;">&#129692; 棚管理</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <img src="${tana1Url}" style="max-width:100%;border-radius:8px;border:1px solid #e8e8e8;" alt="棚1">
         <img src="${tana2Url}" style="max-width:100%;border-radius:8px;border:1px solid #e8e8e8;" alt="棚2">
@@ -140,7 +140,7 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
 
   </div>
   <div style="background:#e8e8e8;padding:10px 20px;border-radius:0 0 12px 12px;font-size:12px;color:#555;text-align:center;">
-    <a href="${sheetUrl}" style="color:#3D7A50;font-weight:700;text-decoration:none;">📊 スプレッドシートで確認</a>
+    <a href="${sheetUrl}" style="color:#3D7A50;font-weight:700;text-decoration:none;">&#128202; スプレッドシートで確認</a>
     <span style="color:#bbb;margin:0 8px;">|</span>
     自動送信 ${today} 18:00 JST — SGL スタッフアプリ
   </div>
@@ -319,7 +319,7 @@ function buildNotesSection(ekihiLabel, memos, alerts, today) {
   if (hasEkihi) {
     const next = getNextEkihiEvent(today);
     inner += `<div style="background:#EEF6FF;border-radius:8px;padding:10px 14px;border:1px solid #c5d8f0;margin-bottom:${activeDates.length > 0 ? '10px' : '0'};">
-      <div style="font-size:13px;font-weight:700;color:#185FA5;">💧 本日の液肥: ${ekihiLabel}</div>
+      <div style="font-size:13px;font-weight:700;color:#185FA5;">&#128167; 本日の液肥: ${ekihiLabel}</div>
       ${next ? `<div style="font-size:12px;color:#555;margin-top:4px;">次回${next.label}: ${next.date}</div>` : ''}
     </div>`;
   }
@@ -331,7 +331,7 @@ function buildNotesSection(ekihiLabel, memos, alerts, today) {
       const isAlert = alertDates.has(date);
       const memo    = memos.find(m => m.sow_date === date);
       const harvestDate = offsetDate(date, 34);
-      const label   = isAlert ? '⚠️' : '📝';
+      const label   = isAlert ? '&#9888;' : '&#128221;';
       rows += `<tr>
         <td style="padding:7px 10px;white-space:nowrap;color:#555;border-bottom:1px solid #f0f0f0;">${label}&nbsp;${date}</td>
         <td style="padding:7px 10px;white-space:nowrap;color:#555;border-bottom:1px solid #f0f0f0;">${harvestDate}</td>
@@ -351,7 +351,7 @@ function buildNotesSection(ekihiLabel, memos, alerts, today) {
   }
 
   return `<div style="margin-bottom:20px;">
-    <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">📋 メモ・アラート・液肥</div>
+    <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">&#128203; メモ・アラート・液肥</div>
     ${inner}
   </div>`;
 }

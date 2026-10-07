@@ -90,7 +90,7 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
       </table>
     </div>`;
 
-  const html = `
+  const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"></head><body>
 <div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:560px;margin:0 auto;">
   <div style="background:#3D7A50;color:#fff;padding:18px 20px;border-radius:12px 12px 0 0;">
     <div style="font-size:12px;opacity:0.75;letter-spacing:0.05em;">SGL スタッフアプリ</div>
@@ -144,7 +144,7 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
     <span style="color:#bbb;margin:0 8px;">|</span>
     自動送信 ${today} 18:00 JST — SGL スタッフアプリ
   </div>
-</div>`;
+</div></body></html>`;
 
   let plainText =
     `【SGL日報】${today}\n\n` +
@@ -153,11 +153,22 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
     `前借り: ${c(hc33.maegari)}\n` +
     `平均重量: ${c(hc34.avg_weight)}g\n` +
     `貯液: ${liquidTotal}L\n`;
-  if (ekihiLabel) plainText += `液肥: ${ekihiLabel}\n`;
-  if (memos.length || alerts.length) {
+  if (ekihiLabel) {
+    const next = getNextEkihiEvent(today);
+    plainText += `液肥: ${ekihiLabel}`;
+    if (next) plainText += `  (次回${next.label}: ${next.date})`;
+    plainText += '\n';
+  }
+  const alertDatesSet = new Set(alerts.map(a => a.sow_date));
+  const activeDates = [...new Set([...memos.map(m => m.sow_date), ...alerts.map(a => a.sow_date)])]
+    .sort().filter(d => offsetDate(d, 34) >= today);
+  if (activeDates.length) {
     plainText += `\n--- メモ・アラート一覧 ---\n`;
-    memos.forEach(m => { plainText += `📝 ${m.sow_date}  ${m.note}\n`; });
-    alerts.forEach(a => { plainText += `⚠️ ${a.sow_date}\n`; });
+    activeDates.forEach(date => {
+      const isAlert = alertDatesSet.has(date);
+      const memo = memos.find(m => m.sow_date === date);
+      plainText += `${isAlert ? '⚠️' : '📝'} 播種:${date} 刈取:${offsetDate(date,34)}${memo ? '  '+memo.note : ''}\n`;
+    });
   }
 
   GmailApp.sendEmail(EMAIL_TO, `【SGL日報】${today}`, plainText, { htmlBody: html });
@@ -263,57 +274,84 @@ function fetchAlerts() {
   } catch(e) { return []; }
 }
 
+const EKIHI_BASE = '2026-03-02';
+const EKIHI_EVENTS = [{ label: '入替', offset: 0 }, { label: '追肥', offset: 4 }, { label: '追肥', offset: 9 }];
+
 function getEkihiLabel(today) {
-  const base = new Date('2026-03-02T00:00:00Z');
+  const base = new Date(EKIHI_BASE + 'T00:00:00Z');
   const d    = new Date(today + 'T00:00:00Z');
   const daysSince = Math.round((d - base) / 86400000);
   if (daysSince < 0) return null;
   const cycleNum = Math.floor(daysSince / 14);
-  const events   = [{ label: '入替', offset: 0 }, { label: '追肥', offset: 4 }, { label: '追肥', offset: 9 }];
-  const hit = events.find(e => cycleNum * 14 + e.offset === daysSince);
+  const hit = EKIHI_EVENTS.find(e => cycleNum * 14 + e.offset === daysSince);
   return hit ? hit.label : null;
 }
 
+function getNextEkihiEvent(today) {
+  const base = new Date(EKIHI_BASE + 'T00:00:00Z');
+  const d    = new Date(today + 'T00:00:00Z');
+  const daysSince = Math.round((d - base) / 86400000);
+  if (daysSince < 0) return { label: '入替', date: EKIHI_BASE };
+  const cycleNum = Math.floor(daysSince / 14);
+  for (let c = cycleNum; c <= cycleNum + 1; c++) {
+    for (const evt of EKIHI_EVENTS) {
+      const evtDay = c * 14 + evt.offset;
+      if (evtDay > daysSince) return { label: evt.label, date: offsetDate(EKIHI_BASE, evtDay) };
+    }
+  }
+  return null;
+}
+
 function buildNotesSection(ekihiLabel, memos, alerts, today) {
-  const hasEkihi  = !!ekihiLabel;
-  const hasMemos  = memos.length > 0;
-  const hasAlerts = alerts.length > 0;
-  if (!hasEkihi && !hasMemos && !hasAlerts) return '';
+  // 液肥: today is event day only
+  const hasEkihi = !!ekihiLabel;
 
-  let rows = '';
+  // メモ・アラート: filter out lots whose harvest date (sow+34) has already passed
+  const alertDates = new Set(alerts.map(a => a.sow_date));
+  const allDates = [...new Set([...memos.map(m => m.sow_date), ...alerts.map(a => a.sow_date)])].sort();
+  const activeDates = allDates.filter(d => offsetDate(d, 34) >= today);
 
+  if (!hasEkihi && activeDates.length === 0) return '';
+
+  let inner = '';
+
+  // 液肥カード（当日イベントの日のみ）
   if (hasEkihi) {
-    rows += `<tr style="background:#EEF6FF;">
-      <td style="padding:8px 14px;white-space:nowrap;font-weight:700;">💧 ${today}</td>
-      <td style="padding:8px 14px;color:#185FA5;font-weight:700;">液肥${ekihiLabel}</td>
-    </tr>`;
+    const next = getNextEkihiEvent(today);
+    inner += `<div style="background:#EEF6FF;border-radius:8px;padding:10px 14px;border:1px solid #c5d8f0;margin-bottom:${activeDates.length > 0 ? '10px' : '0'};">
+      <div style="font-size:13px;font-weight:700;color:#185FA5;">💧 本日の液肥: ${ekihiLabel}</div>
+      ${next ? `<div style="font-size:12px;color:#555;margin-top:4px;">次回${next.label}: ${next.date}</div>` : ''}
+    </div>`;
   }
 
-  const alertDates = new Set(alerts.map(a => a.sow_date));
-
-  // Merge memos and alerts into a unified list sorted by sow_date
-  const allDates = [...new Set([...memos.map(m => m.sow_date), ...alerts.map(a => a.sow_date)])].sort();
-  allDates.forEach(date => {
-    const isAlert = alertDates.has(date);
-    const memo    = memos.find(m => m.sow_date === date);
-    const label   = isAlert ? '⚠️' : '📝';
-    const content = memo ? memo.note : '';
-    rows += `<tr>
-      <td style="padding:7px 14px;white-space:nowrap;color:#555;">${label} ${date}</td>
-      <td style="padding:7px 14px;">${content}</td>
-    </tr>`;
-  });
-
-  return `<div style="margin-bottom:20px;">
-    <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">📋 メモ・アラート・液肥</div>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e8e8e8;">
+  // メモ・アラートテーブル（播種日・刈取日・内容）
+  if (activeDates.length > 0) {
+    let rows = '';
+    activeDates.forEach(date => {
+      const isAlert = alertDates.has(date);
+      const memo    = memos.find(m => m.sow_date === date);
+      const harvestDate = offsetDate(date, 34);
+      const label   = isAlert ? '⚠️' : '📝';
+      rows += `<tr>
+        <td style="padding:7px 10px;white-space:nowrap;color:#555;border-bottom:1px solid #f0f0f0;">${label}&nbsp;${date}</td>
+        <td style="padding:7px 10px;white-space:nowrap;color:#555;border-bottom:1px solid #f0f0f0;">${harvestDate}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;">${memo ? memo.note : ''}</td>
+      </tr>`;
+    });
+    inner += `<table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e8e8e8;">
       <thead>
         <tr style="background:#f0f0ee;">
-          <th style="padding:6px 14px;text-align:left;font-size:11px;color:#888;font-weight:600;white-space:nowrap;">播種日</th>
-          <th style="padding:6px 14px;text-align:left;font-size:11px;color:#888;font-weight:600;">内容</th>
+          <th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;font-weight:600;white-space:nowrap;">播種日</th>
+          <th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;font-weight:600;white-space:nowrap;">刈取日</th>
+          <th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;font-weight:600;">内容</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
-    </table>
+    </table>`;
+  }
+
+  return `<div style="margin-bottom:20px;">
+    <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">📋 メモ・アラート・液肥</div>
+    ${inner}
   </div>`;
 }

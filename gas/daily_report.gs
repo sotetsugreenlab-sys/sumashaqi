@@ -35,6 +35,16 @@ function dailyReport() {
 // ────────────────────────────────────────────────────────────
 // スプレッドシート書き込み
 // ────────────────────────────────────────────────────────────
+function fixSheetHeader() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  if (!sheet) { Logger.log('シート「' + SHEET_NAME + '」が見つかりません'); return; }
+  const row = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const col = row.indexOf('貯液(L)');
+  if (col === -1) { Logger.log('更新不要（すでに修正済みか、列が見つかりません）'); return; }
+  sheet.getRange(1, col + 1).setValue('貯液残量(L)');
+  Logger.log('ヘッダーを「貯液残量(L)」に更新しました（列 ' + (col + 1) + '）');
+}
+
 function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);

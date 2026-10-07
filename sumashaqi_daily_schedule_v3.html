@@ -511,13 +511,16 @@ function notesHtml(sowDateStr) {
 
 db.channel('lot_notes_sumashaqi')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'lot_notes' }, payload => {
-    if (payload.new?.crop === 'sumashaqi') {
+    const crop = payload.new?.crop || payload.old?.crop;
+    if (crop === 'sumashaqi') {
       const d = payload.new.sow_date;
       if (!lotNotes[d]) lotNotes[d] = [];
       const existing = lotNotes[d].find(n => n.id === payload.new.id);
       if (existing) existing.note = payload.new.note;
       else lotNotes[d].push({ id: payload.new.id, note: payload.new.note });
       renderTasks();
+    } else if (['lot_irregular', 'sumashaqi_alert', 'harvest_order_irregular'].includes(crop)) {
+      loadLotNotes();
     }
   })
   .subscribe();

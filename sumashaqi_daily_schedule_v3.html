@@ -540,8 +540,8 @@ async function loadHarvestCounts(dateStr) {
   const sowDate34 = toDateStr(addDays(viewDate, -34));
   const irrRec = harvestOrderIrr[dateStr];
   const irrMainSow = irrRec?.main_sow;
-  const keys = [`${dateStr}_33`, `${sowDate34}_34`];
-  if (irrMainSow) keys.push(`${irrMainSow}_irr`);
+  const keys = [`${dateStr}_33`, `${sowDate34}_harvest`];
+  if (irrMainSow) keys.push(`${irrMainSow}_harvest`);
   const { data } = await db.from('lot_notes')
     .select('id,sow_date,note')
     .eq('crop', 'harvest_count')
@@ -554,7 +554,7 @@ async function loadHarvestCounts(dateStr) {
   });
   const courses = irrMainSow ? [33, 34, 'irr'] : [33, 34];
   courses.forEach(c => {
-    const key = c === 'irr' ? `${irrMainSow}_irr` : c === 34 ? `${sowDate34}_34` : `${dateStr}_33`;
+    const key = c === 'irr' ? `${irrMainSow}_harvest` : c === 34 ? `${sowDate34}_harvest` : `${dateStr}_33`;
     const counts = harvestCounts[key] || {};
     const fields = c === 33 ? ['maegari'] : HC34_FIELDS;
     fields.forEach(f => {
@@ -566,8 +566,8 @@ async function loadHarvestCounts(dateStr) {
 
 function onHarvestInput(course, field, keySowDate) {
   const dateStr = toDateStr(viewDate);
-  const key = keySowDate ? `${keySowDate}_${course}`
-    : course === 34 ? `${toDateStr(addDays(viewDate,-34))}_34`
+  const key = keySowDate ? `${keySowDate}_harvest`
+    : course === 34 ? `${toDateStr(addDays(viewDate,-34))}_harvest`
     : `${dateStr}_${course}`;
   const debKey = `${key}_${field}`;
   clearTimeout(hcDebounce[debKey]);
@@ -680,12 +680,12 @@ db.channel('harvest_count_notes')
     const dateStr = toDateStr(viewDate);
     const sowDate34 = toDateStr(addDays(viewDate, -34));
     const irrMainSow = harvestOrderIrr[dateStr]?.main_sow;
-    const validKeys = [`${dateStr}_33`, `${sowDate34}_34`, ...(irrMainSow ? [`${irrMainSow}_irr`] : [])];
+    const validKeys = [`${dateStr}_33`, `${sowDate34}_harvest`, ...(irrMainSow ? [`${irrMainSow}_harvest`] : [])];
     if (!validKeys.includes(r.sow_date)) return;
     try {
       const parsed = JSON.parse(r.note || '{}');
       harvestCounts[r.sow_date] = { id: r.id, ...parsed };
-      const course = r.sow_date.endsWith('_33') ? 33 : r.sow_date.endsWith('_irr') ? 'irr' : 34;
+      const course = r.sow_date.endsWith('_33') ? 33 : r.sow_date === `${irrMainSow}_harvest` ? 'irr' : 34;
       const fields = course === 33 ? ['maegari'] : HC34_FIELDS;
       fields.forEach(f => {
         const el = document.getElementById(`hcount-${course}-${f}`);
@@ -829,7 +829,7 @@ function renderTasks() {
       </div>`;
     }
     const sowDate34Str = toDateStr(addDays(viewDate, -34));
-    const c34 = harvestCounts[`${sowDate34Str}_34`] || {};
+    const c34 = harvestCounts[`${sowDate34Str}_harvest`] || {};
     return `<div class="harvest-counts">
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">最低</span>
@@ -885,7 +885,7 @@ function renderTasks() {
 
   function irrHarvestInputsHtml() {
     const mainSow = irrRecord.main_sow;
-    const counts = harvestCounts[`${mainSow}_irr`] || {};
+    const counts = harvestCounts[`${mainSow}_harvest`] || {};
     return `<div class="harvest-counts">
       <div class="hc-row">
         <span class="hc-label" style="font-size:10px">最低</span>

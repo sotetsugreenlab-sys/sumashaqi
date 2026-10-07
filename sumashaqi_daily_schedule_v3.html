@@ -860,24 +860,15 @@ function renderTasks() {
       <button style="font-size:10px;background:none;border:none;color:#534AB7;cursor:pointer" onclick="toggleHarvestIrr('${dateStr}')">取消</button>
     </div>`;
   })() : '';
-  const irrFormHtml = (!irrRecord && harvestIrrFormOpen) ? (() => {
-    const quickBtns = courses.map(c => {
-      const sow = addDays(viewDate, -c);
-      const sowStr2 = toDateStr(sow);
-      const [,m,d] = sowStr2.split('-').map(Number);
-      return `<button style="padding:4px 10px;border-radius:8px;border:1px solid #534AB7;background:#EEEDFE;color:#534AB7;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="submitHarvestIrr('${dateStr}','${sowStr2}')">${m}/${d}播種（${c}日目）</button>`;
-    }).join('');
-    return `<div class="harvest-irr-form">
-      <div style="margin-bottom:6px;font-weight:600;color:#534AB7">🔀 メインの刈取ロットを選択</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${quickBtns}</div>
-      <div style="color:#888;font-size:10px;margin-bottom:4px">または播種日を直接入力</div>
+  const irrFormHtml = (!irrRecord && harvestIrrFormOpen) ? `
+    <div class="harvest-irr-form">
+      <div style="margin-bottom:8px;font-weight:600;color:#534AB7">本日のイレギュラーメイン刈取ロットを選択</div>
       <div style="display:flex;gap:6px;align-items:center">
         <input id="irr-sow-input" type="date" value="${dateStr}" style="border:1px solid #ccc;border-radius:8px;padding:5px 8px;font-size:13px;flex:1">
         <button style="padding:5px 12px;border-radius:8px;border:none;background:#534AB7;color:#fff;font-size:12px;font-weight:600;cursor:pointer" onclick="submitHarvestIrrFromInput('${dateStr}')">決定</button>
       </div>
       <button style="margin-top:6px;font-size:11px;color:#aaa;background:none;border:none;cursor:pointer" onclick="toggleHarvestIrr('${dateStr}')">キャンセル</button>
-    </div>`;
-  })() : '';
+    </div>` : '';
 
   let html = `<div class="col-header">
     ${courses.map(c => `<div class="col-label" style="background:#f0f0ee;color:#555">${c}日目刈取</div>`).join('')}

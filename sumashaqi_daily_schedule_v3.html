@@ -803,7 +803,7 @@ function renderTasks() {
         </div>
         ${irrReceivedHtml}
         ${irrGivenHtml}
-        <button class="btn-irregular${irrOpen ? ' open' : ''}" onclick="toggleIrregular('${dateStr}',33)">🔄 前借日イレギュラー</button>
+        <button class="btn-irregular${irrOpen ? ' open' : ''}" onclick="toggleIrregular('${dateStr}',33)">前借日イレギュラーを入力✏️</button>
         ${irrFormHtml}
       </div>`;
     }
@@ -950,7 +950,7 @@ function renderTasks() {
     ${courses.map(c => `<div class="col-label" style="background:#f0f0ee;color:#555">${c}日目刈取</div>`).join('')}
   </div>
   ${irrBannerHtml}${irrFormHtml}
-  ${!irrRecord ? `<div style="text-align:right;margin-bottom:4px"><button class="btn-harvest-irr${harvestIrrFormOpen?' active':''}" onclick="toggleHarvestIrr('${dateStr}')">🔀 イレギュラー刈取</button></div>` : ''}
+  ${!irrRecord ? `<div style="text-align:right;margin-bottom:4px"><button class="btn-harvest-irr${harvestIrrFormOpen?' active':''}" onclick="toggleHarvestIrr('${dateStr}')">出荷用刈取日イレギュラーを入力✏️</button></div>` : ''}
   ${irrCellHtml}
   <div class="stage-row">
     ${courses.map(c => `<div class="stage-cell">${makeCard({label:'刈取', cls:'card-刈取', days:c, sow:addDays(viewDate,-c), history:hist}, dayLabel, true)}${harvestInputsHtml(c)}</div>`).join('')}

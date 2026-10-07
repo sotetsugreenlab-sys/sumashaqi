@@ -471,7 +471,8 @@ let currentPdfUrl = '';
 function openModal(title, url) {
   currentPdfUrl = url;
   document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-iframe').src = url;
+  const viewerUrl = 'https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true';
+  document.getElementById('modal-iframe').src = viewerUrl;
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -483,13 +484,7 @@ function closeModal() {
 }
 
 function doPrint() {
-  const iframe = document.getElementById('modal-iframe');
-  try {
-    iframe.contentWindow.focus();
-    iframe.contentWindow.print();
-  } catch(e) {
-    window.open(currentPdfUrl, '_blank');
-  }
+  window.open(currentPdfUrl, '_blank');
 }
 
 // ── 初期化 ────────────────────────────────

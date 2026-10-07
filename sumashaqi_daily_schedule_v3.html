@@ -625,6 +625,15 @@ function updateSheratonAvgIrr() {
   if (el) el.textContent = (count && weight) ? Math.round(weight / count) : '-';
 }
 
+function updateBatchTotal(course) {
+  const bukuro = parseInt(document.getElementById(`hcount-${course}-yoku_bukuro`)?.value) || 0;
+  const sheraton = parseInt(document.getElementById(`hcount-${course}-sheraton_count`)?.value) || 0;
+  const chipburn = parseInt(document.getElementById(`hcount-${course}-chipburn`)?.value) || 0;
+  const total = 161 + bukuro + sheraton + chipburn;
+  const el = document.getElementById(`batch-total-${course}`);
+  if (el) el.textContent = `ローゼン161 ＋ 翌日袋${bukuro} ＋ シェラトン${sheraton} ＋ ダメ株${chipburn} ＝ ${total}株`;
+}
+
 async function toggleHarvestIrr(dateStr) {
   if (harvestOrderIrr[dateStr]) {
     await db.from('lot_notes').delete().eq('id', harvestOrderIrr[dateStr].id);
@@ -830,13 +839,13 @@ function renderTasks() {
       </div>
       <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
         <span class="hc-label" style="font-size:10px">翌日袋</span>
-        <input type="number" min="0" id="hcount-34-yoku_bukuro" class="hc-input" value="${counts.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput(34,'yoku_bukuro')">
+        <input type="number" min="0" id="hcount-34-yoku_bukuro" class="hc-input" value="${counts.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput(34,'yoku_bukuro');updateBatchTotal(34)">
         <span class="hc-unit">袋</span>
       </div>
       <div style="font-size:9px;color:#8B6D11;font-weight:600;margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">重量不足</div>
       <div class="hc-row" style="margin-top:3px">
         <span class="hc-label" style="font-size:9px;color:#8B6D11">ｼｪﾗﾄﾝ</span>
-        <input type="number" min="0" id="hcount-34-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_count');updateSheratonAvg()">
+        <input type="number" min="0" id="hcount-34-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_count');updateSheratonAvg();updateBatchTotal(34)">
         <span class="hc-unit">株</span>
         <span class="hc-label" style="font-size:9px;color:#8B6D11">合計</span>
         <input type="number" min="0" id="hcount-34-sheraton_weight" class="hc-input" value="${counts.sheraton_weight || ''}" placeholder="0" oninput="onHarvestInput(34,'sheraton_weight');updateSheratonAvg()">
@@ -850,12 +859,12 @@ function renderTasks() {
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:9px;color:#993C1D">ダメ株</span>
-        <input type="number" min="0" id="hcount-34-chipburn" class="hc-input" value="${counts.chipburn || ''}" placeholder="0" oninput="onHarvestInput(34,'chipburn')">
+        <input type="number" min="0" id="hcount-34-chipburn" class="hc-input" value="${counts.chipburn || ''}" placeholder="0" oninput="onHarvestInput(34,'chipburn');updateBatchTotal(34)">
         <span class="hc-unit">株</span>
         <span style="font-size:9px;color:#aaa">ﾁｯﾌﾟﾊﾞｰﾝ・ﾌﾞﾗｳﾝ等</span>
       </div>
-      <div style="font-size:9px;color:#888;margin-top:4px;line-height:1.5;padding:4px 6px;background:#f7f7f5;border-radius:6px">
-        翌日袋＋シェラトン＋ダメ株等を合わせると1バッチ分の合計
+      <div id="batch-total-34" style="font-size:10px;color:#534AB7;font-weight:600;margin-top:4px;line-height:1.5;padding:4px 6px;background:#EEEDFE;border-radius:6px">
+        ${(() => { const b=counts.yoku_bukuro||0,s=counts.sheraton_count||0,d=counts.chipburn||0; return `ローゼン161 ＋ 翌日袋${b} ＋ シェラトン${s} ＋ ダメ株${d} ＝ ${161+b+s+d}株`; })()}
       </div>
     </div>`;
   }
@@ -885,13 +894,13 @@ function renderTasks() {
       </div>
       <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
         <span class="hc-label" style="font-size:10px">翌日袋</span>
-        <input type="number" min="0" id="hcount-irr-yoku_bukuro" class="hc-input" value="${counts.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput('irr','yoku_bukuro')">
+        <input type="number" min="0" id="hcount-irr-yoku_bukuro" class="hc-input" value="${counts.yoku_bukuro || ''}" placeholder="0" oninput="onHarvestInput('irr','yoku_bukuro');updateBatchTotal('irr')">
         <span class="hc-unit">袋</span>
       </div>
       <div style="font-size:9px;color:#8B6D11;font-weight:600;margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">重量不足</div>
       <div class="hc-row" style="margin-top:3px">
         <span class="hc-label" style="font-size:9px;color:#8B6D11">ｼｪﾗﾄﾝ</span>
-        <input type="number" min="0" id="hcount-irr-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput('irr','sheraton_count');updateSheratonAvgIrr()">
+        <input type="number" min="0" id="hcount-irr-sheraton_count" class="hc-input" value="${counts.sheraton_count || ''}" placeholder="0" oninput="onHarvestInput('irr','sheraton_count');updateSheratonAvgIrr();updateBatchTotal('irr')">
         <span class="hc-unit">株</span>
         <span class="hc-label" style="font-size:9px;color:#8B6D11">合計</span>
         <input type="number" min="0" id="hcount-irr-sheraton_weight" class="hc-input" value="${counts.sheraton_weight || ''}" placeholder="0" oninput="onHarvestInput('irr','sheraton_weight');updateSheratonAvgIrr()">
@@ -905,12 +914,12 @@ function renderTasks() {
       </div>
       <div class="hc-row">
         <span class="hc-label" style="font-size:9px;color:#993C1D">ダメ株</span>
-        <input type="number" min="0" id="hcount-irr-chipburn" class="hc-input" value="${counts.chipburn || ''}" placeholder="0" oninput="onHarvestInput('irr','chipburn')">
+        <input type="number" min="0" id="hcount-irr-chipburn" class="hc-input" value="${counts.chipburn || ''}" placeholder="0" oninput="onHarvestInput('irr','chipburn');updateBatchTotal('irr')">
         <span class="hc-unit">株</span>
         <span style="font-size:9px;color:#aaa">ﾁｯﾌﾟﾊﾞｰﾝ・ﾌﾞﾗｳﾝ等</span>
       </div>
-      <div style="font-size:9px;color:#888;margin-top:4px;line-height:1.5;padding:4px 6px;background:#f7f7f5;border-radius:6px">
-        翌日袋＋シェラトン＋ダメ株等を合わせると1バッチ分の合計
+      <div id="batch-total-irr" style="font-size:10px;color:#534AB7;font-weight:600;margin-top:4px;line-height:1.5;padding:4px 6px;background:#EEEDFE;border-radius:6px">
+        ${(() => { const b=counts.yoku_bukuro||0,s=counts.sheraton_count||0,d=counts.chipburn||0; return `ローゼン161 ＋ 翌日袋${b} ＋ シェラトン${s} ＋ ダメ株${d} ＝ ${161+b+s+d}株`; })()}
       </div>
     </div>`;
   }

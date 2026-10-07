@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>印刷物 – SGL</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding-bottom: 2rem; }
+
+.header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 1rem 0.75rem;
+  border-bottom: 1px solid #e5e5e3;
+  background: #fff;
+  position: sticky; top: 0; z-index: 10;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 17px; font-weight: 700; color: #1a1a1a; flex: 1; }
+
+.content { padding: 1rem; max-width: 480px; margin: 0 auto; }
+
+/* カード */
+.pdf-card {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 1rem 1.1rem;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.pdf-icon { font-size: 28px; flex-shrink: 0; }
+.pdf-info { flex: 1; min-width: 0; }
+.pdf-title { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+.pdf-desc { font-size: 12px; color: #999; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pdf-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+.btn-print {
+  background: #534AB7; color: #fff;
+  border: none; border-radius: 10px;
+  padding: 8px 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.btn-print:active { opacity: 0.8; }
+
+.btn-delete {
+  background: none; color: #ccc;
+  border: 1px solid #e5e5e3; border-radius: 10px;
+  padding: 8px 10px; font-size: 14px;
+  cursor: pointer;
+}
+.btn-delete:active { color: #DC2626; border-color: #DC2626; }
+
+/* 追加ボタン */
+.btn-add {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 1rem;
+  background: #fff; border: 2px dashed #d0cef5; border-radius: 14px;
+  color: #534AB7; font-size: 15px; font-weight: 600;
+  cursor: pointer; margin-top: 4px;
+}
+.btn-add:active { background: #f5f4ff; }
+
+/* 追加フォーム */
+.add-form {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 1rem 1.1rem; margin-bottom: 10px;
+  display: none;
+}
+.add-form.open { display: block; }
+.form-title { font-size: 14px; font-weight: 700; color: #534AB7; margin-bottom: 10px; }
+.form-field { margin-bottom: 10px; }
+.form-field label { font-size: 11px; color: #aaa; font-weight: 600; display: block; margin-bottom: 4px; }
+.form-field input, .form-field textarea {
+  width: 100%; border: 1px solid #e5e5e3; border-radius: 8px;
+  padding: 8px 10px; font-size: 14px; color: #1a1a1a;
+  outline: none; font-family: sans-serif;
+}
+.form-field input:focus, .form-field textarea:focus { border-color: #534AB7; }
+.form-field textarea { resize: vertical; height: 60px; }
+.form-actions { display: flex; gap: 8px; }
+.btn-submit {
+  flex: 1; background: #534AB7; color: #fff;
+  border: none; border-radius: 10px;
+  padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.btn-submit:disabled { opacity: 0.5; }
+.btn-cancel {
+  background: none; color: #999; border: 1px solid #e5e5e3;
+  border-radius: 10px; padding: 10px 16px; font-size: 14px; cursor: pointer;
+}
+
+/* モーダル */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 100; flex-direction: column;
+}
+.modal-overlay.open { display: flex; }
+.modal-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: #1a1a1a;
+}
+.modal-title { color: #fff; font-size: 15px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn-modal-print {
+  background: #534AB7; color: #fff;
+  border: none; border-radius: 8px;
+  padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.btn-modal-close {
+  background: none; color: #fff; border: none;
+  font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+.modal-body { flex: 1; overflow: hidden; }
+.modal-body iframe { width: 100%; height: 100%; border: none; display: block; }
+
+/* 空状態 */
+.empty-state { text-align: center; padding: 3rem 1rem; color: #bbb; font-size: 14px; }
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* ローディング */
+.loading { text-align: center; padding: 2rem; color: #bbb; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">← 戻る</a>
+  <div class="header-title">🖨️ 印刷物</div>
+</div>
+
+<div class="content">
+  <div id="loading" class="loading">読み込み中...</div>
+  <div id="list"></div>
+
+  <!-- 追加フォーム -->
+  <div class="add-form" id="add-form">
+    <div class="form-title">＋ PDFを追加</div>
+    <div class="form-field">
+      <label>タイトル（必須）</label>
+      <input type="text" id="input-title" placeholder="例：スマシャキ週次報告書">
+    </div>
+    <div class="form-field">
+      <label>PDF の URL（必須）</label>
+      <input type="url" id="input-url" placeholder="https://...">
+    </div>
+    <div class="form-field">
+      <label>メモ（任意）</label>
+      <input type="text" id="input-desc" placeholder="例：毎週月曜に印刷">
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="closeForm()">キャンセル</button>
+      <button class="btn-submit" id="btn-submit" onclick="addPdf()">追加する</button>
+    </div>
+  </div>
+
+  <button class="btn-add" id="btn-add" onclick="openForm()">
+    ＋ PDFを追加
+  </button>
+</div>
+
+<!-- 印刷モーダル -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-header">
+    <div class="modal-title" id="modal-title"></div>
+    <button class="btn-modal-print" onclick="doPrint()">🖨️ 印刷</button>
+    <button class="btn-modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <iframe id="modal-iframe" src=""></iframe>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+let docs = [];
+
+async function loadDocs() {
+  const { data } = await db.from('lot_notes')
+    .select('id,sow_date,note')
+    .eq('crop', 'print_document')
+    .order('sow_date', { ascending: true });
+  docs = (data || []).map(r => {
+    try { return { id: r.id, key: r.sow_date, ...JSON.parse(r.note) }; } catch(e) { return null; }
+  }).filter(Boolean);
+  renderList();
+  document.getElementById('loading').style.display = 'none';
+}
+
+function renderList() {
+  const el = document.getElementById('list');
+  if (docs.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div>PDFがまだ登録されていません</div>`;
+    return;
+  }
+  el.innerHTML = docs.map(d => `
+    <div class="pdf-card">
+      <div class="pdf-icon">📄</div>
+      <div class="pdf-info">
+        <div class="pdf-title">${escHtml(d.title)}</div>
+        ${d.desc ? `<div class="pdf-desc">${escHtml(d.desc)}</div>` : ''}
+      </div>
+      <div class="pdf-actions">
+        <button class="btn-print" onclick="openModal(${JSON.stringify(d.title)}, ${JSON.stringify(d.url)})">🖨️ 印刷</button>
+        <button class="btn-delete" onclick="deletePdf(${JSON.stringify(d.key)})" title="削除">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function openForm() {
+  document.getElementById('add-form').classList.add('open');
+  document.getElementById('btn-add').style.display = 'none';
+  document.getElementById('input-title').focus();
+}
+
+function closeForm() {
+  document.getElementById('add-form').classList.remove('open');
+  document.getElementById('btn-add').style.display = '';
+  document.getElementById('input-title').value = '';
+  document.getElementById('input-url').value = '';
+  document.getElementById('input-desc').value = '';
+}
+
+async function addPdf() {
+  const title = document.getElementById('input-title').value.trim();
+  const url   = document.getElementById('input-url').value.trim();
+  const desc  = document.getElementById('input-desc').value.trim();
+  if (!title || !url) { alert('タイトルとURLは必須です'); return; }
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  const key = 'print_' + Date.now();
+  const note = JSON.stringify({ title, url, desc });
+  const { error } = await db.from('lot_notes').insert({ crop: 'print_document', sow_date: key, note });
+  btn.disabled = false;
+  if (error) { alert('追加に失敗しました'); return; }
+  closeForm();
+  await loadDocs();
+}
+
+async function deletePdf(key) {
+  if (!confirm('このPDFを削除しますか？')) return;
+  await db.from('lot_notes').delete().eq('crop', 'print_document').eq('sow_date', key);
+  await loadDocs();
+}
+
+let currentPdfUrl = '';
+
+function openModal(title, url) {
+  currentPdfUrl = url;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-iframe').src = url;
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('modal-iframe').src = '';
+  document.body.style.overflow = '';
+}
+
+function doPrint() {
+  const iframe = document.getElementById('modal-iframe');
+  try {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+  } catch(e) {
+    // 別タブで開いて印刷
+    window.open(currentPdfUrl, '_blank');
+  }
+}
+
+loadDocs();
+</script>
+</body>
+</html>

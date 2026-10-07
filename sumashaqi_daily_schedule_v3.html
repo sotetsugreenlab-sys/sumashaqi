@@ -1171,7 +1171,7 @@ async function loadEvents() {
 }
 
 const MC_ITEMS = [
-  { id: 'ac',       type: 'ac', label: 'エアコン 19℃' },
+  { id: 'ac',       type: 'ac', label: 'エアコン' },
   { id: 'fan',      label: '換気扇 よし' },
   { id: 'temp',     label: '室温 確認（21〜23℃、棚1-A は22.5〜24.5℃）' },
   { id: 'led_auto', label: 'LED：今日の区画 → 自動 に戻した' },
@@ -1184,6 +1184,8 @@ let mcRowId = null;
 let mcLoadedDate = null;
 
 function renderAcRow(item, state, toggleFn) {
+  const tempFn = toggleFn === 'toggleMC' ? 'setMcTemp' : 'setEcTemp';
+  const temp = state[item.id + '_temp'] || 19;
   const speeds = [['_kyu','急'],['_tsu','強'],['_chu','中'],['_jaku','弱']];
   const boxes = speeds.map(([sfx, label]) => {
     const id = item.id + sfx, c = !!state[id];
@@ -1193,7 +1195,12 @@ function renderAcRow(item, state, toggleFn) {
     </div>`;
   }).join('');
   return `<div class="mc-item" style="flex-direction:column;align-items:flex-start;cursor:default">
-    <div class="mc-label" style="font-weight:600;color:#444;margin-bottom:4px">${item.label}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span class="mc-label" style="font-weight:600;color:#444">エアコン</span>
+      <button onclick="${tempFn}('${item.id}',-1)" style="width:24px;height:24px;border-radius:50%;border:1px solid #ccc;background:#f5f5f5;font-size:14px;cursor:pointer;line-height:1">－</button>
+      <span style="font-size:15px;font-weight:700;min-width:36px;text-align:center">${temp}℃</span>
+      <button onclick="${tempFn}('${item.id}',1)" style="width:24px;height:24px;border-radius:50%;border:1px solid #ccc;background:#f5f5f5;font-size:14px;cursor:pointer;line-height:1">＋</button>
+    </div>
     <div style="display:flex;flex-wrap:wrap;gap:12px">${boxes}</div>
   </div>`;
 }
@@ -1248,9 +1255,23 @@ async function toggleMC(id) {
   }
 }
 
+async function setMcTemp(id, delta) {
+  const cur = mcState[id + '_temp'] || 19;
+  mcState[id + '_temp'] = Math.min(25, Math.max(16, cur + delta));
+  renderMorningCheck();
+  const noteStr = JSON.stringify(mcState);
+  if (mcRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', mcRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'morning_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data && data.length > 0) mcRowId = data[0].id;
+  }
+}
+
 const EC_ITEMS = [
   { id: 'ec_cycle', label: 'LEDサイクルマーク よし' },
-  { id: 'ec_ac',    type: 'ac', label: 'エアコン 19℃' },
+  { id: 'ec_ac',    type: 'ac', label: 'エアコン' },
   { id: 'ec_fan',   label: '換気扇 よし' },
   { id: 'ec_basil', label: 'バジルLED よし' },
 ];
@@ -1291,6 +1312,20 @@ async function initEveningCheck() {
 
 async function toggleEC(id) {
   ecState[id] = !ecState[id];
+  renderEveningCheck();
+  const noteStr = JSON.stringify(ecState);
+  if (ecRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', ecRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'evening_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data && data.length > 0) ecRowId = data[0].id;
+  }
+}
+
+async function setEcTemp(id, delta) {
+  const cur = ecState[id + '_temp'] || 19;
+  ecState[id + '_temp'] = Math.min(25, Math.max(16, cur + delta));
   renderEveningCheck();
   const noteStr = JSON.stringify(ecState);
   if (ecRowId) {

@@ -38,11 +38,23 @@ function dailyReport() {
 function fixSheetHeader() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   if (!sheet) { Logger.log('シート「' + SHEET_NAME + '」が見つかりません'); return; }
-  const row = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const col = row.indexOf('貯液(L)');
-  if (col === -1) { Logger.log('更新不要（すでに修正済みか、列が見つかりません）'); return; }
-  sheet.getRange(1, col + 1).setValue('貯液残量(L)');
-  Logger.log('ヘッダーを「貯液残量(L)」に更新しました（列 ' + (col + 1) + '）');
+  const headers = [
+    '日付',
+    '朝:AC温度', '朝:AC風速',
+    '帰:AC温度', '帰:AC風速',
+    '前借播種日', '前借数(33日)',
+    'メイン播種日', '最小重量(g)', '平均重量(g)', '70g以上', '75g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
+    '貯液残量(L)', '液肥'
+  ];
+  const lastCol = sheet.getLastColumn();
+  if (lastCol > headers.length) {
+    sheet.deleteColumns(headers.length + 1, lastCol - headers.length);
+  }
+  const headerRange = sheet.getRange(1, 1, 1, headers.length);
+  headerRange.setValues([headers]);
+  headerRange.setFontWeight('bold').setBackground('#3D7A50').setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+  Logger.log('ヘッダーを正しい列構成に書き直しました（' + headers.length + '列）');
 }
 
 function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {

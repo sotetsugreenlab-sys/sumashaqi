@@ -374,7 +374,10 @@ function renderHeader() {
   wrap.innerHTML = isSameDay(viewDate, realToday)
     ? ''
     : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
-  document.querySelector('.today-bar').style.background = sowTrayBg(viewDate);
+  const _ts = sowTrayStyle(viewDate);
+  const bar = document.querySelector('.today-bar');
+  bar.style.background = _ts.bg;
+  bar.style.border = _ts.border || '';
 }
 
 let lotNotes = {};

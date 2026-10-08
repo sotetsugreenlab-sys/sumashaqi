@@ -402,7 +402,7 @@ async function loadLotNotes() {
   (irregularRes.data || []).forEach(r => {
     try {
       const p = JSON.parse(r.note || '{}');
-      const entry = { id: r.id, from_sow_date: r.sow_date, to_sow_date: p.to_sow_date, count: p.count };
+      const entry = { id: r.id, from_sow_date: r.sow_date, to_sow_date: p.to_sow_date, count: p.count, harvest_date: p.harvest_date || null };
       if (!lotIrregularsGiven[r.sow_date]) lotIrregularsGiven[r.sow_date] = [];
       lotIrregularsGiven[r.sow_date].push(entry);
       if (p.to_sow_date) {
@@ -511,13 +511,16 @@ function notesHtml(sowDateStr) {
 
 db.channel('lot_notes_sumashaqi')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'lot_notes' }, payload => {
-    if (payload.new?.crop === 'sumashaqi') {
+    const crop = payload.new?.crop || payload.old?.crop;
+    if (crop === 'sumashaqi') {
       const d = payload.new.sow_date;
       if (!lotNotes[d]) lotNotes[d] = [];
       const existing = lotNotes[d].find(n => n.id === payload.new.id);
       if (existing) existing.note = payload.new.note;
       else lotNotes[d].push({ id: payload.new.id, note: payload.new.note });
       renderTasks();
+    } else if (['lot_irregular', 'sumashaqi_alert', 'harvest_order_irregular'].includes(crop)) {
+      loadLotNotes();
     }
   })
   .subscribe();
@@ -607,10 +610,10 @@ async function submitIrregular(viewDateStr, sowDateStr, course) {
   if (!fromDate || !count) { alert('日付と株数を入力してください'); return; }
 
   // 提供元ロット(fromDate)が受取ロット(sowDateStr)に株を提供したことを記録
-  const note = JSON.stringify({ to_sow_date: sowDateStr, count });
+  const note = JSON.stringify({ to_sow_date: sowDateStr, count, harvest_date: viewDateStr });
   const { data } = await db.from('lot_notes').insert({ crop: 'lot_irregular', sow_date: fromDate, note }).select('id');
 
-  const entry = { id: data?.[0]?.id, from_sow_date: fromDate, to_sow_date: sowDateStr, count };
+  const entry = { id: data?.[0]?.id, from_sow_date: fromDate, to_sow_date: sowDateStr, count, harvest_date: viewDateStr };
   if (!lotIrregularsGiven[fromDate]) lotIrregularsGiven[fromDate] = [];
   lotIrregularsGiven[fromDate].push(entry);
   if (!lotIrregularsReceived[sowDateStr]) lotIrregularsReceived[sowDateStr] = [];
@@ -695,18 +698,20 @@ db.channel('harvest_count_notes')
   })
   .subscribe();
 
-const TRAY_COLORS = [
-  'rgba(160, 210, 100, 0.35)', // 黄緑
-  'rgba(230, 160, 185, 0.35)', // ピンク
-  'rgba(240, 220, 100, 0.35)', // 黄色
-  'rgba(235, 220, 175, 0.35)', // クリーム
-  'rgba(130, 185, 225, 0.35)', // 青
+const TRAY_STYLES = [
+  { bg: '#ffffff' },                                      // 白
+  { bg: '#c8e6c9' },                                      // 緑
+  { bg: '#fce4ec' },                                      // ピンク
+  { bg: '#ffffff', border: '2px solid #f48fb1' },         // 白ピンク
+  { bg: '#fff9c4' },                                      // 黄色
+  { bg: '#bbdefb' },                                      // 青
 ];
-const TRAY_REF = new Date('2026-08-04T00:00:00');
-function sowTrayBg(sow) {
+const TRAY_REF = new Date('2026-10-08T00:00:00Z');
+function sowTrayStyle(sow) {
   const diff = Math.round((sow - TRAY_REF) / 86400000);
-  return TRAY_COLORS[((diff % 5) + 5) % 5];
+  return TRAY_STYLES[((diff % 6) + 6) % 6];
 }
+function sowTrayBg(sow) { return sowTrayStyle(sow).bg; }
 
 function irregularGivenTotal(sowStr) {
   return (lotIrregularsGiven[sowStr] || []).reduce((s, e) => s + (e.count || 0), 0);
@@ -714,7 +719,9 @@ function irregularGivenTotal(sowStr) {
 
 function makeCard(t, dayLabel, compact) {
   const cls = compact ? `card ${t.cls} compact` : `card ${t.cls}`;
-  const bg = sowTrayBg(t.sow);
+  const trayStyle = sowTrayStyle(t.sow);
+  const bg = trayStyle.bg;
+  const trayBorder = trayStyle.border ? `;border:${trayStyle.border}` : '';
   let histHtml = '';
   if (t.history.length > 0) {
     histHtml = '<div class="history">';
@@ -727,21 +734,29 @@ function makeCard(t, dayLabel, compact) {
   }
   const sowStr = toDateStr(t.sow);
   const manualAlert = !!(alertLots[sowStr]);
-  const givenTotal = irregularGivenTotal(sowStr);
+  const givenEntries = lotIrregularsGiven[sowStr] || [];
+  const givenTotal = givenEntries.reduce((s, e) => s + (e.count || 0), 0);
   const autoAlert = givenTotal >= 5;
   const hasAlert = manualAlert || autoAlert;
   const dateStr = toDateStr(viewDate);
   const isIrrMain = harvestOrderIrr[dateStr]?.main_sow === sowStr;
   let alertBanner = '';
   if (autoAlert) {
-    alertBanner = `<div class="card-alert-banner">⚠️ ${givenTotal}株前借り済</div>`;
+    const today = toDateStr(viewDate);
+    const lines = givenEntries.map(e => {
+      const dateLabel = e.harvest_date ? fmtShort(new Date(e.harvest_date + 'T00:00:00')) : '?';
+      const todayMark = e.harvest_date === today ? '・今日の入力分' : '';
+      return `<div>⚠️ ${e.count}株前借り済（${dateLabel}${todayMark}）</div>`;
+    }).join('');
+    const remaining = 180 - givenTotal;
+    alertBanner = `<div class="card-alert-banner">${lines}<div>残り ${remaining}株</div></div>`;
   } else if (manualAlert) {
     alertBanner = `<div class="card-alert-banner">⚠️ 注意ロット</div>`;
   }
   const irrMainBadge = isIrrMain ? `<div class="irr-main-badge">🔀 本日メイン刈取</div>` : '';
   const outlineStyle = isIrrMain ? ';outline:2px solid #534AB7' : hasAlert ? ';outline:2px solid #E24B4A' : '';
   if (compact) {
-    return `<div class="${cls}" style="background:${bg}${outlineStyle}" data-sow="${sowStr}">
+    return `<div class="${cls}" style="background:${bg}${trayBorder}${outlineStyle}" data-sow="${sowStr}">
       ${irrMainBadge}
       ${alertBanner}
       <div class="card-task">${t.label}</div>
@@ -751,7 +766,7 @@ function makeCard(t, dayLabel, compact) {
       ${notesHtml(sowStr)}
     </div>`;
   }
-  return `<div class="${cls}" style="background:${bg}${outlineStyle}" data-sow="${sowStr}">
+  return `<div class="${cls}" style="background:${bg}${trayBorder}${outlineStyle}" data-sow="${sowStr}">
     ${irrMainBadge}
     ${alertBanner}
     <div class="card-top">
@@ -813,8 +828,8 @@ function renderTasks() {
       // このロット自身が他の日の出荷に提供済み（前借り済）
       const irrGiven = (lotIrregularsGiven[sowDateStr33] || []);
       const irrGivenHtml = irrGiven.map(e => {
-        const [, tm, td] = e.to_sow_date.split('-').map(Number);
-        return `<div class="irr-given-badge">⚠️ ${e.count}株 前借り済<span style="color:#aaa;margin-left:3px">（${tm}/${td}出荷分）</span></div>`;
+        const dateLabel = e.harvest_date ? fmtShort(new Date(e.harvest_date + 'T00:00:00')) : '?';
+        return `<div class="irr-given-badge">⚠️ ${e.count}株 前借り済<span style="color:#aaa;margin-left:3px">（${dateLabel}刈取）</span></div>`;
       }).join('');
       return `<div class="harvest-counts">
         <div class="hc-row">

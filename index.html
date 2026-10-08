@@ -142,6 +142,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; display:
       </div>
     </a>
     <a class="menu-card card-manual" href="manual.html">
+      <div class="badge" id="manual-badge">NEW</div>
       <div class="menu-icon">📖</div>
       <div class="menu-text">
         <div class="menu-name">マニュアル</div>
@@ -185,6 +186,21 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; display:
     }
   } catch(e) {}
 })();
+
+// マニュアルバッジ
+try {
+  const MANUAL_UPDATED = {
+    app:        '2026-01-01T00:00:00Z',
+    herb:       '2026-10-08T12:00:00Z',
+    sumashaqi:  '2026-10-08T12:00:00Z',
+    sheraton:   '2026-01-01T00:00:00Z',
+  };
+  const hasNew = Object.entries(MANUAL_UPDATED).some(([key, updatedAt]) => {
+    const lastVisit = localStorage.getItem('manual_visit_' + key) || '0';
+    return new Date(updatedAt) > new Date(lastVisit);
+  });
+  if (hasNew) document.getElementById('manual-badge').classList.add('show');
+} catch(e) {}
 </script>
 </body>
 </html>

@@ -48,6 +48,14 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 .manual-name { font-size: 16px; font-weight: 700; color: #1a1a1a; }
 .manual-desc { font-size: 12px; color: #999; margin-top: 2px; }
 .manual-arrow { font-size: 18px; color: #ccc; flex-shrink: 0; }
+.manual-item { position: relative; }
+.manual-badge {
+  display: none; position: absolute; top: 10px; right: 36px;
+  background: #DC2626; color: #fff;
+  font-size: 10px; font-weight: 700;
+  padding: 1px 7px; border-radius: 8px;
+}
+.manual-badge.show { display: block; }
 </style>
 </head>
 <body>
@@ -59,6 +67,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 
 <div class="manual-list">
   <a class="manual-item" href="app-manual.html" style="border-left-color:#534AB7">
+    <div class="manual-badge" id="badge-app">NEW</div>
     <div class="manual-icon">📱</div>
     <div class="manual-info">
       <div class="manual-name">アプリの使い方</div>
@@ -67,6 +76,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
     <div class="manual-arrow">›</div>
   </a>
   <a class="manual-item" href="herb-manual.html" style="border-left-color:#8B6D11">
+    <div class="manual-badge" id="badge-herb">NEW</div>
     <div class="manual-icon">🌿</div>
     <div class="manual-info">
       <div class="manual-name">ハーブ（バジル・ワイルドルッコラ）</div>
@@ -75,6 +85,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
     <div class="manual-arrow">›</div>
   </a>
   <a class="manual-item" href="sumashaqi-manual.html">
+    <div class="manual-badge" id="badge-sumashaqi">NEW</div>
     <div class="manual-icon">🥬</div>
     <div class="manual-info">
       <div class="manual-name">スマシャキ（フリルレタス）</div>
@@ -83,6 +94,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
     <div class="manual-arrow">›</div>
   </a>
   <a class="manual-item" href="sheraton-manual.html" style="border-left-color:#8B6D11">
+    <div class="manual-badge" id="badge-sheraton">NEW</div>
     <div class="manual-icon">🏨</div>
     <div class="manual-info">
       <div class="manual-name">シェラトン伝票印刷</div>
@@ -91,6 +103,24 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
     <div class="manual-arrow">›</div>
   </a>
 </div>
+
+<script>
+// 各マニュアルの最終更新日時（更新のたびにここを変える）
+const MANUAL_UPDATED = {
+  app:        '2026-01-01T00:00:00Z',
+  herb:       '2026-10-08T12:00:00Z',
+  sumashaqi:  '2026-10-08T12:00:00Z',
+  sheraton:   '2026-01-01T00:00:00Z',
+};
+try {
+  Object.entries(MANUAL_UPDATED).forEach(([key, updatedAt]) => {
+    const lastVisit = localStorage.getItem('manual_visit_' + key) || '0';
+    if (new Date(updatedAt) > new Date(lastVisit)) {
+      document.getElementById('badge-' + key)?.classList.add('show');
+    }
+  });
+} catch(e) {}
+</script>
 
 </body>
 </html>

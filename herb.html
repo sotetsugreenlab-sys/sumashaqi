@@ -307,7 +307,9 @@ const TRAY_STYLES = [
 ];
 const TRAY_REF = new Date('2026-10-08T00:00:00Z');
 function sowTrayStyle(sow) {
-  const diff = Math.round((sow - TRAY_REF) / 86400000);
+  const d = new Date(sow); d.setHours(0, 0, 0, 0);
+  const r = new Date(TRAY_REF); r.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - r) / 86400000);
   return TRAY_STYLES[((diff % 6) + 6) % 6];
 }
 function sowTrayBg(sow) { return sowTrayStyle(sow).bg; }

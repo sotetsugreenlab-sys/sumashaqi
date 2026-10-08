@@ -698,18 +698,20 @@ db.channel('harvest_count_notes')
   })
   .subscribe();
 
-const TRAY_COLORS = [
-  'rgba(160, 210, 100, 0.35)', // 黄緑
-  'rgba(230, 160, 185, 0.35)', // ピンク
-  'rgba(240, 220, 100, 0.35)', // 黄色
-  'rgba(235, 220, 175, 0.35)', // クリーム
-  'rgba(130, 185, 225, 0.35)', // 青
+const TRAY_STYLES = [
+  { bg: '#ffffff' },                                      // 白
+  { bg: '#c8e6c9' },                                      // 緑
+  { bg: '#fce4ec' },                                      // ピンク
+  { bg: '#ffffff', border: '2px solid #f48fb1' },         // 白ピンク
+  { bg: '#fff9c4' },                                      // 黄色
+  { bg: '#bbdefb' },                                      // 青
 ];
-const TRAY_REF = new Date('2026-08-04T00:00:00');
-function sowTrayBg(sow) {
+const TRAY_REF = new Date('2026-10-08T00:00:00Z');
+function sowTrayStyle(sow) {
   const diff = Math.round((sow - TRAY_REF) / 86400000);
-  return TRAY_COLORS[((diff % 5) + 5) % 5];
+  return TRAY_STYLES[((diff % 6) + 6) % 6];
 }
+function sowTrayBg(sow) { return sowTrayStyle(sow).bg; }
 
 function irregularGivenTotal(sowStr) {
   return (lotIrregularsGiven[sowStr] || []).reduce((s, e) => s + (e.count || 0), 0);
@@ -717,7 +719,9 @@ function irregularGivenTotal(sowStr) {
 
 function makeCard(t, dayLabel, compact) {
   const cls = compact ? `card ${t.cls} compact` : `card ${t.cls}`;
-  const bg = sowTrayBg(t.sow);
+  const trayStyle = sowTrayStyle(t.sow);
+  const bg = trayStyle.bg;
+  const trayBorder = trayStyle.border ? `;border:${trayStyle.border}` : '';
   let histHtml = '';
   if (t.history.length > 0) {
     histHtml = '<div class="history">';
@@ -752,7 +756,7 @@ function makeCard(t, dayLabel, compact) {
   const irrMainBadge = isIrrMain ? `<div class="irr-main-badge">🔀 本日メイン刈取</div>` : '';
   const outlineStyle = isIrrMain ? ';outline:2px solid #534AB7' : hasAlert ? ';outline:2px solid #E24B4A' : '';
   if (compact) {
-    return `<div class="${cls}" style="background:${bg}${outlineStyle}" data-sow="${sowStr}">
+    return `<div class="${cls}" style="background:${bg}${trayBorder}${outlineStyle}" data-sow="${sowStr}">
       ${irrMainBadge}
       ${alertBanner}
       <div class="card-task">${t.label}</div>
@@ -762,7 +766,7 @@ function makeCard(t, dayLabel, compact) {
       ${notesHtml(sowStr)}
     </div>`;
   }
-  return `<div class="${cls}" style="background:${bg}${outlineStyle}" data-sow="${sowStr}">
+  return `<div class="${cls}" style="background:${bg}${trayBorder}${outlineStyle}" data-sow="${sowStr}">
     ${irrMainBadge}
     ${alertBanner}
     <div class="card-top">

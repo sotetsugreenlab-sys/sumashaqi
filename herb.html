@@ -291,21 +291,26 @@ function renderHeader() {
   document.getElementById('disp-date').textContent = fmt(viewDate);
   document.getElementById('back-today-wrap').innerHTML = isSameDay(viewDate, realToday)
     ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
-  document.querySelector('.header').style.background = sowTrayBg(viewDate);
+  const _ts = sowTrayStyle(viewDate);
+  const _hdr = document.querySelector('.header');
+  _hdr.style.background = _ts.bg;
+  _hdr.style.border = _ts.border || '';
 }
 
-const TRAY_COLORS = [
-  'rgba(160, 210, 100, 0.35)', // 黄緑
-  'rgba(230, 160, 185, 0.35)', // ピンク
-  'rgba(240, 220, 100, 0.35)', // 黄色
-  'rgba(235, 220, 175, 0.35)', // クリーム
-  'rgba(130, 185, 225, 0.35)', // 青
+const TRAY_STYLES = [
+  { bg: '#ffffff' },                                      // 白
+  { bg: '#c8e6c9' },                                      // 緑
+  { bg: '#fce4ec' },                                      // ピンク
+  { bg: '#ffffff', border: '2px solid #f48fb1' },         // 白ピンク
+  { bg: '#fff9c4' },                                      // 黄色
+  { bg: '#bbdefb' },                                      // 青
 ];
-const TRAY_REF = new Date('2026-08-15T00:00:00');
-function sowTrayBg(sow) {
+const TRAY_REF = new Date('2026-10-08T00:00:00Z');
+function sowTrayStyle(sow) {
   const diff = Math.round((sow - TRAY_REF) / 86400000);
-  return TRAY_COLORS[((diff % 5) + 5) % 5];
+  return TRAY_STYLES[((diff % 6) + 6) % 6];
 }
+function sowTrayBg(sow) { return sowTrayStyle(sow).bg; }
 
 let lotNotes = {};
 async function loadLotNotes() {
@@ -419,7 +424,9 @@ db.channel('lot_notes_herb')
   .subscribe();
 
 function makeCompactCard(stage, sow, herbName) {
-  return `<div class="card ${stage.cls}" style="background:${sowTrayBg(sow)}">
+  const _st = sowTrayStyle(sow);
+  const _border = _st.border ? `;border:${_st.border}` : '';
+  return `<div class="card ${stage.cls}" style="background:${_st.bg}${_border}">
     <div class="card-task">${stage.label}</div>
     <div class="card-sow">${fmtShort(sow)}播種</div>
     <div class="card-sub">${stage.days}日目</div>

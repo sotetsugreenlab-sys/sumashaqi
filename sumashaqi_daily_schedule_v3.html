@@ -170,11 +170,6 @@ input[type=date] { font-size: 13px; padding: 5px 8px; border: 0.5px solid #ccc; 
   <div id="back-today-wrap"></div>
   <div id="staff-banner"></div>
   <div class="ekihi-line" id="ekihi-line" style="display:none"></div>
-  <div class="bag-bar">
-    <span class="bag-label">袋在庫</span>
-    <span class="bag-count" id="bag-count-display">--</span>
-    <span class="bag-unit">組</span>
-  </div>
   <div class="liquid-bar">
     <span class="liquid-label">貯液</span>
     <span class="liquid-count" id="liquid-display">--</span>
@@ -345,17 +340,6 @@ const realToday = new Date();
 const _urlDate = new URLSearchParams(location.search).get('date');
 let viewDate = _urlDate ? new Date(_urlDate + 'T00:00:00') : new Date(realToday);
 
-// 袋在庫 - 基準日から毎日1組減（在庫が変わったらここを更新）
-const BAG_BASE_DATE = '2026-09-02';
-const BAG_BASE_COUNT = 32;
-
-function renderBagCount() {
-  const daysDiff = Math.round((parseDate(toDateStr(viewDate)) - parseDate(BAG_BASE_DATE)) / 86400000);
-  const count = Math.max(0, BAG_BASE_COUNT - daysDiff);
-  const el = document.getElementById('bag-count-display');
-  el.textContent = count;
-  el.className = 'bag-count' + (count <= 3 ? ' low' : '');
-}
 
 function navigate(delta) {
   viewDate = addDays(viewDate, delta);
@@ -1065,7 +1049,6 @@ function renderAll() {
   renderEkihi();
   renderDelivery();
   renderTasks();
-  renderBagCount();
   if (cachedEvents) renderBanner(cachedEvents);
   loadHarvestCounts(toDateStr(viewDate));
   const ds = toDateStr(viewDate);

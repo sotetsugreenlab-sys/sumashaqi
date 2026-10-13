@@ -317,11 +317,10 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=
 // 36日コース: 播種(0日)→30穴(7日)→5穴(17日)→刈取(36日)
 
 // 液肥管理
-const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
+const EKIHI_BASE = new Date(2026, 9, 17); // 2026-10-17（追肥の基準日）
 const EKIHI_EVENTS = [
-  { label: '入替', offset: 0 },
-  { label: '追肥', offset: 4 },
-  { label: '追肥', offset: 9 },
+  { label: '追肥', offset: 0 },
+  { label: '入替', offset: 5 },
 ];
 
 // 日付ユーティリティ
@@ -1006,8 +1005,8 @@ function renderTasks() {
 function renderEkihi() {
   const ms = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate()).getTime();
   const daysSinceBase = Math.round((ms - EKIHI_BASE.getTime()) / 86400000);
-  const cycleNum = Math.floor(daysSinceBase / 14);
-  const hit = EKIHI_EVENTS.find(e => (cycleNum * 14 + e.offset) === daysSinceBase);
+  const cycleNum = Math.floor(daysSinceBase / 10);
+  const hit = EKIHI_EVENTS.find(e => (cycleNum * 10 + e.offset) === daysSinceBase);
   const el = document.getElementById('ekihi-line');
   if (hit) {
     el.textContent = `液肥管理：${hit.label}`;

@@ -317,11 +317,10 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=
 // 36日コース: 播種(0日)→30穴(7日)→5穴(17日)→刈取(36日)
 
 // 液肥管理
-const EKIHI_BASE = new Date(2026, 2, 2); // 2026-03-02（入替の基準日）
+const EKIHI_BASE = new Date(2026, 9, 17); // 2026-10-17（追肥の基準日）
 const EKIHI_EVENTS = [
-  { label: '入替', offset: 0 },
-  { label: '追肥', offset: 4 },
-  { label: '追肥', offset: 9 },
+  { label: '追肥', offset: 0 },
+  { label: '入替', offset: 5 },
 ];
 
 // 日付ユーティリティ
@@ -862,13 +861,8 @@ function renderTasks() {
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row">
-        <span class="hc-label" style="font-size:10px">70g</span>
+        <span class="hc-label" style="font-size:10px">65g</span>
         <input type="number" min="0" id="hcount-34-w70" class="hc-input" value="${c34.w70 || ''}" placeholder="0" oninput="onHarvestInput(34,'w70','${sowDate34Str}')">
-        <span class="hc-unit">株</span>
-      </div>
-      <div class="hc-row">
-        <span class="hc-label" style="font-size:10px">75g</span>
-        <input type="number" min="0" id="hcount-34-w75" class="hc-input" value="${c34.w75 || ''}" placeholder="0" oninput="onHarvestInput(34,'w75','${sowDate34Str}')">
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
@@ -918,13 +912,8 @@ function renderTasks() {
         <span class="hc-unit">g</span>
       </div>
       <div class="hc-row">
-        <span class="hc-label" style="font-size:10px">70g</span>
+        <span class="hc-label" style="font-size:10px">65g</span>
         <input type="number" min="0" id="hcount-irr-w70" class="hc-input" value="${counts.w70 || ''}" placeholder="0" oninput="onHarvestInput('irr','w70','${mainSow}')">
-        <span class="hc-unit">株</span>
-      </div>
-      <div class="hc-row">
-        <span class="hc-label" style="font-size:10px">75g</span>
-        <input type="number" min="0" id="hcount-irr-w75" class="hc-input" value="${counts.w75 || ''}" placeholder="0" oninput="onHarvestInput('irr','w75','${mainSow}')">
         <span class="hc-unit">株</span>
       </div>
       <div class="hc-row" style="margin-top:4px;padding-top:4px;border-top:0.5px solid rgba(0,0,0,0.08)">
@@ -1016,8 +1005,8 @@ function renderTasks() {
 function renderEkihi() {
   const ms = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate()).getTime();
   const daysSinceBase = Math.round((ms - EKIHI_BASE.getTime()) / 86400000);
-  const cycleNum = Math.floor(daysSinceBase / 14);
-  const hit = EKIHI_EVENTS.find(e => (cycleNum * 14 + e.offset) === daysSinceBase);
+  const cycleNum = Math.floor(daysSinceBase / 10);
+  const hit = EKIHI_EVENTS.find(e => (cycleNum * 10 + e.offset) === daysSinceBase);
   const el = document.getElementById('ekihi-line');
   if (hit) {
     el.textContent = `液肥管理：${hit.label}`;
@@ -1197,6 +1186,7 @@ const MC_ITEMS = [
   { id: 'led_auto', type: 'led_auto', label: 'LED：今日の区画 → 自動 に戻した' },
   { id: 'led_on',   type: 'led_on',   label: 'LED：3日後の区画 → 入 にした' },
   { id: 'cycle',    label: 'サイクルマーク よし' },
+  { id: 'mc_basil', label: 'バジルLED（OFF）よし' },
 ];
 
 let mcState = {};
@@ -1304,7 +1294,8 @@ const EC_ITEMS = [
   { id: 'ec_cycle', label: 'LEDサイクルマーク よし' },
   { id: 'ec_ac',    type: 'ac', label: 'エアコン' },
   { id: 'ec_fan',   label: '換気扇 よし' },
-  { id: 'ec_basil', label: 'バジルLED よし' },
+  { id: 'ec_basil', label: 'バジルLED（ON）よし' },
+  { id: 'ec_sheet', label: '🧼 シート洗い（前半）' },
 ];
 
 let ecState = {};

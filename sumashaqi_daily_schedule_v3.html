@@ -1165,7 +1165,7 @@ async function loadEvents() {
 const MC_ITEMS = [
   { id: 'ac',       type: 'ac', label: 'エアコン' },
   { id: 'fan',      label: '換気扇 よし' },
-  { id: 'temp',     label: '室温 確認（21〜23℃、棚1-A は22.5〜24.5℃）' },
+  { id: 'temp',     label: '室温 確認（22.5〜23.5℃、棚1-A は24.5℃）' },
   { id: 'led_auto', type: 'led_auto', label: 'LED：今日の区画 → 自動 に戻した' },
   { id: 'led_on',   type: 'led_on',   label: 'LED：3日後の区画 → 入 にした' },
   { id: 'cycle',    label: 'サイクルマーク よし' },
@@ -1179,7 +1179,7 @@ let mcLoadedDate = null;
 
 function renderAcRow(item, state, toggleFn) {
   const tempFn = toggleFn === 'toggleMC' ? 'setMcTemp' : 'setEcTemp';
-  const temp = state[item.id + '_temp'] || 19;
+  const temp = state[item.id + '_temp'] || 21;
   const speeds = [['_kyu','急'],['_tsu','強'],['_chu','中'],['_jaku','弱']];
   const boxes = speeds.map(([sfx, label]) => {
     const id = item.id + sfx, c = !!state[id];

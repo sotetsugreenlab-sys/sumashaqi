@@ -24,6 +24,12 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 
 .delivery-row { display: flex; gap: 8px; margin-bottom: 10px; }
 .delivery-banner { background: #E6F1FB; border-radius: 12px; padding: 0.75rem 1.25rem; font-size: 15px; font-weight: 500; color: #185FA5; flex: 1; }
+.delivery-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.delivery-table tr { border-top: 1px solid rgba(24,95,165,0.12); }
+.delivery-table tr:first-child { border-top: none; }
+.delivery-table td { padding: 4px 0; font-size: 13px; vertical-align: middle; }
+.delivery-table td:first-child { font-weight: 600; color: #185FA5; width: 7em; }
+.delivery-table td:not(:first-child) { color: #444; font-weight: 400; }
 .kodomo-banner { background: #FAEEDA; border-radius: 12px; padding: 0.75rem; font-size: 14px; font-weight: 600; color: #854F0B; display: flex; align-items: center; justify-content: center; text-align: center; flex-shrink: 0; }
 
 .event-banner { background: #FAEEDA; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
@@ -1011,36 +1017,81 @@ function renderBanner(events) {
 
 const KODOMO_DATES = ['2026-07-14','2026-07-18','2026-07-21','2026-07-28'];
 
+// 出荷表（10/12〜）曜日ごと store: 店名, f: フリル, r: ルッコラ, b: バジル
+const DELIVERY_SCHEDULE = {
+  0: [ // 日
+    { store: '三ツ境',         f: 25, r: 15, b: 15 },
+    { store: 'JT二俣川',       f: 30, r:  5, b:  5 },
+    { store: '鶴ヶ峰',         f: 25 },
+    { store: '南まきが原',     f: 25, r:  5, b:  5 },
+    { store: '緑園都市',       f: 30, r:  5, b:  5 },
+    { store: 'いずみ中央',     f: 25, r: 10, b: 10 },
+  ],
+  1: [ // 月
+    { store: 'JT二俣川',       f: 30, r: 10, b: 10 },
+    { store: '鶴ヶ峰',         f: 25, r: 10, b: 10 },
+    { store: '緑園都市',       f: 30 },
+    { store: '弥生台駅前',     f: 20, r:  5, b:  5 },
+    { store: 'いずみ野駅前',   f: 30, r:  5, b:  5 },
+    { store: 'いずみ中央',     f: 25, r: 10, b: 10 },
+  ],
+  2: [ // 火
+    { store: '三ツ境',         f: 45, r: 10, b: 10 },
+    { store: 'JT二俣川',       f: 20, r: 15, b: 15 },
+    { store: '鶴ヶ峰',         f: 20 },
+    { store: '南まきが原',     f: 30, r:  5, b:  5 },
+    { store: '緑園都市',       f: 25, r: 10, b: 10 },
+    { store: 'いずみ野駅前',   f: 20 },
+  ],
+  3: [ // 水
+    { store: 'JT二俣川',       f: 30, r: 15, b: 15 },
+    { store: '鶴ヶ峰',         f: 40, r: 10, b: 10 },
+    { store: '緑園都市',       f: 30, r: 10, b: 10 },
+    { store: '弥生台駅前',     f: 20 },
+    { store: 'いずみ中央',     f: 15 },
+    { store: 'ゆめが丘ソラトス', f: 25, r: 5, b: 5 },
+  ],
+  4: [ // 木
+    { store: '三ツ境',         f: 45, r: 15, b: 15 },
+    { store: 'JT二俣川',       f: 20 },
+    { store: '鶴ヶ峰',         f: 20, r: 10, b: 10 },
+    { store: '南まきが原',     f: 30, r:  5, b:  5 },
+    { store: '緑園都市',       f: 20, r:  5, b:  5 },
+    { store: 'ゆめが丘ソラトス', f: 25, r: 5, b: 5 },
+  ],
+  5: [ // 金
+    { store: '三ツ境',         f: 25, r: 15, b: 15 },
+    { store: 'JT二俣川',       f: 30, r:  5, b:  5 },
+    { store: '南まきが原',     f: 25 },
+    { store: '緑園都市',       f: 25, r:  5, b:  5 },
+    { store: 'いずみ野駅前',   f: 30, r:  5, b:  5 },
+    { store: 'いずみ中央',     f: 25, r: 10, b: 10 },
+  ],
+  6: [ // 土
+    { store: '三ツ境',         f: 30, r: 10, b: 10 },
+    { store: 'JT二俣川',       f: 20, r: 10, b: 10 },
+    { store: '鶴ヶ峰',         f: 30, r:  5, b:  5 },
+    { store: '緑園都市',       f: 30, r:  5, b:  5 },
+    { store: '弥生台駅前',     f: 20, r:  5, b:  5 },
+    { store: 'ゆめが丘ソラトス', f: 30, r: 5, b: 5 },
+  ],
+};
+
 function renderDelivery() {
-  const deliveryItems = {
-    0: 'フリル15・バジル5・パクチー5・ルッコラ5', // 日
-    1: 'フリル25・バジル5・ルッコラ5',             // 月
-    2: 'フリル15',                                 // 火
-    3: 'フリル30・バジル5・パクチー5・ルッコラ5', // 水
-    4: 'フリル30・バジル5・ルッコラ5',             // 木
-    5: 'フリル20・バジル5・ルッコラ5',             // 金
-    6: 'フリル20',                                 // 土
-  };
-  const dateOverrides = {
-    '2026-07-02': 'フリル30・バジル5',
-    '2026-07-03': 'フリル20・バジル20・ルッコラ20・パクチー10',
-    '2026-07-08': 'フリル30',
-    '2026-07-09': 'フリル30',
-    '2026-07-10': 'フリル20',
-    '2026-07-26': 'フリル15',
-    '2026-07-27': 'フリル25',
-    '2026-07-28': 'フリル15',
-    '2026-07-29': 'フリル30',
-    '2026-07-30': 'フリル30',
-    '2026-07-31': 'フリル20',
-  };
   const ds = `${viewDate.getFullYear()}-${String(viewDate.getMonth()+1).padStart(2,'0')}-${String(viewDate.getDate()).padStart(2,'0')}`;
-  const items = dateOverrides[ds] ?? deliveryItems[viewDate.getDay()];
+  const stores = DELIVERY_SCHEDULE[viewDate.getDay()] || [];
+  const rows = stores.map(s => {
+    const parts = [];
+    if (s.f) parts.push(`フリル<strong>${s.f}</strong>`);
+    if (s.r) parts.push(`ルッコラ<strong>${s.r}</strong>`);
+    if (s.b) parts.push(`バジル<strong>${s.b}</strong>`);
+    return `<tr><td>${s.store}</td><td>${parts.join('　')}</td></tr>`;
+  }).join('');
   const kodomoHtml = KODOMO_DATES.includes(ds)
     ? `<div class="kodomo-banner">🍱<br>子ども食堂</div>`
     : '';
   const el = document.getElementById('delivery-banner');
-  el.innerHTML = `<div class="delivery-row"><div class="delivery-banner">🎒 緑園都市配送<br><span style="font-size:13px;font-weight:400">${items}</span></div>${kodomoHtml}</div>`;
+  el.innerHTML = `<div class="delivery-row"><div class="delivery-banner">📦 本日の出荷<table class="delivery-table">${rows}</table></div>${kodomoHtml}</div>`;
 }
 
 function renderAll() {

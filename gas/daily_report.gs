@@ -43,7 +43,7 @@ function fixSheetHeader() {
     '朝:AC温度', '朝:AC風速',
     '帰:AC温度', '帰:AC風速',
     '前借播種日', '前借数(33日)',
-    'メイン播種日', '最小重量(g)', '平均重量(g)', '70g以上', '75g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
+    'メイン播種日', '最小重量(g)', '平均重量(g)', '65g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
     '貯液残量(L)', '液肥'
   ];
   const lastCol = sheet.getLastColumn();
@@ -67,7 +67,7 @@ function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
       '朝:AC温度', '朝:AC風速',
       '帰:AC温度', '帰:AC風速',
       '前借播種日', '前借数(33日)',
-      'メイン播種日', '最小重量(g)', '平均重量(g)', '70g以上', '75g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
+      'メイン播種日', '最小重量(g)', '平均重量(g)', '65g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
       '貯液残量(L)', '液肥'
     ];
     sheet.appendRow(headers);
@@ -85,7 +85,7 @@ function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
     sow33, c(hc33.maegari),
     sow34,
     c(hc34.min_weight), c(hc34.avg_weight),
-    c(hc34.w70), c(hc34.w75), c(hc34.yoku_bukuro),
+    c(hc34.w70), c(hc34.yoku_bukuro),
     c(hc34.sheraton_count), c(hc34.sheraton_weight), c(hc34.chipburn),
     liquidTotal,
     ekihiLabel || '-'
@@ -138,8 +138,7 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
     ${section('#8B5A00', '&#128230;', `メイン刈取（34日目刈取 / 播種 ${sow34}）`, [
       row('最小重量', c(hc34.min_weight) + ' g'),
       row('平均重量', c(hc34.avg_weight) + ' g'),
-      row('70g 以上', c(hc34.w70)),
-      row('75g 以上', c(hc34.w75)),
+      row('65g 以上', c(hc34.w70)),
       row('翌袋', c(hc34.yoku_bukuro)),
       row('シェラトン 数', c(hc34.sheraton_count)),
       row('シェラトン 重量', c(hc34.sheraton_weight) + ' g'),
@@ -291,16 +290,16 @@ function fetchAlerts() {
   } catch(e) { return []; }
 }
 
-const EKIHI_BASE = '2026-03-02';
-const EKIHI_EVENTS = [{ label: '入替', offset: 0 }, { label: '追肥', offset: 4 }, { label: '追肥', offset: 9 }];
+const EKIHI_BASE = '2026-10-17'; // 追肥の基準日
+const EKIHI_EVENTS = [{ label: '追肥', offset: 0 }, { label: '入替', offset: 5 }];
 
 function getEkihiLabel(today) {
   const base = new Date(EKIHI_BASE + 'T00:00:00Z');
   const d    = new Date(today + 'T00:00:00Z');
   const daysSince = Math.round((d - base) / 86400000);
   if (daysSince < 0) return null;
-  const cycleNum = Math.floor(daysSince / 14);
-  const hit = EKIHI_EVENTS.find(e => cycleNum * 14 + e.offset === daysSince);
+  const cycleNum = Math.floor(daysSince / 10);
+  const hit = EKIHI_EVENTS.find(e => cycleNum * 10 + e.offset === daysSince);
   return hit ? hit.label : null;
 }
 
@@ -308,11 +307,11 @@ function getNextEkihiEvent(today) {
   const base = new Date(EKIHI_BASE + 'T00:00:00Z');
   const d    = new Date(today + 'T00:00:00Z');
   const daysSince = Math.round((d - base) / 86400000);
-  if (daysSince < 0) return { label: '入替', date: EKIHI_BASE };
-  const cycleNum = Math.floor(daysSince / 14);
+  if (daysSince < 0) return { label: '追肥', date: EKIHI_BASE };
+  const cycleNum = Math.floor(daysSince / 10);
   for (let c = cycleNum; c <= cycleNum + 1; c++) {
     for (const evt of EKIHI_EVENTS) {
-      const evtDay = c * 14 + evt.offset;
+      const evtDay = c * 10 + evt.offset;
       if (evtDay > daysSince) return { label: evt.label, date: offsetDate(EKIHI_BASE, evtDay) };
     }
   }

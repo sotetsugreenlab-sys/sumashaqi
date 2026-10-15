@@ -4,10 +4,11 @@
 //  Google スプレッドシートの Apps Script に貼り付けて使用
 // ============================================================
 
-const SUPABASE_URL = 'https://pqoexlikdviqqgdnzuud.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM';
-const EMAIL_TO    = 'data_sgl@ecodesic.co.jp';
-const SHEET_NAME  = '日報';
+const SUPABASE_URL  = 'https://pqoexlikdviqqgdnzuud.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM';
+const EMAIL_TO      = 'data_sgl@ecodesic.co.jp';
+const SHEET_NAME    = '日報';
+const SPREADSHEET_ID = '1ToRWfLfyspV8xLaWUCkjXIAw3-dt6023_-UL7WOoQng';
 
 // ────────────────────────────────────────────────────────────
 // メイン（毎日18時に実行）
@@ -25,7 +26,7 @@ function dailyReport() {
   const ekihiLabel = getEkihiLabel(today);
   const memos      = fetchMemos();
   const alerts     = fetchAlerts();
-  const sheetUrl   = SpreadsheetApp.getActiveSpreadsheet().getUrl();
+  const sheetUrl   = SpreadsheetApp.openById(SPREADSHEET_ID).getUrl();
   const tana1Url   = 'https://raw.githubusercontent.com/sotetsugreenlab-sys/sumashaqi/main/screenshots/tana-1.png';
   const tana2Url   = 'https://raw.githubusercontent.com/sotetsugreenlab-sys/sumashaqi/main/screenshots/tana-2.png';
   appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel);
@@ -36,7 +37,7 @@ function dailyReport() {
 // スプレッドシート書き込み
 // ────────────────────────────────────────────────────────────
 function fixSheetHeader() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   if (!sheet) { Logger.log('シート「' + SHEET_NAME + '」が見つかりません'); return; }
   const headers = [
     '日付',
@@ -58,7 +59,7 @@ function fixSheetHeader() {
 }
 
 function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);

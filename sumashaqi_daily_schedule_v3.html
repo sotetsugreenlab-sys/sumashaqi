@@ -1300,6 +1300,9 @@ async function initMorningCheck() {
 
 async function toggleMC(id) {
   mcState[id] = !mcState[id];
+  if (['ac_kyu','ac_tsu','ac_chu','ac_jaku'].includes(id) && mcState['ac_temp'] == null) {
+    mcState['ac_temp'] = 21;
+  }
   renderMorningCheck();
   const noteStr = JSON.stringify(mcState);
   if (mcRowId) {
@@ -1312,7 +1315,7 @@ async function toggleMC(id) {
 }
 
 async function setMcTemp(id, delta) {
-  const cur = mcState[id + '_temp'] || 19;
+  const cur = mcState[id + '_temp'] || 21;
   mcState[id + '_temp'] = Math.min(25, Math.max(16, cur + delta));
   renderMorningCheck();
   const noteStr = JSON.stringify(mcState);
@@ -1369,6 +1372,9 @@ async function initEveningCheck() {
 
 async function toggleEC(id) {
   ecState[id] = !ecState[id];
+  if (['ec_ac_kyu','ec_ac_tsu','ec_ac_chu','ec_ac_jaku'].includes(id) && ecState['ec_ac_temp'] == null) {
+    ecState['ec_ac_temp'] = 21;
+  }
   renderEveningCheck();
   const noteStr = JSON.stringify(ecState);
   if (ecRowId) {
@@ -1381,7 +1387,7 @@ async function toggleEC(id) {
 }
 
 async function setEcTemp(id, delta) {
-  const cur = ecState[id + '_temp'] || 19;
+  const cur = ecState[id + '_temp'] || 21;
   ecState[id + '_temp'] = Math.min(25, Math.max(16, cur + delta));
   renderEveningCheck();
   const noteStr = JSON.stringify(ecState);

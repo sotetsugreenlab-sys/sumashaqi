@@ -237,27 +237,42 @@ function shiftMonth(delta) {
   load();
 }
 
+function addMonths(year, month, delta) {
+  month += delta;
+  while (month < 1)  { month += 12; year--; }
+  while (month > 12) { month -= 12; year++; }
+  return { year, month };
+}
+
 function parseRow(byObj, key, course, p) {
   if (!byObj[key]) byObj[key] = {
     maegari:0, shipment:0, min_weight:0, avg_weight:0,
     haiki_kakaku:0, haiki_error:0,
-    w70:0, w75:0, yoku_bukuro:0, sheraton_count:0, sheraton_weight:0, chipburn:0
+    w70:0, yoku_bukuro:0, sheraton_count:0, sheraton_weight:0, chipburn:0
   };
   if (course === '33') byObj[key].maegari += (p.maegari || 0);
-  if (course === '34' || course === '35') {
+  if (course === '34' || course === '35' || course === 'harvest') {
     byObj[key].shipment      += p.shipment      || 0;
     byObj[key].min_weight     = p.min_weight    || 0;
     byObj[key].avg_weight     = p.avg_weight    || 0;
     byObj[key].haiki_kakaku  += p.haiki_kakaku != null ? p.haiki_kakaku : (p.haiki || 0);
     byObj[key].haiki_error   += p.haiki_error   || 0;
     byObj[key].w70           += p.w70           || 0;
-    byObj[key].w75           += p.w75           || 0;
     byObj[key].yoku_bukuro   += p.yoku_bukuro   || 0;
     byObj[key].sheraton_count+= p.sheraton_count|| 0;
     byObj[key].sheraton_weight+=p.sheraton_weight||0;
     byObj[key].chipburn      += p.chipburn      || 0;
   }
-  if (course === '34' && p.maegari != null) byObj[key].maegari += p.maegari;
+  if ((course === '34' || course === 'harvest') && p.maegari != null) byObj[key].maegari += p.maegari;
+}
+
+function sowToHarvestDate(sowDate, course) {
+  if (course === 'harvest') {
+    const d = new Date(sowDate + 'T00:00:00');
+    d.setDate(d.getDate() + 34);
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+  return sowDate; // _33 records use harvest date as sow_date key
 }
 
 async function load() {
@@ -265,15 +280,24 @@ async function load() {
   const ym = `${currentYear}-${pad(currentMonth)}`;
   const newFmt = isNewFmt(ym);
   const prefix = ym + '-';
+
+  // _harvest records use sow_date ~34 days before harvest, so query 3 months back
+  const m3 = addMonths(currentYear, currentMonth, -3);
+  const startYm = `${m3.year}-${pad(m3.month)}-01`;
   const { data } = await db.from('lot_notes')
     .select('sow_date,note')
     .eq('crop', 'harvest_count')
-    .like('sow_date', `${prefix}%`);
+    .gte('sow_date', startYm)
+    .lte('sow_date', prefix + '31_zzz');
 
   const byDate = {};
   (data || []).forEach(r => {
-    const [date, course] = r.sow_date.split('_');
-    try { parseRow(byDate, date, course, JSON.parse(r.note || '{}')); } catch(e) {}
+    const under = r.sow_date.indexOf('_');
+    const sowDate = r.sow_date.slice(0, under);
+    const course  = r.sow_date.slice(under + 1);
+    const harvestDate = sowToHarvestDate(sowDate, course);
+    if (!harvestDate.startsWith(prefix)) return;
+    try { parseRow(byDate, harvestDate, course, JSON.parse(r.note || '{}')); } catch(e) {}
   });
 
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
@@ -306,7 +330,7 @@ async function load() {
   if (newFmt) {
     document.getElementById('daily-thead').innerHTML = `<tr>
       <th>日付</th><th>前借り</th><th>最低g</th><th>平均g</th>
-      <th>70g株</th><th>75g株</th><th>翌日袋</th>
+      <th>65g株</th><th>翌日袋</th>
       <th>シェラトン株</th><th>シェラトンg</th><th>ダメ株</th>
     </tr>`;
   } else {
@@ -318,7 +342,7 @@ async function load() {
   }
 
   const tbody = document.getElementById('tbody');
-  const cols  = newFmt ? 10 : 8;
+  const cols  = newFmt ? 9 : 8;
   if (!activeDates.length) {
     tbody.innerHTML = `<tr class="empty-row"><td colspan="${cols}">この月のデータはまだありません</td></tr>`;
     return;
@@ -337,7 +361,7 @@ async function load() {
     if (newFmt) {
       const v = f => row[f] ? `<td class="has-val">${row[f]}</td>` : `<td>—</td>`;
       const gv = f => row[f] ? `<td class="has-val">${row[f]}g</td>` : `<td>—</td>`;
-      return `<tr>${dateCell}${mC}${gv('min_weight')}${gv('avg_weight')}${v('w70')}${v('w75')}${v('yoku_bukuro')}${v('sheraton_count')}${gv('sheraton_weight')}${v('chipburn')}</tr>`;
+      return `<tr>${dateCell}${mC}${gv('min_weight')}${gv('avg_weight')}${v('w70')}${v('yoku_bukuro')}${v('sheraton_count')}${gv('sheraton_weight')}${v('chipburn')}</tr>`;
     } else {
       const total_haiki = row.haiki_kakaku + row.haiki_error;
       const sC   = row.shipment     ? `<td class="has-val c-shipment">${row.shipment}</td>`  : `<td>—</td>`;
@@ -359,8 +383,11 @@ async function loadMonthly() {
 
   const byMonth = {};
   (data || []).forEach(r => {
-    const [date, course] = r.sow_date.split('_');
-    const ym = date.slice(0, 7);
+    const under = r.sow_date.indexOf('_');
+    const sowDate = r.sow_date.slice(0, under);
+    const course  = r.sow_date.slice(under + 1);
+    const harvestDate = sowToHarvestDate(sowDate, course);
+    const ym = harvestDate.slice(0, 7);
     try { parseRow(byMonth, ym, course, JSON.parse(r.note || '{}')); } catch(e) {}
   });
 

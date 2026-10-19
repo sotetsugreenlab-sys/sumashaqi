@@ -45,7 +45,8 @@ function fixSheetHeader() {
     '帰:AC温度', '帰:AC風速',
     '前借播種日', '前借数(33日)',
     'メイン播種日', '最小重量(g)', '平均重量(g)', '65g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
-    '貯液残量(L)', '液肥'
+    '貯液残量(L)', '液肥',
+    '正規刈り取り', 'キープ刈り取り', '出荷数', '本出荷', '予備', '予備使用', 'キープ廃棄', '廃棄合計', '翌日刈取予定'
   ];
   const lastCol = sheet.getLastColumn();
   if (lastCol > headers.length) {
@@ -69,7 +70,8 @@ function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
       '帰:AC温度', '帰:AC風速',
       '前借播種日', '前借数(33日)',
       'メイン播種日', '最小重量(g)', '平均重量(g)', '65g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
-      '貯液残量(L)', '液肥'
+      '貯液残量(L)', '液肥',
+      '正規刈り取り', 'キープ刈り取り', '出荷数', '本出荷', '予備', '予備使用', 'キープ廃棄', '廃棄合計', '翌日刈取予定'
     ];
     sheet.appendRow(headers);
     const headerRange = sheet.getRange(1, 1, 1, headers.length);
@@ -79,17 +81,31 @@ function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
 
   const sow33 = offsetDate(today, -33);
   const sow34 = offsetDate(today, -34);
+  const maegari   = hc33.maegari     || 0;
+  const shipMain  = hc34.shipment    || 160;
+  const spare     = hc34.spare       || 1;
+  const haikiKeep = hc34.haiki_keep  || 0;
+  const chipburn  = hc34.chipburn    || 0;
   sheet.appendRow([
     today,
     c(mc.ac_temp) + '℃', acMode(mc, 'ac'),
     c(ec.ec_ac_temp) + '℃', acMode(ec, 'ec_ac'),
-    sow33, c(hc33.maegari),
+    sow33, maegari,
     sow34,
     c(hc34.min_weight), c(hc34.avg_weight),
     c(hc34.w70), c(hc34.yoku_bukuro),
-    c(hc34.sheraton_count), c(hc34.sheraton_weight), c(hc34.chipburn),
+    c(hc34.sheraton_count), c(hc34.sheraton_weight), chipburn,
     liquidTotal,
-    ekihiLabel || '-'
+    ekihiLabel || '-',
+    hc34.seiki        || 0,
+    hc34.keep_harvest || 0,
+    shipMain + spare,
+    shipMain,
+    spare,
+    hc34.spare_used   || 0,
+    haikiKeep,
+    chipburn + haikiKeep,
+    180 - maegari
   ]);
 }
 
@@ -143,7 +159,16 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
       row('翌袋', c(hc34.yoku_bukuro)),
       row('シェラトン 数', c(hc34.sheraton_count)),
       row('シェラトン 重量', c(hc34.sheraton_weight) + ' g'),
-      row('チップバーン', c(hc34.chipburn))
+      row('チップバーン', c(hc34.chipburn)),
+      row('正規刈り取り', c(hc34.seiki)),
+      row('キープ刈り取り', c(hc34.keep_harvest)),
+      row('出荷数（本出荷+予備）', ((hc34.shipment||160) + (hc34.spare||1)) + ' 株'),
+      row('　本出荷', (hc34.shipment||160) + ' 株'),
+      row('　予備', (hc34.spare||1) + ' 株'),
+      row('　予備使用', c(hc34.spare_used)),
+      row('キープ廃棄', c(hc34.haiki_keep)),
+      row('廃棄合計', ((hc34.chipburn||0) + (hc34.haiki_keep||0)) + ' 株'),
+      row('翌日刈取予定', (180 - (hc33.maegari||0)) + ' 株')
     ].join(''))}
 
     ${section('#185FA5', '&#128167;', '貯液', [

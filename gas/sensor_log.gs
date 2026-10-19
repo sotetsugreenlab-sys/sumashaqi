@@ -19,7 +19,8 @@ const HEADERS = [
 
 function doPost(e) {
   try {
-    const json = JSON.parse(e.postData.contents);
+    const parsed = JSON.parse(e.postData.contents);
+    const json = Array.isArray(parsed) ? parsed[0] : parsed;
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName(SENSOR_SHEET_NAME);
 
@@ -28,9 +29,7 @@ function doPost(e) {
       sheet.appendRow(HEADERS);
     }
 
-    const now = new Date();
-    const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-    const ts = Utilities.formatDate(jst, 'Asia/Tokyo', 'yyyy/MM/dd HH:mm');
+    const ts = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm');
 
     // センサー値をパース（値は /100 or /10 で実値に変換）
     const p4 = json.ECpH4   || {};  // 棚1A pH
@@ -38,8 +37,8 @@ function doPost(e) {
     const p3 = json.ECpH3   || {};  // 棚1A EC
     const w1 = json.waterSensors1 || {};  // 棚2A
     const w2 = json.waterSensors2 || {};  // 棚2B
-    const t1 = json.tr76ul1  || {};  // おんどとり1
-    const t2 = json.tr76ul2  || {};  // おんどとり2
+    const t1 = json.tr76ui1  || {};  // おんどとり1
+    const t2 = json.tr76ui2  || {};  // おんどとり2
     const a1 = json.airSensor1 || {};
     const a2 = json.airSensor2 || {};
 

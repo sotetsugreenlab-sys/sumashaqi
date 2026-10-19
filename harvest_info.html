@@ -172,6 +172,78 @@ td.c-shipment { color: #3D7A50; }
 td.c-haiki    { color: #A84040; }
 
 .empty-row td { text-align: center; color: #aaa; padding: 32px; }
+
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border: 1px solid #D4D0C8;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #FAFAF8;
+}
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #7A7870;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: background 0.15s;
+}
+.tab-btn.active { background: #1C201C; color: #fff; }
+.tab-btn:not(.active):active { background: #E8E4DE; }
+
+.karitori-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #D4D0C8;
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 12px;
+}
+.karitori-table-wrap table {
+  min-width: 640px;
+}
+.keep-start-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #D4D0C8;
+  border-radius: 9px;
+  font-size: 12px;
+}
+.keep-start-row label { color: #7A7870; white-space: nowrap; }
+.keep-start-row input {
+  width: 70px;
+  padding: 5px 8px;
+  border: 1px solid #D4D0C8;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  text-align: right;
+}
+.csv-btn {
+  margin-left: auto;
+  background: #3D7A50;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.csv-btn:active { background: #2d5e3c; }
+td.c-neg { color: #A84040; font-weight: 700; background: #fff5f5; }
+tr.neg-keep td.keep-cell { color: #A84040; font-weight: 700; background: #fff0f0; }
 </style>
 </head>
 <body>
@@ -188,31 +260,61 @@ td.c-haiki    { color: #A84040; }
   </div>
 </div>
 
-<div class="tiles" id="tiles">
-  <div class="tile maegari">
-    <div class="tile-label">前借り</div>
-    <div class="tile-value" id="total-maegari">—<span class="tile-unit">株</span></div>
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-frills" onclick="switchTab('frills')">フリル実績</button>
+  <button class="tab-btn" id="tab-karitori" onclick="switchTab('karitori')">刈り取り記録</button>
+</div>
+
+<div id="pane-frills">
+  <div class="tiles" id="tiles">
+    <div class="tile maegari">
+      <div class="tile-label">前借り</div>
+      <div class="tile-value" id="total-maegari">—<span class="tile-unit">株</span></div>
+    </div>
+    <div class="tile shipment" id="tile-2">
+      <div class="tile-label" id="tile-2-label">出荷</div>
+      <div class="tile-value" id="total-tile2">—<span class="tile-unit" id="tile-2-unit">株</span></div>
+    </div>
+    <div class="tile haiki" id="tile-3">
+      <div class="tile-label" id="tile-3-label">廃棄</div>
+      <div class="tile-value" id="total-tile3">—<span class="tile-unit">株</span></div>
+    </div>
   </div>
-  <div class="tile shipment" id="tile-2">
-    <div class="tile-label" id="tile-2-label">出荷</div>
-    <div class="tile-value" id="total-tile2">—<span class="tile-unit" id="tile-2-unit">株</span></div>
+
+  <div class="table-wrap">
+    <table id="daily-table">
+      <thead id="daily-thead"></thead>
+      <tbody id="tbody"><tr class="empty-row"><td colspan="8">読み込み中...</td></tr></tbody>
+    </table>
   </div>
-  <div class="tile haiki" id="tile-3">
-    <div class="tile-label" id="tile-3-label">廃棄</div>
-    <div class="tile-value" id="total-tile3">—<span class="tile-unit">株</span></div>
+
+  <div style="margin-top:24px">
+    <div class="section-label" style="margin-bottom:10px">月次集計</div>
+    <div id="monthly-wrap"></div>
   </div>
 </div>
 
-<div class="table-wrap">
-  <table id="daily-table">
-    <thead id="daily-thead"></thead>
-    <tbody id="tbody"><tr class="empty-row"><td colspan="8">読み込み中...</td></tr></tbody>
-  </table>
-</div>
-
-<div style="margin-top:24px">
-  <div class="section-label" style="margin-bottom:10px">月次集計</div>
-  <div id="monthly-wrap"></div>
+<div id="pane-karitori" hidden>
+  <div class="keep-start-row">
+    <label>キープ数 スタート値：</label>
+    <input type="number" id="keep-start-val" value="0" oninput="saveKeepStart();loadKaritoriRecord()">
+    <span style="font-size:11px;color:#7A7870">株（初日の繰越）</span>
+    <button class="csv-btn" onclick="downloadCSV()">CSVダウンロード</button>
+  </div>
+  <div class="karitori-table-wrap">
+    <table id="karitori-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">刈り取り日</th>
+          <th>正規</th><th>ｷｰﾌﾟ刈</th><th>前借り</th>
+          <th>出荷数</th><th>ｼｪﾗﾄﾝ<br>ｷｰﾌﾟ</th><th>廃棄</th>
+          <th>翌日<br>予定</th><th>キープ数</th>
+        </tr>
+      </thead>
+      <tbody id="karitori-tbody"><tr class="empty-row"><td colspan="9">読み込み中...</td></tr></tbody>
+    </table>
+  </div>
+  <div id="karitori-monthly-wrap"></div>
 </div>
 
 <script>
@@ -230,11 +332,31 @@ const NEW_FMT_YM = '2026-10'; // この年月以降は新フォーマット
 
 function isNewFmt(ym) { return ym >= NEW_FMT_YM; }
 
+let currentTab = 'frills';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('pane-frills').hidden = (tab !== 'frills');
+  document.getElementById('pane-karitori').hidden = (tab !== 'karitori');
+  document.getElementById('tab-frills').classList.toggle('active', tab === 'frills');
+  document.getElementById('tab-karitori').classList.toggle('active', tab === 'karitori');
+  if (tab === 'karitori') loadKaritoriRecord();
+}
+
 function shiftMonth(delta) {
   currentMonth += delta;
   if (currentMonth > 12) { currentMonth = 1; currentYear++; }
   if (currentMonth < 1)  { currentMonth = 12; currentYear--; }
   load();
+  if (currentTab === 'karitori') loadKaritoriRecord();
+}
+
+function saveKeepStart() {
+  try { localStorage.setItem('keepStart', document.getElementById('keep-start-val').value); } catch(e) {}
+}
+
+function loadKeepStart() {
+  try { const v = localStorage.getItem('keepStart'); if (v != null) document.getElementById('keep-start-val').value = v; } catch(e) {}
 }
 
 function addMonths(year, month, delta) {
@@ -438,10 +560,202 @@ async function loadMonthly() {
   wrap.innerHTML = html;
 }
 
+// ─── 刈り取り記録 ────────────────────────────────────────────
+let karitoriAllData = null; // {harvestDate: {maegari, seiki, keep_harvest, shipment, spare, sheraton_count, chipburn, haiki_keep}}
+
+async function loadKaritoriRecord() {
+  document.getElementById('month-label').textContent = `${currentYear}/${pad(currentMonth)}`;
+  const ym = `${currentYear}-${pad(currentMonth)}`;
+
+  // 全データをキャッシュ（キープ数の累積計算に必要）
+  if (!karitoriAllData) {
+    const { data } = await db.from('lot_notes')
+      .select('sow_date,note')
+      .eq('crop', 'harvest_count')
+      .order('sow_date');
+    karitoriAllData = {};
+    (data || []).forEach(r => {
+      const under = r.sow_date.indexOf('_');
+      const sowDate = r.sow_date.slice(0, under);
+      const course  = r.sow_date.slice(under + 1);
+      const harvestDate = sowToHarvestDate(sowDate, course);
+      try {
+        const p = JSON.parse(r.note || '{}');
+        if (!karitoriAllData[harvestDate]) karitoriAllData[harvestDate] = {};
+        const d = karitoriAllData[harvestDate];
+        if (course === '33') { d.maegari = (d.maegari || 0) + (p.maegari || 0); }
+        if (course === '34' || course === 'harvest') {
+          d.seiki        = p.seiki        || 0;
+          d.keep_harvest = p.keep_harvest || 0;
+          d.shipment     = p.shipment     || 0;
+          d.spare        = p.spare        || 0;
+          d.spare_used   = p.spare_used   || 0;
+          d.sheraton_count = p.sheraton_count || 0;
+          d.chipburn     = p.chipburn     || 0;
+          d.haiki_keep   = p.haiki_keep   || 0;
+        }
+      } catch(e) {}
+    });
+  }
+
+  // 日付順ソート → キープ数累積計算
+  const allDates = Object.keys(karitoriAllData).sort();
+  const keepStart = parseInt(document.getElementById('keep-start-val')?.value) || 0;
+  let keepVal = keepStart;
+  const keepByDate = {};
+  allDates.forEach(d => {
+    const row = karitoriAllData[d];
+    keepVal = keepVal
+      + (row.sheraton_count || 0)
+      - (row.keep_harvest   || 0)
+      - (row.haiki_keep     || 0);
+    keepByDate[d] = keepVal;
+  });
+
+  // 当月の日付だけ表示
+  const prefix = ym + '-';
+  const monthDates = allDates.filter(d => d.startsWith(prefix));
+
+  const tbody = document.getElementById('karitori-tbody');
+  if (!monthDates.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">この月のデータはまだありません</td></tr>`;
+    renderKaritoriMonthly(allDates, keepByDate);
+    return;
+  }
+
+  // 月合計
+  let tSeiki=0,tKeepH=0,tMae=0,tShip=0,tSher=0,tHaiki=0;
+
+  tbody.innerHTML = monthDates.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    const row = karitoriAllData[d];
+    const maegari  = row.maegari || 0;
+    const seiki    = row.seiki   || 0;
+    const keepH    = row.keep_harvest || 0;
+    const shipMain = row.shipment || 160;
+    const spare    = row.spare || 1;
+    const shipTotal= shipMain + spare;
+    const sher     = row.sheraton_count || 0;
+    const haiki    = (row.chipburn || 0) + (row.haiki_keep || 0);
+    const yokujitsu= 180 - maegari;
+    const keep     = keepByDate[d];
+    const isNeg    = keep < 0;
+
+    tSeiki+=seiki; tKeepH+=keepH; tMae+=maegari; tShip+=shipTotal; tSher+=sher; tHaiki+=haiki;
+
+    const dateCell = `<td style="text-align:left;font-size:11px">
+      <div style="font-weight:600">${dt.getMonth()+1}/${dt.getDate()}（${DAYS[dt.getDay()]}）</div>
+    </td>`;
+    const v = (n, cls='') => n ? `<td class="has-val ${cls}">${n}</td>` : `<td>—</td>`;
+    const keepCell = `<td class="has-val keep-cell${isNeg?' c-neg':''}">${keep}</td>`;
+    return `<tr class="${isNeg?'neg-keep':''}">${dateCell}${v(seiki)}${v(keepH)}${v(maegari,'c-maegari')}${v(shipTotal,'c-shipment')}${v(sher)}${v(haiki,'c-haiki')}<td class="has-val">${yokujitsu}</td>${keepCell}</tr>`;
+  }).join('');
+
+  // 合計行
+  const finalKeep = monthDates.length ? keepByDate[monthDates[monthDates.length-1]] : keepStart;
+  tbody.innerHTML += `<tr style="border-top:2px solid #D4D0C8;background:#EEECE7">
+    <td style="text-align:left;font-size:10px;font-weight:700;color:#7A7870">月合計</td>
+    <td class="has-val">${tSeiki}</td><td class="has-val">${tKeepH}</td>
+    <td class="has-val c-maegari">${tMae}</td><td class="has-val c-shipment">${tShip}</td>
+    <td class="has-val">${tSher}</td><td class="has-val c-haiki">${tHaiki}</td>
+    <td>—</td><td class="has-val keep-cell${finalKeep<0?' c-neg':''}">${finalKeep}</td>
+  </tr>`;
+
+  renderKaritoriMonthly(allDates, keepByDate);
+}
+
+function renderKaritoriMonthly(allDates, keepByDate) {
+  // 月ごとの合計
+  const byMonth = {};
+  allDates.forEach(d => {
+    const ym = d.slice(0, 7);
+    if (!byMonth[ym]) byMonth[ym] = {seiki:0,keep_harvest:0,maegari:0,ship:0,sher:0,haiki:0,finalKeep:0};
+    const row = karitoriAllData[d];
+    const maegari = row.maegari || 0;
+    byMonth[ym].seiki       += row.seiki        || 0;
+    byMonth[ym].keep_harvest+= row.keep_harvest || 0;
+    byMonth[ym].maegari     += maegari;
+    byMonth[ym].ship        += (row.shipment||160) + (row.spare||1);
+    byMonth[ym].sher        += row.sheraton_count || 0;
+    byMonth[ym].haiki       += (row.chipburn||0) + (row.haiki_keep||0);
+    byMonth[ym].finalKeep    = keepByDate[d];
+  });
+
+  const months = Object.keys(byMonth).sort().reverse();
+  const wrap = document.getElementById('karitori-monthly-wrap');
+  if (!months.length) { wrap.innerHTML = ''; return; }
+
+  wrap.innerHTML = `<div style="margin-top:20px">
+    <div class="section-label" style="margin-bottom:8px">月次集計（刈り取り記録）</div>
+    <div class="karitori-table-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left">月</th>
+        <th>正規</th><th>ｷｰﾌﾟ刈</th><th>前借り</th>
+        <th>出荷数</th><th>ｼｪﾗﾄﾝ</th><th>廃棄</th><th>月末ｷｰﾌﾟ</th>
+      </tr></thead>
+      <tbody>${months.map(ym => {
+        const [y, m] = ym.split('-');
+        const r = byMonth[ym];
+        const isNeg = r.finalKeep < 0;
+        return `<tr>
+          <td style="text-align:left">${+y}/${+m}月</td>
+          <td class="has-val">${r.seiki}</td>
+          <td class="has-val">${r.keep_harvest}</td>
+          <td class="has-val c-maegari">${r.maegari}</td>
+          <td class="has-val c-shipment">${r.ship}</td>
+          <td class="has-val">${r.sher}</td>
+          <td class="has-val c-haiki">${r.haiki}</td>
+          <td class="has-val keep-cell${isNeg?' c-neg':''}">${r.finalKeep}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function downloadCSV() {
+  if (!karitoriAllData) return;
+  const ym = `${currentYear}-${pad(currentMonth)}`;
+  const prefix = ym + '-';
+  const keepStart = parseInt(document.getElementById('keep-start-val')?.value) || 0;
+  let keepVal = keepStart;
+  const allDates = Object.keys(karitoriAllData).sort();
+  const rows = [['刈り取り日','正規刈り取り数','キープ刈り取り数','前借刈り取り数','出荷数','シェラトン向等キープ数','廃棄数','翌日刈取予定数','キープ数','本出荷','予備','予備使用']];
+  allDates.forEach(d => {
+    const row = karitoriAllData[d];
+    keepVal = keepVal + (row.sheraton_count||0) - (row.keep_harvest||0) - (row.haiki_keep||0);
+    if (!d.startsWith(prefix)) return;
+    const maegari  = row.maegari || 0;
+    const shipMain = row.shipment || 160;
+    const spare    = row.spare || 1;
+    rows.push([
+      d,
+      row.seiki || 0, row.keep_harvest || 0, maegari,
+      shipMain + spare,
+      row.sheraton_count || 0,
+      (row.chipburn||0) + (row.haiki_keep||0),
+      180 - maegari,
+      keepVal,
+      shipMain, spare, row.spare_used || 0
+    ]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `刈り取り記録_${ym}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+// ─────────────────────────────────────────────────────────────
+
 db.channel('harvest_info_rt')
-  .on('postgres_changes', { event:'*', schema:'public', table:'lot_notes', filter:'crop=eq.harvest_count' }, () => { load(); loadMonthly(); })
+  .on('postgres_changes', { event:'*', schema:'public', table:'lot_notes', filter:'crop=eq.harvest_count' }, () => {
+    karitoriAllData = null; // キャッシュリセット
+    load(); loadMonthly();
+    if (currentTab === 'karitori') loadKaritoriRecord();
+  })
   .subscribe();
 
+loadKeepStart();
 load();
 loadMonthly();
 </script>

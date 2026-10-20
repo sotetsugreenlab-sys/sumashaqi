@@ -393,6 +393,12 @@ async function loadShifts() {
         ['2026-10-29', INITIAL_SHIFTS['2026-10-29']],
       ]);
     }
+    // 11月分がSupabaseにない場合は投入
+    if (!shifts['2026-11-01']) {
+      const novDates = Object.entries(INITIAL_SHIFTS)
+        .filter(([d]) => d.startsWith('2026-11-'));
+      await patchShiftDates(novDates);
+    }
   }
   render();
 }

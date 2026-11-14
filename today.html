@@ -417,29 +417,32 @@ function herbNotesHtml(herbName, sowDateStr) {
 }
 
 // ===== スマシャキ レンダリング =====
-const SM_HARVEST_DAYS = 32;
+// 今日作業が発生する節目の日数
+const SM_STAGES = [
+  { days: 32, label: '刈取',      cls: 'card-harvest' },
+  { days: 31, label: '前借り',    cls: 'card-yellow'  },
+  { days: 17, label: '5穴へ移植', cls: 'card-5ana'    },
+  { days: 6,  label: '32穴へ移植',cls: 'card-30'      },
+];
 
 function renderSumashaqi() {
   const dateStr = toDateStr(viewDate);
-  const lotsWithDays = shelfLots.map(lot => {
-    const sow = parseDate(lot.sow_date);
-    const days = Math.round((parseDate(dateStr) - sow) / 86400000);
-    return { ...lot, days };
-  }).filter(l => l.days >= 0 && l.days <= SM_HARVEST_DAYS + 1);
 
-  // 収穫カード群
-  const harvestLots = lotsWithDays.filter(l => l.days === SM_HARVEST_DAYS);
-  const maegariLots = lotsWithDays.filter(l => l.days === SM_HARVEST_DAYS - 1);
-  // 刈取遅れ（SM_HARVEST_DAYS+1日以上）
-  const overLots   = shelfLots.map(lot => {
-    const sow = parseDate(lot.sow_date);
-    const days = Math.round((parseDate(dateStr) - sow) / 86400000);
-    return { ...lot, days };
-  }).filter(l => l.days > SM_HARVEST_DAYS);
-  // 5穴ロット（17日目〜SM_HARVEST_DAYS-2日目）
-  const fiveHoleLots = lotsWithDays.filter(l => l.days >= 17 && l.days < SM_HARVEST_DAYS - 1);
+  function daysFromSow(sowDate) {
+    return Math.round((parseDate(dateStr) - parseDate(sowDate)) / 86400000);
+  }
 
-  function smCard(lot, label, cls, extraCls) {
+  // 刈取遅れは表示しない
+  const overLots = [];
+
+  // 各節目に当たるロット
+  const stageLots = SM_STAGES.map(stage => {
+    const lots = shelfLots.map(l => ({ ...l, days: daysFromSow(l.sow_date) }))
+      .filter(l => l.days === stage.days);
+    return { ...stage, lots };
+  });
+
+  function smCard(lot, label, cls) {
     const st = sowTrayStyle(parseDate(lot.sow_date));
     const borderStyle = st.border ? `;border:${st.border}` : '';
     const alertStyle = smAlerts[lot.sow_date] ? ';outline:2px solid #E24B4A' : '';
@@ -452,34 +455,32 @@ function renderSumashaqi() {
     </div>`;
   }
 
-  // 収穫セクション HTML
-  const harvestHtml = harvestLots.length
-    ? harvestLots.map(l => smCard(l, '刈取', 'card-harvest')).join('')
-    : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
-  const maegariHtml = maegariLots.length
-    ? maegariLots.map(l => smCard(l, '前借り', 'card-yellow')).join('')
-    : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
   const overHtml = overLots.length
     ? overLots.map(l => smCard(l, `刈取遅れ(${l.days}日目)`, 'card-harvest-ov1')).join('')
     : '';
 
-  // 5穴ロット
-  const fiveHoleHtml = fiveHoleLots.length
-    ? fiveHoleLots.sort((a,b) => b.days - a.days).map(l => {
-        const st = sowTrayStyle(parseDate(l.sow_date));
-        const borderStyle = st.border ? `;border:${st.border}` : '';
-        const alertStyle = smAlerts[l.sow_date] ? ';outline:2px solid #E24B4A' : '';
-        return `<div class="card card-5ana" style="background:${st.bg}${borderStyle}${alertStyle}">
-          ${smAlerts[l.sow_date] ? '<div class="card-alert-badge">⚠️</div>' : ''}
-          <div class="card-task">5穴</div>
-          <div class="card-sow">${fmtShort(parseDate(l.sow_date))}播種</div>
-          <div class="card-sub">${l.days}日目</div>
-          ${smNotesHtml(l.sow_date)}
-        </div>`;
-      }).join('')
-    : `<div style="font-size:12px;color:#ccc;padding:4px 2px">−</div>`;
+  // 刈取（32日目）と前借り（31日目）を2カラム表示
+  const harvestStage  = stageLots[0]; // 32日目
+  const maegariStage  = stageLots[1]; // 31日目
+  const fiveHoleStage = stageLots[2]; // 17日目
+  const thirtyStage   = stageLots[3]; // 6日目
 
-  const dateLabel = isSameDay(viewDate, realToday) ? '今日の' : 'この日の';
+  function stageCell(stage) {
+    const inner = stage.lots.length
+      ? `<div class="harvest-stack">${stage.lots.map(l => smCard(l, stage.label, stage.cls)).join('')}</div>`
+      : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
+    return `<div class="harvest-col">
+      <div class="harvest-col-title">${stage.days}日目 ${stage.label}</div>
+      ${inner}
+    </div>`;
+  }
+
+  const otherCells = [fiveHoleStage, thirtyStage].map(stage => {
+    if (!stage.lots.length) return '';
+    return `<div class="stage-cell">
+      ${stage.lots.map(l => smCard(l, stage.label, stage.cls)).join('')}
+    </div>`;
+  }).filter(Boolean);
 
   document.getElementById('sumashaqi-section').innerHTML = `
     <div class="sumashaqi-section">
@@ -489,19 +490,10 @@ function renderSumashaqi() {
       </div>
       ${overHtml ? `<div style="margin-bottom:8px">${overHtml}</div>` : ''}
       <div class="harvest-row">
-        <div class="harvest-col">
-          <div class="harvest-col-title">${SM_HARVEST_DAYS}日目 刈取</div>
-          <div class="harvest-stack">${harvestHtml}</div>
-        </div>
-        <div class="harvest-col">
-          <div class="harvest-col-title">${SM_HARVEST_DAYS-1}日目 前借り</div>
-          <div class="harvest-stack">${maegariHtml}</div>
-        </div>
+        ${stageCell(harvestStage)}
+        ${stageCell(maegariStage)}
       </div>
-      <div class="sm-lot-section">
-        <div class="stage-label">5穴ロット</div>
-        <div class="lot-scroll">${fiveHoleHtml}</div>
-      </div>
+      ${otherCells.length ? `<div class="stage-row">${otherCells.join('')}</div>` : ''}
     </div>`;
 }
 

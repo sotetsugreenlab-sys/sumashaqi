@@ -515,7 +515,7 @@ function renderTasks() {
         ${bagHtml}<span class="herb-arrow">›</span>
       </a>
       ${hasTask
-        ? `<div class="stage-row"><div class="stage-cell">${harvestCellHtml}</div>${otherCells.join('')}</div>`
+        ? `<div class="stage-row">${[...otherCells].reverse().join('')}<div class="stage-cell">${harvestCellHtml}</div></div>`
         : (sowToday ? '' : '<div class="no-task-inline">本日の作業なし</div>')
       }
     </div>`;

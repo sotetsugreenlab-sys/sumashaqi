@@ -50,17 +50,17 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 .ac-speed .mc-label { font-size: 12px; }
 
 /* 液肥 */
-.liquid-current { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px; }
-.liquid-num { font-size: 28px; font-weight: 700; color: #185FA5; }
-.liquid-unit { font-size: 14px; color: #666; }
-.liquid-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.liquid-input { width: 60px; font-size: 14px; padding: 5px 7px; border: 1px solid #ddd; border-radius: 8px; text-align: center; background: #fafafa; color: #1a1a1a; }
+.liquid-current { font-size: 13px; color: #666; margin-bottom: 12px; }
+.liquid-current strong { font-size: 22px; font-weight: 700; color: #185FA5; margin: 0 2px; }
+.liquid-action { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0ee; }
+.liquid-action:last-child { border-bottom: none; }
+.liquid-input { width: 70px; font-size: 16px; font-weight: 600; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 10px; text-align: center; background: #fafafa; color: #1a1a1a; }
 .liquid-input:focus { outline: none; border-color: #185FA5; }
-.liquid-btn { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+.liquid-action-label { font-size: 14px; color: #444; flex: 1; }
+.liquid-btn { font-size: 13px; padding: 7px 16px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; flex-shrink: 0; }
 .liquid-btn-minus { background: #E6F1FB; color: #185FA5; }
 .liquid-btn-plus  { background: #EAF3DE; color: #3B6D11; }
 .liquid-btn:active { opacity: 0.75; }
-.liquid-label { font-size: 13px; color: #666; }
 
 /* 刈り取り */
 .harvest-day-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0ee; }
@@ -90,18 +90,16 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 
 <div class="section">
   <div class="section-label">💧 液肥</div>
-  <div class="liquid-current">
-    <span class="liquid-label">貯液</span>
-    <span class="liquid-num" id="liquid-display">--</span>
-    <span class="liquid-unit">L</span>
-  </div>
-  <div class="liquid-row">
+  <div class="liquid-current">現在 貯液 <strong id="liquid-display">--</strong> ℓ</div>
+  <div class="liquid-action">
     <input type="number" id="liquid-used" class="liquid-input" placeholder="0" min="0" step="0.1">
-    <span class="liquid-unit">L</span>
-    <button class="liquid-btn liquid-btn-minus" onclick="adjustLiquid(-1)">使用 −</button>
+    <span class="liquid-action-label">ℓ 使用</span>
+    <button class="liquid-btn liquid-btn-minus" onclick="adjustLiquid(-1)">送信 −</button>
+  </div>
+  <div class="liquid-action">
     <input type="number" id="liquid-made" class="liquid-input" placeholder="0" min="0" step="0.1">
-    <span class="liquid-unit">L</span>
-    <button class="liquid-btn liquid-btn-plus" onclick="adjustLiquid(1)">追加 ＋</button>
+    <span class="liquid-action-label">ℓ 追加</span>
+    <button class="liquid-btn liquid-btn-plus" onclick="adjustLiquid(1)">送信 ＋</button>
   </div>
 </div>
 

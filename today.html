@@ -503,49 +503,8 @@ function renderSumashaqi() {
     return Math.round((parseDate(dateStr) - parseDate(sowDate)) / 86400000);
   }
 
-  // 刈取遅れは表示しない
-  const overLots = [];
-
-  // 各節目に当たるロット
-  const stageLots = SM_STAGES.map(stage => {
-    const lots = shelfLots.map(l => ({ ...l, days: daysFromSow(l.sow_date) }))
-      .filter(l => l.days === stage.days);
-    return { ...stage, lots };
-  });
-
-  function smCard(lot, label, cls) {
-    const st = sowTrayStyle(parseDate(lot.sow_date));
-    const borderStyle = st.border ? `;border:${st.border}` : '';
-    const alertStyle = smAlerts[lot.sow_date] ? ';outline:2px solid #E24B4A' : '';
-    return `<div class="card ${cls}" style="background:${st.bg}${borderStyle}${alertStyle}">
-      ${smAlerts[lot.sow_date] ? '<div class="card-alert-badge">⚠️ 注意ロット</div>' : ''}
-      <div class="card-task">${label}</div>
-      <div class="card-sow">${fmtShort(parseDate(lot.sow_date))}播種</div>
-      <div class="card-sub">${lot.days}日目</div>
-      ${smNotesHtml(lot.sow_date)}
-    </div>`;
-  }
-
-  const overHtml = overLots.length
-    ? overLots.map(l => smCard(l, `刈取遅れ(${l.days}日目)`, 'card-harvest-ov1')).join('')
-    : '';
-
-  // 刈取（32日目）と前借り（31日目）はshelf_lotsから
-  const harvestStage  = stageLots[0]; // 32日目
-  const maegariStage  = stageLots[1]; // 31日目
-
-  function stageCell(stage) {
-    const inner = stage.lots.length
-      ? `<div class="harvest-stack">${stage.lots.map(l => smCard(l, stage.label, stage.cls)).join('')}</div>`
-      : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
-    return `<div class="harvest-col">
-      <div class="harvest-col-title">${stage.days}日目 ${stage.label}</div>
-      ${inner}
-    </div>`;
-  }
-
-  // 32穴（6日目）・4穴（17日目）は今日から逆算した播種日で固定表示（v3と同じ方式）
-  function transplantCard(label, cls, days) {
+  // 全ステージ：今日から逆算した播種日で固定表示（v3と同じ方式）
+  function smCard(label, cls, days) {
     const sowDate = toDateStr(addDays(viewDate, -days));
     const st = sowTrayStyle(parseDate(sowDate));
     const borderStyle = st.border ? `;border:${st.border}` : '';
@@ -568,14 +527,13 @@ function renderSumashaqi() {
         <span class="section-title sumashaqi">🌱 スマシャキ</span>
         <a class="section-link" href="sumashaqi_daily_schedule_v3.html">数値報告 →</a>
       </div>
-      ${overHtml ? `<div style="margin-bottom:8px">${overHtml}</div>` : ''}
       <div class="harvest-row">
-        ${stageCell(maegariStage)}
-        ${stageCell(harvestStage)}
+        ${smCard('前借り',    'card-yellow',  31)}
+        ${smCard('刈取',      'card-harvest', 32)}
       </div>
       <div class="harvest-row">
-        ${transplantCard('32穴へ移植', 'card-30', 6)}
-        ${transplantCard('4穴へ移植',  'card-5ana', 17)}
+        ${smCard('32穴へ移植','card-30',       6)}
+        ${smCard('4穴へ移植', 'card-5ana',    17)}
       </div>
     </div>`;
 }

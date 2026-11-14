@@ -592,7 +592,7 @@ function renderHerbs() {
       return `<div class="stage-cell">${inner}</div>`;
     });
 
-    const hasTask = harvestCards.length > 0 ||
+    const hasTask = true ||
       allStageSets.some(stageSet =>
         stageSet.slice(1).some(s => {
           const sow = addDays(viewDate, -s.days);

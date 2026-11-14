@@ -316,7 +316,7 @@ function fetchAlerts() {
   } catch(e) { return []; }
 }
 
-const EKIHI_BASE = '2026-10-17'; // 追肥の基準日
+const EKIHI_BASE = '2026-11-17'; // 追肥の基準日
 const EKIHI_EVENTS = [{ label: '追肥', offset: 0 }, { label: '入替', offset: 5 }];
 
 function getEkihiLabel(today) {

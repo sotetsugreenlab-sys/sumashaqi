@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今日の作業</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="今日の作業">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
+
+.header { text-align: center; margin-bottom: 1rem; border-radius: 12px; padding: 0.75rem 0.5rem; background: #f5f5f2; transition: background 0.3s; }
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 10px; }
+.nav-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.nav-btn { font-size: 20px; color: #aaa; background: none; border: none; cursor: pointer; padding: 0 4px; line-height: 1; }
+.nav-btn:active { color: #1a1a1a; }
+.date-big { font-size: 22px; font-weight: 500; color: #1a1a1a; }
+.date-sub { font-size: 13px; color: #666; margin-top: 2px; }
+.back-today { display: inline-block; margin-top: 6px; font-size: 12px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 20px; padding: 3px 12px; cursor: pointer; }
+
+/* Section header */
+.section-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 2px 7px; border-bottom: 1.5px solid #f0f0ed; margin-bottom: 7px; }
+.section-title { font-size: 14px; font-weight: 700; }
+.section-title.sumashaqi { color: #993C1D; }
+.section-link { font-size: 11px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 3px 10px; text-decoration: none; white-space: nowrap; }
+
+/* Stage row - horizontal card layout */
+.stage-row { display: flex; gap: 6px; }
+.stage-cell { flex: 1; min-width: 0; }
+
+/* 5穴ロット horizontal scroll */
+.lot-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; }
+.lot-scroll::-webkit-scrollbar { height: 3px; }
+.lot-scroll::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+.lot-scroll .card { flex-shrink: 0; min-width: 90px; max-width: 120px; }
+
+/* Stage label above card row */
+.stage-label { font-size: 11px; color: #aaa; font-weight: 500; margin-bottom: 4px; }
+.harvest-col { flex: 1; }
+.harvest-col-title { font-size: 11px; color: #999; text-align: center; padding: 2px; margin-bottom: 4px; border-radius: 6px; background: #fafafa; }
+
+/* Compact cards */
+.card { border-radius: 10px; padding: 0.55rem 0.65rem; margin-bottom: 0; }
+.card-harvest   { background: #FAECE7; }
+.card-harvest-ov { background: #F2D5C8; }
+.card-green     { background: #EAF3DE; }
+.card-yellow    { background: #F3F5DE; }
+.card-led       { background: #E6F1FB; }
+.card-30        { background: #EEEDFE; }
+.card-kuro      { background: #EBEBEB; }
+.card-5ana      { background: #FDE8E8; }
+.card-task { font-size: 11px; font-weight: 500; margin-bottom: 2px; }
+.card-harvest   .card-task, .card-harvest-ov .card-task { color: #993C1D; }
+.card-green     .card-task { color: #3B6D11; }
+.card-yellow    .card-task { color: #6D8B11; }
+.card-led       .card-task { color: #185FA5; }
+.card-30        .card-task { color: #534AB7; }
+.card-kuro      .card-task { color: #444; }
+.card-5ana      .card-task { color: #B84040; }
+.card-sow { font-size: 17px; font-weight: 500; color: #1a1a1a; }
+.card-sub { font-size: 10px; color: #888; margin-top: 1px; }
+.card-empty { border-radius: 10px; padding: 0.55rem 0.65rem; background: #fafafa; border: 1px dashed #e8e8e8; display: flex; align-items: center; justify-content: center; min-height: 72px; }
+.card-empty-text { font-size: 10px; color: #ccc; }
+.card-alert-badge { font-size: 9px; font-weight: 700; color: #E24B4A; margin-bottom: 2px; }
+
+/* harvest window styles */
+.card-harvest-w2  { background: #FEF6F3; }
+.card-harvest-w1  { background: #FCF1EC; }
+.card-harvest-ov1 { background: #F2D5C8; }
+.card-harvest-ov2 { background: #E8B89A; }
+.card-harvest-w2  .card-task { color: #C8A07A; }
+.card-harvest-w1  .card-task { color: #B5603A; }
+.card-harvest-ov1 .card-task { color: #993C1D; }
+.card-harvest-ov2 .card-task { color: #7A1A00; }
+.harvest-stack { display: flex; flex-direction: column; gap: 4px; }
+.harvest-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 6px; margin-left: 3px; display: inline-block; vertical-align: middle; }
+.badge-w2  { background: #F5D8A0; color: #7A4F00; }
+.badge-w1  { background: #E09060; color: #fff; }
+.badge-ov1 { background: #D04020; color: #fff; }
+.badge-ov2 { background: #902000; color: #fff; }
+
+/* Notes */
+.card-notes { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(0,0,0,0.07); }
+.card-note-item { font-size: 11px; color: #C0392B; line-height: 1.5; margin-bottom: 2px; font-weight: 500; }
+.btn-note-add { font-size: 10px; color: #aaa; background: none; border: 1px dashed #ccc; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-top: 3px; }
+.btn-alert { font-size: 10px; color: #aaa; background: none; border: 1px dashed #ccc; border-radius: 10px; padding: 2px 8px; cursor: pointer; margin-top: 3px; margin-left: 4px; }
+.btn-alert.active { color: #E24B4A; border-color: #E24B4A; background: #FDE8E8; }
+.note-input-wrap { display: none; align-items: center; gap: 4px; margin-top: 5px; }
+.note-input-wrap.open { display: flex; }
+.note-input { flex: 1; min-width: 0; font-size: 12px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
+.btn-note-save { font-size: 11px; padding: 4px 10px; background: #534AB7; color: #fff; border: none; border-radius: 8px; cursor: pointer; flex-shrink: 0; }
+.btn-note-cancel { font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; }
+.btn-note-edit { font-size: 10px; color: #aaa; background: none; border: none; cursor: pointer; margin-left: 4px; text-decoration: underline; }
+.note-delete-confirm { display: none; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.note-delete-label { font-size: 11px; color: #E24B4A; }
+
+/* Herb section */
+.herb-section { margin-bottom: 16px; }
+.herb-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; padding: 5px 2px 7px; text-decoration: none; border-bottom: 1.5px solid #f0f0ed; margin-bottom: 7px; }
+.herb-arrow { font-size: 16px; color: #ccc; }
+.herb-seeds { font-size: 12px; font-weight: 400; color: #999; margin-left: 6px; }
+.no-task-inline { font-size: 12px; color: #ccc; padding: 4px 2px; }
+.herb-bag { font-size: 12px; font-weight: 500; color: #993C1D; background: #FAECE7; border-radius: 6px; padding: 3px 8px; margin-left: auto; margin-right: 6px; }
+.herb-bag.low { color: #E24B4A; background: #FDE8E8; }
+.herb-bag strong { font-size: 15px; font-weight: 700; }
+.name-only-section { margin-top: 16px; padding-top: 12px; border-top: 1.5px solid #f0f0ed; }
+.name-only-title { font-size: 11px; color: #aaa; margin-bottom: 8px; }
+.name-only-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.name-only-item { font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 20px; background: #f5f5f2; text-decoration: none; }
+
+/* スマシャキセクション */
+.sumashaqi-section { margin-bottom: 20px; }
+.harvest-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.sm-lot-section { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div class="header" id="main-header">
+  <a class="back-link" href="index.html">← トップ</a>
+  <div class="nav-row">
+    <button class="nav-btn" onclick="navigate(-1)">＜</button>
+    <div class="date-big" id="disp-date"></div>
+    <button class="nav-btn" onclick="navigate(1)">＞</button>
+  </div>
+  <div class="date-sub">の作業内容</div>
+  <div id="back-today-wrap"></div>
+</div>
+
+<div id="sumashaqi-section"></div>
+<div id="herb-section"></div>
+
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+// ===== ハーブ設定（herb.htmlと同じ）=====
+const HERBS = [
+  {
+    name: 'バジル', href: 'basil.html', color: '#3B6D11', seeds: 10, cubes: 90, bagBase: { date: '2026-08-19', count: 16 },
+    sowDays: [0,1,2,3,4,5,6], sowCutoff: '2026-07-16',
+    sowDates: ['2026-06-09','2026-06-10','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-21','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16'],
+    stages: [
+      { label: '収穫',       days: 35, cls: 'card-harvest' },
+      { label: '8穴へ移植',  days: 17, cls: 'card-green'   },
+      { label: '30穴へ移植', days: 9,  cls: 'card-30'      },
+    ],
+    stagesNewFrom: '2026-08-11',
+    stages2: [
+      { label: '収穫',       days: 40, cls: 'card-harvest'          },
+      { label: '8穴へ移植',  days: 22, cls: 'card-green'            },
+      { label: '32穴へ移植', days: 12, cls: 'card-30', boards: 2   },
+      { label: '黒板を外す', days: 3,  cls: 'card-kuro'             },
+    ]
+  },
+  {
+    name: 'ルッコラ', href: 'rucola.html', color: '#6D8B11', seeds: 8,
+    nameOnly: true,
+    sowDays: [1,2,3,4,0], sowCutoff: '2099-12-31',
+    sowDates: ['2026-04-14','2026-04-23','2026-05-02','2026-05-15','2026-05-18','2026-05-21','2026-05-22','2026-05-25','2026-05-29'],
+    stages: [
+      { label: '8穴へ移植',  days: 22, cls: 'card-yellow'           },
+      { label: '32穴へ移植', days: 12, cls: 'card-30', boards: 3   },
+    ]
+  },
+  {
+    name: 'ワイルドロケット', href: 'rocket.html', color: '#8B6D11', seeds: 8, cubes: 130, bagBase: { date: '2026-08-19', count: 24 },
+    sowDays: [0,1,2,3,4,5,6], sowCutoff: '2026-07-16',
+    sowDates: ['2026-06-09','2026-06-10','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-21','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16'],
+    stages: [
+      { label: '収穫',       days: 34, cls: 'card-harvest'          },
+      { label: '8穴へ移植',  days: 20, cls: 'card-green'            },
+      { label: '32穴へ移植', days: 9,  cls: 'card-30', boards: 3   },
+    ],
+    stagesNewFrom: '2026-08-11',
+    stages2: [
+      { label: '収穫',       days: 39, cls: 'card-harvest'          },
+      { label: '8穴へ移植',  days: 22, cls: 'card-green'            },
+      { label: '32穴へ移植', days: 12, cls: 'card-30', boards: 3   },
+      { label: '黒板を外す', days: 3,  cls: 'card-kuro'             },
+    ]
+  },
+  {
+    name: 'パクチー', href: 'pakuchi.html', color: '#11836D', seeds: 5, bagBase: { date: '2026-08-19', count: 3 },
+    nameOnly: true,
+    sowDays: [0,1,2,3,4,5,6], sowCutoff: '2026-06-28',
+    sowDates: ['2026-04-23','2026-05-02','2026-05-22','2026-05-24','2026-05-25','2026-05-26','2026-05-27','2026-05-29','2026-06-01','2026-06-03','2026-06-04','2026-06-07','2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-21','2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26'],
+    stages: [
+      { label: '収穫',             days: 32, cls: 'card-harvest' },
+      { label: 'LED高い場所へ移動', days: 20, cls: 'card-led'    },
+      { label: '32穴へ移植',       days: 9,  cls: 'card-30'      },
+    ],
+    stagesNewFrom: '2026-08-11',
+    stages2: [
+      { label: '収穫',       days: 39, cls: 'card-harvest' },
+      { label: '8穴へ移植',  days: 24, cls: 'card-green'   },
+      { label: '32穴へ移植', days: 12, cls: 'card-30'      },
+      { label: '黒板を外す', days: 3,  cls: 'card-kuro'    },
+    ]
+  },
+  {
+    name: 'イタリアンパセリ', href: 'parsley.html', color: '#7B4FA8', seeds: 5,
+    nameOnly: true,
+    sowDays: [5], sowCutoff: '2099-12-31',
+    sowDates: ['2026-05-13','2026-05-21','2026-05-24','2026-05-27','2026-05-31','2026-06-05','2026-06-12','2026-06-19'],
+    stages: [
+      { label: '収穫',           days: 35, cls: 'card-harvest' },
+      { label: 'LED高い段へ移動', days: 26, cls: 'card-led'    },
+      { label: '32穴へ移植',     days: 12, cls: 'card-30'      },
+    ]
+  },
+  {
+    name: 'ディル', href: 'dill.html', color: '#B5860D', seeds: 3,
+    nameOnly: true,
+    sowDays: [5], sowCutoff: '2099-12-31',
+    sowDates: ['2026-05-13','2026-05-21','2026-05-24','2026-05-27','2026-05-31','2026-06-05','2026-06-12','2026-06-19'],
+    stages: [
+      { label: '収穫',           days: 33, cls: 'card-harvest' },
+      { label: 'LED高い段へ移動', days: 26, cls: 'card-led'    },
+      { label: '32穴へ移植',     days: 9,  cls: 'card-30'      },
+    ]
+  },
+];
+
+// ===== ユーティリティ =====
+function fmt(d) {
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+}
+function fmtShort(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function parseDate(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
+function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
+function isValidSow(herb, date) {
+  const ds = toDateStr(date);
+  const cutoff = herb.sowCutoff ?? herb.sowDates[herb.sowDates.length - 1];
+  const validDay = herb.sowDays ? herb.sowDays.includes(date.getDay()) : (date.getDay()===1||date.getDay()===5);
+  return herb.sowDates.includes(ds) || (cutoff !== undefined && ds > cutoff && validDay);
+}
+function getStagesForSow(herb, sow) {
+  if (herb.stagesNewFrom && herb.stages2 && toDateStr(sow) >= herb.stagesNewFrom) return herb.stages2;
+  return herb.stages;
+}
+function getBagCount(herb, date) {
+  if (!herb.bagBase) return null;
+  const diff = Math.round((parseDate(toDateStr(date)) - parseDate(herb.bagBase.date)) / 86400000);
+  return Math.max(0, herb.bagBase.count - diff);
+}
+
+// トレイ背景色
+const TRAY_STYLES = [
+  { bg: '#ffffff' }, { bg: '#c8e6c9' }, { bg: '#fce4ec' },
+  { bg: '#ffffff', border: '2px solid #f48fb1' }, { bg: '#fff9c4' }, { bg: '#bbdefb' },
+];
+const TRAY_REF = new Date('2026-10-08T00:00:00Z');
+function sowTrayStyle(sow) {
+  const d = new Date(sow); d.setHours(0,0,0,0);
+  const r = new Date(TRAY_REF); r.setHours(0,0,0,0);
+  return TRAY_STYLES[((Math.round((d-r)/86400000) % 6) + 6) % 6];
+}
+
+// ===== 日付ナビゲーション =====
+const realToday = new Date();
+let viewDate = new Date(realToday);
+
+function navigate(delta) { viewDate = addDays(viewDate, delta); renderAll(); }
+function goToday() { viewDate = new Date(realToday); renderAll(); }
+
+function renderHeader() {
+  document.getElementById('disp-date').textContent = fmt(viewDate);
+  document.getElementById('back-today-wrap').innerHTML = isSameDay(viewDate, realToday)
+    ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
+}
+
+// ===== スマシャキ データ =====
+let shelfLots = [];
+let smNotes = {};
+let smAlerts = {};
+
+async function loadSumashaqi() {
+  const [lotsRes, notesRes, alertRes] = await Promise.all([
+    db.from('shelf_lots').select('id,sow_date,shelf,row_num,note').eq('crop', 'スマシャキ').order('sow_date'),
+    db.from('lot_notes').select('id,sow_date,note').eq('crop', 'sumashaqi'),
+    db.from('lot_notes').select('id,sow_date').eq('crop', 'sumashaqi_alert'),
+  ]);
+  shelfLots = lotsRes.data || [];
+  smNotes = {};
+  (notesRes.data || []).forEach(r => {
+    if (!smNotes[r.sow_date]) smNotes[r.sow_date] = [];
+    smNotes[r.sow_date].push({ id: r.id, note: r.note });
+  });
+  smAlerts = {};
+  (alertRes.data || []).forEach(r => { smAlerts[r.sow_date] = r.id; });
+  renderAll();
+}
+
+async function toggleSmAlert(sowDate) {
+  if (smAlerts[sowDate]) {
+    await db.from('lot_notes').delete().eq('id', smAlerts[sowDate]);
+    delete smAlerts[sowDate];
+  } else {
+    const { data } = await db.from('lot_notes').insert({ crop: 'sumashaqi_alert', sow_date: sowDate, note: '1' }).select('id');
+    if (data?.[0]) smAlerts[sowDate] = data[0].id;
+  }
+  renderSumashaqi();
+}
+
+// ===== ハーブ ノート =====
+let herbNotes = {};
+
+async function loadHerbNotes() {
+  const cropNames = HERBS.filter(h => !h.nameOnly).map(h => h.name);
+  const { data } = await db.from('lot_notes').select('id,crop,sow_date,note').in('crop', cropNames);
+  herbNotes = {};
+  (data || []).forEach(r => {
+    const key = r.crop + ':' + r.sow_date;
+    if (!herbNotes[key]) herbNotes[key] = [];
+    herbNotes[key].push({ id: r.id, note: r.note });
+  });
+  renderHerbs();
+}
+
+// ===== メモ 操作 =====
+function openNote(id) { document.getElementById(id).classList.add('open'); document.getElementById(id+'-t').focus(); }
+function closeNote(id) { document.getElementById(id).classList.remove('open'); }
+
+async function submitSmNote(sowDate) {
+  const id = 'smni-' + sowDate;
+  const input = document.getElementById(id+'-t');
+  const text = input.value.trim();
+  if (!text) return;
+  const { data } = await db.from('lot_notes').insert({ crop: 'sumashaqi', sow_date: sowDate, note: text }).select('id');
+  if (!smNotes[sowDate]) smNotes[sowDate] = [];
+  smNotes[sowDate].push({ id: data?.[0]?.id, note: text });
+  input.value = '';
+  closeNote(id);
+  renderSumashaqi();
+}
+
+async function submitHerbNote(crop, sowDate) {
+  const id = 'hni-' + crop + '-' + sowDate;
+  const input = document.getElementById(id+'-t');
+  const text = input.value.trim();
+  if (!text) return;
+  const { data } = await db.from('lot_notes').insert({ crop, sow_date: sowDate, note: text }).select('id');
+  const key = crop + ':' + sowDate;
+  if (!herbNotes[key]) herbNotes[key] = [];
+  herbNotes[key].push({ id: data?.[0]?.id, note: text });
+  input.value = '';
+  closeNote(id);
+  renderHerbs();
+}
+
+async function deleteNote(noteId, type, key) {
+  await db.from('lot_notes').delete().eq('id', noteId);
+  if (type === 'sm') {
+    if (smNotes[key]) smNotes[key] = smNotes[key].filter(n => n.id !== noteId);
+    renderSumashaqi();
+  } else {
+    if (herbNotes[key]) herbNotes[key] = herbNotes[key].filter(n => n.id !== noteId);
+    renderHerbs();
+  }
+}
+
+function showDeleteConfirm(noteId) { document.getElementById('dc-'+noteId).style.display = 'flex'; }
+function hideDeleteConfirm(noteId) { document.getElementById('dc-'+noteId).style.display = 'none'; }
+
+function smNotesHtml(sowDate) {
+  const notes = smNotes[sowDate] || [];
+  const id = 'smni-' + sowDate;
+  const isAlert = !!smAlerts[sowDate];
+  const items = notes.map(n => `
+    <div class="card-note-item">📝 ${n.note}
+      <button class="btn-note-edit" onclick="deleteNote(${n.id},'sm','${sowDate}')">削除</button>
+    </div>
+    <div class="note-delete-confirm" id="dc-${n.id}" style="display:none">
+      <span class="note-delete-label">本当に削除？</span>
+      <button class="btn-note-save" style="background:#E24B4A" onclick="deleteNote(${n.id},'sm','${sowDate}')">はい</button>
+      <button class="btn-note-cancel" onclick="hideDeleteConfirm(${n.id})">いいえ</button>
+    </div>`).join('');
+  return `<div class="card-notes">
+    ${items}
+    <div id="${id}" class="note-input-wrap">
+      <input class="note-input" id="${id}-t" placeholder="メモを入力…" onkeydown="if(event.key==='Enter')submitSmNote('${sowDate}')">
+      <button class="btn-note-save" onclick="submitSmNote('${sowDate}')">保存</button>
+      <button class="btn-note-cancel" onclick="closeNote('${id}')">✕</button>
+    </div>
+    <button class="btn-note-add" onclick="openNote('${id}')">＋ メモ</button>
+    <button class="btn-alert${isAlert?' active':''}" onclick="toggleSmAlert('${sowDate}')">⚠️ 注意</button>
+  </div>`;
+}
+
+function herbNotesHtml(herbName, sowDateStr) {
+  const key = herbName + ':' + sowDateStr;
+  const notes = herbNotes[key] || [];
+  const id = 'hni-' + herbName + '-' + sowDateStr;
+  const items = notes.map(n => `
+    <div class="card-note-item">📝 ${n.note}
+      <button class="btn-note-edit" onclick="deleteNote(${n.id},'herb','${key}')">削除</button>
+    </div>`).join('');
+  return `<div class="card-notes">
+    ${items}
+    <div id="${id}" class="note-input-wrap">
+      <input class="note-input" id="${id}-t" placeholder="メモを入力…" onkeydown="if(event.key==='Enter')submitHerbNote('${herbName}','${sowDateStr}')">
+      <button class="btn-note-save" onclick="submitHerbNote('${herbName}','${sowDateStr}')">保存</button>
+      <button class="btn-note-cancel" onclick="closeNote('${id}')">✕</button>
+    </div>
+    <button class="btn-note-add" onclick="openNote('${id}')">＋ メモ</button>
+  </div>`;
+}
+
+// ===== スマシャキ レンダリング =====
+const SM_HARVEST_DAYS = 32;
+
+function renderSumashaqi() {
+  const dateStr = toDateStr(viewDate);
+  const lotsWithDays = shelfLots.map(lot => {
+    const sow = parseDate(lot.sow_date);
+    const days = Math.round((parseDate(dateStr) - sow) / 86400000);
+    return { ...lot, days };
+  }).filter(l => l.days >= 0 && l.days <= SM_HARVEST_DAYS + 1);
+
+  // 収穫カード群
+  const harvestLots = lotsWithDays.filter(l => l.days === SM_HARVEST_DAYS);
+  const maegariLots = lotsWithDays.filter(l => l.days === SM_HARVEST_DAYS - 1);
+  // 刈取遅れ（SM_HARVEST_DAYS+1日以上）
+  const overLots   = shelfLots.map(lot => {
+    const sow = parseDate(lot.sow_date);
+    const days = Math.round((parseDate(dateStr) - sow) / 86400000);
+    return { ...lot, days };
+  }).filter(l => l.days > SM_HARVEST_DAYS);
+  // 5穴ロット（17日目〜SM_HARVEST_DAYS-2日目）
+  const fiveHoleLots = lotsWithDays.filter(l => l.days >= 17 && l.days < SM_HARVEST_DAYS - 1);
+
+  function smCard(lot, label, cls, extraCls) {
+    const st = sowTrayStyle(parseDate(lot.sow_date));
+    const borderStyle = st.border ? `;border:${st.border}` : '';
+    const alertStyle = smAlerts[lot.sow_date] ? ';outline:2px solid #E24B4A' : '';
+    return `<div class="card ${cls}" style="background:${st.bg}${borderStyle}${alertStyle}">
+      ${smAlerts[lot.sow_date] ? '<div class="card-alert-badge">⚠️ 注意ロット</div>' : ''}
+      <div class="card-task">${label}</div>
+      <div class="card-sow">${fmtShort(parseDate(lot.sow_date))}播種</div>
+      <div class="card-sub">${lot.days}日目</div>
+      ${smNotesHtml(lot.sow_date)}
+    </div>`;
+  }
+
+  // 収穫セクション HTML
+  const harvestHtml = harvestLots.length
+    ? harvestLots.map(l => smCard(l, '刈取', 'card-harvest')).join('')
+    : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
+  const maegariHtml = maegariLots.length
+    ? maegariLots.map(l => smCard(l, '前借り', 'card-yellow')).join('')
+    : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
+  const overHtml = overLots.length
+    ? overLots.map(l => smCard(l, `刈取遅れ(${l.days}日目)`, 'card-harvest-ov1')).join('')
+    : '';
+
+  // 5穴ロット
+  const fiveHoleHtml = fiveHoleLots.length
+    ? fiveHoleLots.sort((a,b) => b.days - a.days).map(l => {
+        const st = sowTrayStyle(parseDate(l.sow_date));
+        const borderStyle = st.border ? `;border:${st.border}` : '';
+        const alertStyle = smAlerts[l.sow_date] ? ';outline:2px solid #E24B4A' : '';
+        return `<div class="card card-5ana" style="background:${st.bg}${borderStyle}${alertStyle}">
+          ${smAlerts[l.sow_date] ? '<div class="card-alert-badge">⚠️</div>' : ''}
+          <div class="card-task">5穴</div>
+          <div class="card-sow">${fmtShort(parseDate(l.sow_date))}播種</div>
+          <div class="card-sub">${l.days}日目</div>
+          ${smNotesHtml(l.sow_date)}
+        </div>`;
+      }).join('')
+    : `<div style="font-size:12px;color:#ccc;padding:4px 2px">−</div>`;
+
+  const dateLabel = isSameDay(viewDate, realToday) ? '今日の' : 'この日の';
+
+  document.getElementById('sumashaqi-section').innerHTML = `
+    <div class="sumashaqi-section">
+      <div class="section-header">
+        <span class="section-title sumashaqi">🌱 スマシャキ</span>
+        <a class="section-link" href="sumashaqi_daily_schedule_v3.html">数値報告 →</a>
+      </div>
+      ${overHtml ? `<div style="margin-bottom:8px">${overHtml}</div>` : ''}
+      <div class="harvest-row">
+        <div class="harvest-col">
+          <div class="harvest-col-title">${SM_HARVEST_DAYS}日目 刈取</div>
+          <div class="harvest-stack">${harvestHtml}</div>
+        </div>
+        <div class="harvest-col">
+          <div class="harvest-col-title">${SM_HARVEST_DAYS-1}日目 前借り</div>
+          <div class="harvest-stack">${maegariHtml}</div>
+        </div>
+      </div>
+      <div class="sm-lot-section">
+        <div class="stage-label">5穴ロット</div>
+        <div class="lot-scroll">${fiveHoleHtml}</div>
+      </div>
+    </div>`;
+}
+
+// ===== ハーブ レンダリング =====
+function renderHerbs() {
+  let html = '';
+  const activeHerbs = HERBS.filter(h => !h.nameOnly);
+  const nameOnlyHerbs = HERBS.filter(h => h.nameOnly);
+
+  activeHerbs.forEach(herb => {
+    const sowToday = isValidSow(herb, viewDate);
+    const allStageSets = [herb.stages, ...(herb.stages2 ? [herb.stages2] : [])];
+
+    const harvestDayValues = [...new Set(allStageSets.map(s => s[0].days))];
+    const harvestCards = [];
+    const harvestSeenSow = new Set();
+    harvestDayValues.forEach(hDays => {
+      const sow = addDays(viewDate, -hDays);
+      const sowStr = toDateStr(sow);
+      if (harvestSeenSow.has(sowStr) || !isValidSow(herb, sow)) return;
+      const appStages = getStagesForSow(herb, sow);
+      if (appStages[0].days === hDays) {
+        harvestSeenSow.add(sowStr);
+        const st = sowTrayStyle(sow);
+        const borderStyle = st.border ? `;border:${st.border}` : '';
+        harvestCards.push(`<div class="card ${appStages[0].cls}" style="background:${st.bg}${borderStyle}">
+          <div class="card-task">${appStages[0].label}</div>
+          <div class="card-sow">${fmtShort(sow)}播種</div>
+          <div class="card-sub">${appStages[0].days}日目</div>
+          ${herbNotesHtml(herb.name, sowStr)}
+        </div>`);
+      }
+    });
+    const harvestCellHtml = harvestCards.length
+      ? `<div class="harvest-stack">${harvestCards.join('')}</div>`
+      : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
+
+    const refStages = (herb.stages2 || herb.stages).slice(1);
+    const otherCells = refStages.map(refStage => {
+      const cards = [];
+      const seenSow = new Set();
+      allStageSets.forEach(stageSet => {
+        const stage = stageSet.slice(1).find(s => s.days === refStage.days);
+        if (!stage) return;
+        const sow = addDays(viewDate, -stage.days);
+        const sowStr = toDateStr(sow);
+        if (seenSow.has(sowStr) || !isValidSow(herb, sow)) return;
+        const appStages = getStagesForSow(herb, sow);
+        const match = appStages.slice(1).find(s => s.days === stage.days);
+        if (match) {
+          seenSow.add(sowStr);
+          const st = sowTrayStyle(sow);
+          const borderStyle = st.border ? `;border:${st.border}` : '';
+          cards.push(`<div class="card ${match.cls}" style="background:${st.bg}${borderStyle}">
+            <div class="card-task">${match.label}</div>
+            <div class="card-sow">${fmtShort(sow)}播種</div>
+            <div class="card-sub">${match.days}日目</div>
+            ${match.boards ? `<div class="card-sub" style="color:#534AB7;font-weight:700;font-size:11px">${match.boards}ボード</div>` : ''}
+            ${herbNotesHtml(herb.name, sowStr)}
+          </div>`);
+        }
+      });
+      const inner = cards.length
+        ? `<div class="harvest-stack">${cards.join('')}</div>`
+        : `<div class="card-empty"><span class="card-empty-text">−</span></div>`;
+      return `<div class="stage-cell">${inner}</div>`;
+    });
+
+    const hasTask = harvestCards.length > 0 ||
+      allStageSets.some(stageSet =>
+        stageSet.slice(1).some(s => {
+          const sow = addDays(viewDate, -s.days);
+          if (!isValidSow(herb, sow)) return false;
+          return getStagesForSow(herb, sow).slice(1).some(as => as.days === s.days);
+        })
+      );
+    const bagCount = getBagCount(herb, viewDate);
+    const bagHtml = bagCount !== null
+      ? `<span class="herb-bag${bagCount <= 3 ? ' low' : ''}">袋 <strong>${bagCount}</strong>組</span>`
+      : '';
+
+    html += `<div class="herb-section">
+      <a class="herb-header" href="${herb.href}" style="color:${herb.color}">
+        <span>${herb.name}${herb.seeds != null ? `<span class="herb-seeds">${herb.seeds}粒${herb.cubes ? `×${herb.cubes}キューブ` : ''}</span>` : ''}</span>
+        ${bagHtml}<span class="herb-arrow">›</span>
+      </a>
+      ${hasTask
+        ? `<div class="stage-row"><div class="stage-cell">${harvestCellHtml}</div>${otherCells.join('')}</div>`
+        : (sowToday ? '' : '<div class="no-task-inline">本日の作業なし</div>')
+      }
+    </div>`;
+  });
+
+  if (nameOnlyHerbs.length) {
+    html += `<div class="name-only-section">
+      <div class="name-only-title">その他のハーブ</div>
+      <div class="name-only-list">${nameOnlyHerbs.map(h =>
+        `<a class="name-only-item" href="${h.href}" style="color:${h.color}">${h.name}</a>`
+      ).join('')}</div>
+    </div>`;
+  }
+
+  document.getElementById('herb-section').innerHTML = html;
+}
+
+// ===== メイン =====
+function renderAll() {
+  renderHeader();
+  renderSumashaqi();
+  renderHerbs();
+}
+
+renderAll();
+loadSumashaqi();
+loadHerbNotes();
+</script>
+</body>
+</html>

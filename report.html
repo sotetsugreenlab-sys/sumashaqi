@@ -78,6 +78,18 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 .hc-total.ok   { color: #3B6D11; background: #EAF3DE; }
 .hc-total.over { color: #993C1D; background: #FAECE7; }
 .hc-divider { border: none; border-top: 2px dashed #e0e0dc; margin: 14px 0; }
+
+/* ハーブ刈取 */
+.herb-header { font-size: 12px; font-weight: 700; color: #fff; background: #3B6D11; border-radius: 8px; padding: 4px 10px; margin: 8px 0 6px; display: inline-block; }
+.herb-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0ee; }
+.herb-row.sub { padding: 5px 0 5px 14px; border-bottom-color: #f8f8f6; }
+.herb-label { font-size: 13px; color: #555; flex: 1; }
+.herb-row.sub .herb-label { font-size: 12px; color: #999; }
+.herb-input { width: 72px; font-size: 16px; font-weight: 600; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 10px; text-align: center; background: #fafafa; color: #1a1a1a; }
+.herb-input:focus { outline: none; border-color: #3B6D11; }
+.herb-unit { font-size: 13px; color: #aaa; min-width: 20px; }
+.herb-saved { font-size: 12px; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 5px 10px; margin: 6px 0; display: none; }
+.herb-saved.show { display: block; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -193,6 +205,48 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
   </div>
 
   <div class="hc-total ok" id="hc-lot-total">正規0 ＋ 予備0 ＋ シェラトン0 ＋ ダメ0 ＋ 翌日0 ＋ キープ0 ＝ 0 / 180株</div>
+</div>
+
+<div class="section">
+  <div class="section-label">🌿 ハーブ刈取</div>
+
+  <div class="herb-header">バジル</div>
+  <div class="herb-row">
+    <div class="herb-label">刈取株数</div>
+    <input type="number" id="herb-basil-count" class="herb-input" placeholder="0" min="0" oninput="onHerbInput()">
+    <span class="herb-unit">株</span>
+  </div>
+  <div class="herb-row sub">
+    <div class="herb-label">最低重量</div>
+    <input type="number" id="herb-basil-min_g" class="herb-input" placeholder="25" min="0" oninput="onHerbInput()">
+    <span class="herb-unit">g〜</span>
+  </div>
+  <div class="herb-row sub" style="border-bottom:none">
+    <div class="herb-label">エラー・破棄</div>
+    <input type="number" id="herb-basil-error" class="herb-input" placeholder="0" min="0" oninput="onHerbInput()">
+    <span class="herb-unit">株</span>
+  </div>
+
+  <hr class="hc-divider">
+
+  <div class="herb-header">ワイルドルッコラ</div>
+  <div class="herb-row">
+    <div class="herb-label">刈取株数</div>
+    <input type="number" id="herb-wild-count" class="herb-input" placeholder="0" min="0" oninput="onHerbInput()">
+    <span class="herb-unit">株</span>
+  </div>
+  <div class="herb-row sub">
+    <div class="herb-label">最低重量</div>
+    <input type="number" id="herb-wild-min_g" class="herb-input" placeholder="25" min="0" oninput="onHerbInput()">
+    <span class="herb-unit">g〜</span>
+  </div>
+  <div class="herb-row sub" style="border-bottom:none">
+    <div class="herb-label">エラー・破棄</div>
+    <input type="number" id="herb-wild-error" class="herb-input" placeholder="0" min="0" oninput="onHerbInput()">
+    <span class="herb-unit">株</span>
+  </div>
+
+  <div class="herb-saved" id="herb-saved">保存しました ✓</div>
 </div>
 
 <script>
@@ -621,6 +675,59 @@ function onHcInput(field, is31) {
   }, 600);
 }
 
+// ===== ハーブ刈取 =====
+const HERB_FIELDS = ['basil-count','basil-min_g','basil-error','wild-count','wild-min_g','wild-error'];
+let herbData = {};
+let herbDebounce = null;
+
+function herbKey() { return toDateStr(viewDate) + '_herb'; }
+
+async function loadHerbData() {
+  herbData = {};
+  const key = herbKey();
+  const snapDate = toDateStr(viewDate);
+  const { data } = await db.from('lot_notes')
+    .select('id,note').eq('crop','herb_harvest').eq('sow_date', key).limit(1);
+  if (toDateStr(viewDate) !== snapDate) return;
+  if (data?.[0]) {
+    try { herbData = { id: data[0].id, ...JSON.parse(data[0].note || '{}') }; } catch(e) {}
+  }
+  renderHerbInputs();
+}
+
+function renderHerbInputs() {
+  HERB_FIELDS.forEach(f => {
+    const el = document.getElementById('herb-' + f);
+    if (!el || document.activeElement === el) return;
+    const key = f.replace('-', '_');
+    el.value = herbData[key] != null ? herbData[key] : '';
+  });
+}
+
+function onHerbInput() {
+  clearTimeout(herbDebounce);
+  herbDebounce = setTimeout(async () => {
+    const payload = {};
+    HERB_FIELDS.forEach(f => {
+      const val = parseFloat(document.getElementById('herb-' + f)?.value);
+      if (!isNaN(val)) payload[f.replace('-', '_')] = val;
+    });
+    const note = JSON.stringify(payload);
+    if (herbData.id) {
+      await db.from('lot_notes').update({ note }).eq('id', herbData.id);
+    } else {
+      const { data } = await db.from('lot_notes')
+        .insert({ crop: 'herb_harvest', sow_date: herbKey(), note }).select('id');
+      if (data?.[0]) herbData.id = data[0].id;
+    }
+    const savedEl = document.getElementById('herb-saved');
+    if (savedEl) {
+      savedEl.classList.add('show');
+      setTimeout(() => savedEl.classList.remove('show'), 1500);
+    }
+  }, 600);
+}
+
 // ===== メイン =====
 function renderAll() {
   renderHeader();
@@ -631,6 +738,7 @@ function renderAll() {
   initMorningCheck();
   initEveningCheck();
   loadHarvestCounts();
+  loadHerbData();
 }
 
 loadLiquid();

@@ -212,39 +212,51 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 
   <div class="herb-header">バジル</div>
   <div class="herb-row">
-    <div class="herb-label">刈取株数</div>
-    <input type="number" id="herb-basil-count" class="herb-input" placeholder="0" min="0" oninput="onHerbInput()">
-    <span class="herb-unit">株</span>
+    <div class="herb-label">1株袋</div>
+    <input type="number" id="herb-basil-bag1" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('basil')">
+    <span class="herb-unit">袋</span>
+  </div>
+  <div class="herb-row">
+    <div class="herb-label">2株袋<br><span style="font-size:11px;color:#aaa">重量不足</span></div>
+    <input type="number" id="herb-basil-bag2" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('basil')">
+    <span class="herb-unit">袋</span>
   </div>
   <div class="herb-row sub">
     <div class="herb-label">最低重量</div>
-    <input type="number" id="herb-basil-min_g" class="herb-input" placeholder="25" min="0" oninput="onHerbInput()">
+    <input type="number" id="herb-basil-min_g" class="herb-input" placeholder="25" min="0" oninput="onHerbInput('basil')">
     <span class="herb-unit">g〜</span>
   </div>
   <div class="herb-row sub" style="border-bottom:none">
     <div class="herb-label">エラー・破棄</div>
-    <input type="number" id="herb-basil-error" class="herb-input" placeholder="0" min="0" oninput="onHerbInput()">
+    <input type="number" id="herb-basil-error" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('basil')">
     <span class="herb-unit">株</span>
   </div>
+  <div class="hc-total ok" id="herb-basil-total">0袋 / 40袋</div>
 
   <hr class="hc-divider">
 
   <div class="herb-header">ワイルドルッコラ</div>
   <div class="herb-row">
-    <div class="herb-label">刈取株数</div>
-    <input type="number" id="herb-wild-count" class="herb-input" placeholder="0" min="0" oninput="onHerbInput()">
-    <span class="herb-unit">株</span>
+    <div class="herb-label">1株袋</div>
+    <input type="number" id="herb-wild-bag1" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('wild')">
+    <span class="herb-unit">袋</span>
+  </div>
+  <div class="herb-row">
+    <div class="herb-label">2株袋<br><span style="font-size:11px;color:#aaa">重量不足</span></div>
+    <input type="number" id="herb-wild-bag2" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('wild')">
+    <span class="herb-unit">袋</span>
   </div>
   <div class="herb-row sub">
     <div class="herb-label">最低重量</div>
-    <input type="number" id="herb-wild-min_g" class="herb-input" placeholder="25" min="0" oninput="onHerbInput()">
+    <input type="number" id="herb-wild-min_g" class="herb-input" placeholder="25" min="0" oninput="onHerbInput('wild')">
     <span class="herb-unit">g〜</span>
   </div>
   <div class="herb-row sub" style="border-bottom:none">
     <div class="herb-label">エラー・破棄</div>
-    <input type="number" id="herb-wild-error" class="herb-input" placeholder="0" min="0" oninput="onHerbInput()">
+    <input type="number" id="herb-wild-error" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('wild')">
     <span class="herb-unit">株</span>
   </div>
+  <div class="hc-total ok" id="herb-wild-total">0袋 / 40袋</div>
 
   <div class="herb-saved" id="herb-saved">保存しました ✓</div>
 </div>
@@ -676,7 +688,7 @@ function onHcInput(field, is31) {
 }
 
 // ===== ハーブ刈取 =====
-const HERB_FIELDS = ['basil-count','basil-min_g','basil-error','wild-count','wild-min_g','wild-error'];
+const HERB_FIELDS = ['basil-bag1','basil-bag2','basil-min_g','basil-error','wild-bag1','wild-bag2','wild-min_g','wild-error'];
 let herbData = {};
 let herbDebounce = null;
 
@@ -699,18 +711,41 @@ function renderHerbInputs() {
   HERB_FIELDS.forEach(f => {
     const el = document.getElementById('herb-' + f);
     if (!el || document.activeElement === el) return;
-    const key = f.replace('-', '_');
+    const key = f.replace(/-/g, '_');
     el.value = herbData[key] != null ? herbData[key] : '';
   });
+  updateHerbTotal('basil');
+  updateHerbTotal('wild');
 }
 
-function onHerbInput() {
+function updateHerbTotal(herb) {
+  const bag1 = parseInt(document.getElementById(`herb-${herb}-bag1`)?.value) || 0;
+  const bag2 = parseInt(document.getElementById(`herb-${herb}-bag2`)?.value) || 0;
+  const min_g = parseInt(document.getElementById(`herb-${herb}-min_g`)?.value) || 0;
+  const total = bag1 + bag2;
+  const used = bag1 + bag2 * 2;
+  const diff = 40 - total;
+
+  const totEl = document.getElementById(`herb-${herb}-total`);
+  if (!totEl) return;
+  totEl.className = 'hc-total ' + (diff === 0 ? 'ok' : 'over');
+  const gStr = min_g > 0 ? ` / ${min_g}g〜` : '';
+  totEl.innerHTML =
+    `1株袋${bag1} ＋ 2株袋${bag2}＝ <strong>${total}袋</strong> / 40袋` +
+    (diff === 0 ? ` ✅（使用${used}株${gStr}）` :
+     diff > 0  ? ` <span style="color:#993C1D">（あと${diff}袋）</span>` :
+                 ` <span style="color:#993C1D">（${Math.abs(diff)}袋オーバー）</span>`) +
+    (diff !== 0 && used > 0 ? `<br><span style="font-size:12px;color:#888">使用${used}株${gStr}</span>` : '');
+}
+
+function onHerbInput(herb) {
+  updateHerbTotal(herb);
   clearTimeout(herbDebounce);
   herbDebounce = setTimeout(async () => {
     const payload = {};
     HERB_FIELDS.forEach(f => {
       const val = parseFloat(document.getElementById('herb-' + f)?.value);
-      if (!isNaN(val)) payload[f.replace('-', '_')] = val;
+      if (!isNaN(val)) payload[f.replace(/-/g, '_')] = val;
     });
     const note = JSON.stringify(payload);
     if (herbData.id) {

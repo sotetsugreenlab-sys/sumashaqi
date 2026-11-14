@@ -69,6 +69,11 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 .harvest-day-count { font-size: 20px; font-weight: 700; color: #993C1D; }
 .harvest-day-unit { font-size: 12px; color: #aaa; }
 .harvest-empty { font-size: 13px; color: #bbb; text-align: center; padding: 8px 0; }
+.dame-row { display: flex; align-items: center; gap: 10px; padding: 10px 0 2px; border-top: 1px solid #f0f0ee; margin-top: 2px; }
+.dame-label { font-size: 13px; color: #666; flex: 1; }
+.dame-input { width: 70px; font-size: 16px; font-weight: 600; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 10px; text-align: center; background: #fafafa; color: #1a1a1a; }
+.dame-input:focus { outline: none; border-color: #993C1D; }
+.dame-unit { font-size: 13px; color: #aaa; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -106,6 +111,11 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 <div class="section">
   <div class="section-label">✂️ 刈り取り日次</div>
   <div id="harvest-days"></div>
+  <div class="dame-row">
+    <div class="dame-label">ダメ株<br><span style="font-size:11px;color:#aaa">チップバーン・ブラウン等</span></div>
+    <input type="number" id="dame-input" class="dame-input" placeholder="0" min="0" oninput="onDameInput()">
+    <span class="dame-unit">株</span>
+  </div>
 </div>
 
 <script>
@@ -438,6 +448,47 @@ function renderHarvestDays() {
   }).join('');
 }
 
+// ===== ダメ株 =====
+// lot_notes: crop='harvest_count', sow_date=`${sowDate32}_harvest`, note=JSON{chipburn}
+let dameRowId = null;
+let dameDebounce = null;
+
+function dameKey() {
+  return toDateStr(addDays(viewDate, -32)) + '_harvest';
+}
+
+async function loadDame() {
+  const key = dameKey();
+  document.getElementById('dame-input').value = '';
+  dameRowId = null;
+  const { data } = await db.from('lot_notes')
+    .select('id,note').eq('crop','harvest_count').eq('sow_date', key).limit(1);
+  if (data?.[0]) {
+    dameRowId = data[0].id;
+    try {
+      const parsed = JSON.parse(data[0].note || '{}');
+      const el = document.getElementById('dame-input');
+      if (el && parsed.chipburn != null) el.value = parsed.chipburn;
+    } catch(e) {}
+  }
+}
+
+function onDameInput() {
+  clearTimeout(dameDebounce);
+  dameDebounce = setTimeout(async () => {
+    const val = parseInt(document.getElementById('dame-input').value) || 0;
+    const note = JSON.stringify({ chipburn: val });
+    const key = dameKey();
+    if (dameRowId) {
+      await db.from('lot_notes').update({ note }).eq('id', dameRowId);
+    } else {
+      const { data } = await db.from('lot_notes')
+        .insert({ crop: 'harvest_count', sow_date: key, note }).select('id');
+      if (data?.[0]) dameRowId = data[0].id;
+    }
+  }, 600);
+}
+
 // ===== メイン =====
 function renderAll() {
   renderHeader();
@@ -448,6 +499,7 @@ function renderAll() {
   renderEveningCheck();
   initMorningCheck();
   initEveningCheck();
+  loadDame();
 }
 
 loadLiquid();

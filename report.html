@@ -62,18 +62,18 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 .liquid-btn-plus  { background: #EAF3DE; color: #3B6D11; }
 .liquid-btn:active { opacity: 0.75; }
 
-/* 刈り取り */
-.harvest-day-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0ee; }
-.harvest-day-row:last-child { border-bottom: none; }
-.harvest-day-sow { font-size: 13px; color: #666; }
-.harvest-day-count { font-size: 20px; font-weight: 700; color: #993C1D; }
-.harvest-day-unit { font-size: 12px; color: #aaa; }
-.harvest-empty { font-size: 13px; color: #bbb; text-align: center; padding: 8px 0; }
-.dame-row { display: flex; align-items: center; gap: 10px; padding: 10px 0 2px; border-top: 1px solid #f0f0ee; margin-top: 2px; }
-.dame-label { font-size: 13px; color: #666; flex: 1; }
-.dame-input { width: 70px; font-size: 16px; font-weight: 600; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 10px; text-align: center; background: #fafafa; color: #1a1a1a; }
-.dame-input:focus { outline: none; border-color: #993C1D; }
-.dame-unit { font-size: 13px; color: #aaa; }
+/* 刈り取り入力 */
+.hc-day-header { font-size: 12px; font-weight: 700; color: #fff; background: #993C1D; border-radius: 8px; padding: 4px 10px; margin: 8px 0 6px; display: inline-block; }
+.hc-sow-label { font-size: 11px; color: #999; margin-bottom: 8px; }
+.hc-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0ee; }
+.hc-label { font-size: 13px; color: #555; flex: 1; }
+.hc-input { width: 72px; font-size: 16px; font-weight: 600; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 10px; text-align: center; background: #fafafa; color: #1a1a1a; }
+.hc-input:focus { outline: none; border-color: #993C1D; }
+.hc-unit { font-size: 13px; color: #aaa; min-width: 20px; }
+.hc-auto { font-size: 12px; color: #185FA5; background: #E6F1FB; border-radius: 8px; padding: 5px 10px; margin: 6px 0; }
+.hc-subheader { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 0.05em; margin: 12px 0 4px; padding-top: 8px; border-top: 1px solid #eee; }
+.hc-batch { font-size: 12px; color: #555; background: #fafafa; border-radius: 8px; padding: 6px 10px; margin: 6px 0; line-height: 1.6; border: 1px solid #eee; }
+.hc-divider { border: none; border-top: 2px dashed #e0e0dc; margin: 14px 0; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -109,12 +109,96 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 </div>
 
 <div class="section">
-  <div class="section-label">✂️ 刈り取り日次</div>
-  <div id="harvest-days"></div>
-  <div class="dame-row">
-    <div class="dame-label">ダメ株<br><span style="font-size:11px;color:#aaa">チップバーン・ブラウン等</span></div>
-    <input type="number" id="dame-input" class="dame-input" placeholder="0" min="0" oninput="onDameInput()">
-    <span class="dame-unit">株</span>
+  <div class="section-label">✂️ 刈り取り</div>
+
+  <div class="hc-day-header">31日目 前借り</div>
+  <div class="hc-sow-label" id="hc-sow31"></div>
+  <div class="hc-row">
+    <div class="hc-label">前借り</div>
+    <input type="number" id="hc-maegari" class="hc-input" placeholder="0" min="0" oninput="onHcInput('maegari', true)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-auto" id="hc-yokujitsu">翌日刈取予定: -- 株</div>
+
+  <hr class="hc-divider">
+
+  <div class="hc-day-header" style="background:#3D7A50">32日目 刈取</div>
+  <div class="hc-sow-label" id="hc-sow32"></div>
+
+  <div class="hc-row">
+    <div class="hc-label">最低</div>
+    <input type="number" id="hc-min_weight" class="hc-input" placeholder="0" min="0" oninput="onHcInput('min_weight', false)">
+    <span class="hc-unit">g</span>
+  </div>
+  <div class="hc-row">
+    <div class="hc-label">平均</div>
+    <input type="number" id="hc-avg_weight" class="hc-input" placeholder="0" min="0" oninput="onHcInput('avg_weight', false)">
+    <span class="hc-unit">g</span>
+  </div>
+  <div class="hc-row">
+    <div class="hc-label">65g</div>
+    <input type="number" id="hc-w65" class="hc-input" placeholder="0" min="0" oninput="onHcInput('w65', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-row">
+    <div class="hc-label">翌日袋</div>
+    <input type="number" id="hc-yoku_bukuro" class="hc-input" placeholder="0" min="0" oninput="onHcInput('yoku_bukuro', false)">
+    <span class="hc-unit">袋</span>
+  </div>
+
+  <div class="hc-subheader">重量不足</div>
+  <div class="hc-row">
+    <div class="hc-label">シェラトン</div>
+    <input type="number" id="hc-sheraton_count" class="hc-input" placeholder="0" min="0" oninput="onHcInput('sheraton_count', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-row">
+    <div class="hc-label">合計</div>
+    <input type="number" id="hc-sheraton_weight" class="hc-input" placeholder="0" min="0" oninput="onHcInput('sheraton_weight', false)">
+    <span class="hc-unit">g</span>
+  </div>
+  <div class="hc-auto" id="hc-sheraton-avg">1株平均 -- g</div>
+  <div class="hc-row">
+    <div class="hc-label">ダメ株<br><span style="font-size:11px;color:#aaa">チップバーン・ブラウン等</span></div>
+    <input type="number" id="hc-chipburn" class="hc-input" placeholder="0" min="0" oninput="onHcInput('chipburn', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-batch" id="hc-batch-total">翌日袋0 ＋ シェラトン0 ＋ ダメ株0 ＋ ローゼン161 ＝ <strong>161株</strong>（1バッチ分）</div>
+
+  <div class="hc-subheader">刈り取り記録</div>
+  <div class="hc-row">
+    <div class="hc-label">正規</div>
+    <input type="number" id="hc-seiki" class="hc-input" placeholder="0" min="0" oninput="onHcInput('seiki', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-row">
+    <div class="hc-label">キープ刈</div>
+    <input type="number" id="hc-keep_harvest" class="hc-input" placeholder="0" min="0" oninput="onHcInput('keep_harvest', false)">
+    <span class="hc-unit">株</span>
+  </div>
+
+  <div class="hc-subheader">出荷</div>
+  <div class="hc-row">
+    <div class="hc-label">本出荷</div>
+    <input type="number" id="hc-shipment" class="hc-input" placeholder="0" min="0" oninput="onHcInput('shipment', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-row">
+    <div class="hc-label">予備</div>
+    <input type="number" id="hc-spare" class="hc-input" placeholder="0" min="0" oninput="onHcInput('spare', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-row">
+    <div class="hc-label">予備使用</div>
+    <input type="number" id="hc-spare_used" class="hc-input" placeholder="0" min="0" oninput="onHcInput('spare_used', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-auto" id="hc-mochi-total">持ち出し合計 <strong>0株</strong>（本出荷0＋予備0）</div>
+
+  <div class="hc-row" style="border-bottom:none; margin-top:6px">
+    <div class="hc-label">キープ廃棄</div>
+    <input type="number" id="hc-haiki_keep" class="hc-input" placeholder="0" min="0" oninput="onHcInput('haiki_keep', false)">
+    <span class="hc-unit">株</span>
   </div>
 </div>
 
@@ -417,74 +501,96 @@ async function setEcTemp(id, delta) {
   }
 }
 
-// ===== 刈り取り日次（今日の刈り取り日数） =====
-// スマシャキ: 32日コース
-// 表示: 今日から逆算して各ロットが何日目か
-const SM_STAGES = [
-  { days: 32, label: '刈取',      color: '#993C1D' },
-  { days: 31, label: '前借り',    color: '#8B6D11' },
-  { days: 17, label: '4穴移植',   color: '#3B6D11' },
-  { days: 6,  label: '32穴移植',  color: '#185FA5' },
-];
+// ===== 刈り取り入力 =====
+// 31日目: 前借り  → lot_notes crop='harvest_count', sow_date=`${today}_31`
+// 32日目: 刈取   → lot_notes crop='harvest_count', sow_date=`${32日前播種}_harvest`
+const HC32_FIELDS = ['min_weight','avg_weight','w65','yoku_bukuro','sheraton_count','sheraton_weight','chipburn','seiki','keep_harvest','shipment','spare','spare_used','haiki_keep'];
 
-function renderHarvestDays() {
-  const wrap = document.getElementById('harvest-days');
-  if (!SM_STAGES.length) {
-    wrap.innerHTML = '<div class="harvest-empty">データなし</div>';
-    return;
-  }
-  wrap.innerHTML = SM_STAGES.map(s => {
-    const sow = addDays(viewDate, -s.days);
-    return `<div class="harvest-day-row">
-      <div>
-        <div class="harvest-day-sow">${fmtShort(sow)}播種</div>
-        <div style="font-size:11px;color:#aaa">${s.label}</div>
-      </div>
-      <div>
-        <span class="harvest-day-count" style="color:${s.color}">${s.days}</span>
-        <span class="harvest-day-unit">日目</span>
-      </div>
-    </div>`;
-  }).join('');
-}
+let hc31 = {};
+let hc32 = {};
+let hcDebounce = {};
 
-// ===== ダメ株 =====
-// lot_notes: crop='harvest_count', sow_date=`${sowDate32}_harvest`, note=JSON{chipburn}
-let dameRowId = null;
-let dameDebounce = null;
+function hc31Key() { return toDateStr(viewDate) + '_31'; }
+function hc32Key() { return toDateStr(addDays(viewDate, -32)) + '_harvest'; }
 
-function dameKey() {
-  return toDateStr(addDays(viewDate, -32)) + '_harvest';
-}
+async function loadHarvestCounts() {
+  hc31 = {}; hc32 = {};
 
-async function loadDame() {
-  const key = dameKey();
-  document.getElementById('dame-input').value = '';
-  dameRowId = null;
+  const s31El = document.getElementById('hc-sow31');
+  const s32El = document.getElementById('hc-sow32');
+  if (s31El) s31El.textContent = fmtShort(viewDate) + '刈取予定ロット';
+  if (s32El) s32El.textContent = fmtShort(addDays(viewDate, -32)) + '播種ロット';
+
+  const keys = [hc31Key(), hc32Key()];
   const { data } = await db.from('lot_notes')
-    .select('id,note').eq('crop','harvest_count').eq('sow_date', key).limit(1);
-  if (data?.[0]) {
-    dameRowId = data[0].id;
+    .select('id,sow_date,note').eq('crop','harvest_count').in('sow_date', keys);
+  (data || []).forEach(r => {
     try {
-      const parsed = JSON.parse(data[0].note || '{}');
-      const el = document.getElementById('dame-input');
-      if (el && parsed.chipburn != null) el.value = parsed.chipburn;
+      const p = JSON.parse(r.note || '{}');
+      if (r.sow_date === hc31Key()) hc31 = { id: r.id, ...p };
+      else                          hc32 = { id: r.id, ...p };
     } catch(e) {}
-  }
+  });
+  renderHarvestInputs();
 }
 
-function onDameInput() {
-  clearTimeout(dameDebounce);
-  dameDebounce = setTimeout(async () => {
-    const val = parseInt(document.getElementById('dame-input').value) || 0;
-    const note = JSON.stringify({ chipburn: val });
-    const key = dameKey();
-    if (dameRowId) {
-      await db.from('lot_notes').update({ note }).eq('id', dameRowId);
+function renderHarvestInputs() {
+  const f31 = document.getElementById('hc-maegari');
+  if (f31 && document.activeElement !== f31) f31.value = hc31.maegari != null ? hc31.maegari : '';
+  HC32_FIELDS.forEach(f => {
+    const el = document.getElementById('hc-' + f);
+    if (el && document.activeElement !== el) el.value = hc32[f] != null ? hc32[f] : '';
+  });
+  updateHcAutoCalc();
+}
+
+function updateHcAutoCalc() {
+  const maegari = parseInt(document.getElementById('hc-maegari')?.value) || 0;
+  const yokEl = document.getElementById('hc-yokujitsu');
+  if (yokEl) yokEl.textContent = `翌日刈取予定: ${180 - maegari}株（180−前借り${maegari}）`;
+
+  const sc = parseInt(document.getElementById('hc-sheraton_count')?.value) || 0;
+  const sw = parseInt(document.getElementById('hc-sheraton_weight')?.value) || 0;
+  const avgEl = document.getElementById('hc-sheraton-avg');
+  if (avgEl) avgEl.textContent = sc > 0 ? `1株平均 ${(sw/sc).toFixed(1)} g` : '1株平均 -- g';
+
+  const bukuro  = parseInt(document.getElementById('hc-yoku_bukuro')?.value) || 0;
+  const dame    = parseInt(document.getElementById('hc-chipburn')?.value) || 0;
+  const batchEl = document.getElementById('hc-batch-total');
+  if (batchEl) batchEl.innerHTML =
+    `翌日袋${bukuro} ＋ シェラトン${sc} ＋ ダメ株${dame} ＋ ローゼン161 ＝ <strong>${161 + bukuro + sc + dame}株</strong>（1バッチ分）`;
+
+  const ship  = parseInt(document.getElementById('hc-shipment')?.value) || 0;
+  const spare = parseInt(document.getElementById('hc-spare')?.value) || 0;
+  const moEl = document.getElementById('hc-mochi-total');
+  if (moEl) moEl.innerHTML =
+    `持ち出し合計 <strong>${ship + spare}株</strong>（本出荷${ship}＋予備${spare}）`;
+}
+
+function onHcInput(field, is31) {
+  updateHcAutoCalc();
+  clearTimeout(hcDebounce[field]);
+  hcDebounce[field] = setTimeout(async () => {
+    if (is31) {
+      hc31.maegari = parseInt(document.getElementById('hc-maegari').value) || 0;
+      const note = JSON.stringify({ maegari: hc31.maegari });
+      if (hc31.id) {
+        await db.from('lot_notes').update({ note }).eq('id', hc31.id);
+      } else {
+        const { data } = await db.from('lot_notes')
+          .insert({ crop: 'harvest_count', sow_date: hc31Key(), note }).select('id');
+        if (data?.[0]) hc31.id = data[0].id;
+      }
     } else {
-      const { data } = await db.from('lot_notes')
-        .insert({ crop: 'harvest_count', sow_date: key, note }).select('id');
-      if (data?.[0]) dameRowId = data[0].id;
+      hc32[field] = parseFloat(document.getElementById('hc-' + field)?.value) || 0;
+      const note = JSON.stringify(Object.fromEntries(HC32_FIELDS.map(f => [f, hc32[f] || 0])));
+      if (hc32.id) {
+        await db.from('lot_notes').update({ note }).eq('id', hc32.id);
+      } else {
+        const { data } = await db.from('lot_notes')
+          .insert({ crop: 'harvest_count', sow_date: hc32Key(), note }).select('id');
+        if (data?.[0]) hc32.id = data[0].id;
+      }
     }
   }, 600);
 }
@@ -492,14 +598,13 @@ function onDameInput() {
 // ===== メイン =====
 function renderAll() {
   renderHeader();
-  renderHarvestDays();
   mcState = {}; mcRowId = null;
   ecState = {}; ecRowId = null;
   renderMorningCheck();
   renderEveningCheck();
   initMorningCheck();
   initEveningCheck();
-  loadDame();
+  loadHarvestCounts();
 }
 
 loadLiquid();

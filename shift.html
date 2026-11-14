@@ -62,6 +62,7 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 0 0 3rem; }
 .staff-name.cultivation { color: #1a1a1a; }
 .staff-name.delivery { color: #ED7D31; font-weight: 600; }
 .staff-name.other { color: #3B8A28; }
+.cell-sheet { font-size: 9px; color: #0E7490; font-weight: 700; margin-top: 2px; }
 .staff-name.s-mark { color: #D62B7A; font-weight: 700; }
 
 /* Legend */
@@ -361,6 +362,23 @@ function toDateStr(y, m, d) {
   return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 
+// シート洗い: 10/20起算、20日間、3ヶ月ごと
+const SHEET_BASE = new Date(2026, 9, 20);
+function addDaysLocal(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function isSheetWashDay(ds) {
+  const target = new Date(ds + 'T00:00:00');
+  const base = new Date(SHEET_BASE);
+  if (target < base) return false;
+  let start = new Date(base);
+  while (true) {
+    const end = addDaysLocal(start, 19);
+    if (target <= end) return target >= start;
+    const next = new Date(start.getFullYear(), start.getMonth() + 3, start.getDate());
+    if (target < next) return false;
+    start = next;
+  }
+}
+
 async function loadShifts() {
   const { data, error } = await db.from('shifts').select('*');
   if (error) { console.error(error); return; }
@@ -477,6 +495,9 @@ function render() {
     html += `<div class="${cellClass}" onclick="openEdit('${ds}')">`;
     html += `<div class="cell-date ${dateClass}">${d}</div>`;
     if (holiday) html += `<div class="cell-holiday">${holiday}</div>`;
+    if (isSheetWashDay(ds)) {
+      html += '<div class="cell-sheet">🧼 シート洗い</div>';
+    }
     if (data) {
       html += '<div class="staff-list">';
       const wasabiSet = new Set(data.other || []);

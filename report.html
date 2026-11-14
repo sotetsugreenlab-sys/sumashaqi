@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>報告入力</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="報告入力">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem; }
+
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 10px; }
+
+.date-bar { background: #fff; border-radius: 14px; padding: 0.75rem 1rem; margin-bottom: 10px; text-align: center; }
+.nav-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.nav-btn { font-size: 20px; color: #aaa; background: none; border: none; cursor: pointer; padding: 0 4px; line-height: 1; }
+.nav-btn:active { color: #1a1a1a; }
+.date-big { font-size: 20px; font-weight: 500; color: #1a1a1a; }
+.back-today { display: inline-block; margin-top: 6px; font-size: 12px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 20px; padding: 3px 12px; cursor: pointer; }
+
+.section { background: #fff; border-radius: 14px; padding: 1rem; margin-bottom: 10px; }
+.section-label { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 0.06em; margin-bottom: 8px; }
+
+/* チェックリスト */
+.mc-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.mc-item + .mc-item { border-top: 1px solid #ececea; }
+.mc-box { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; background: #fff; }
+.mc-box.checked { background: #3B8A28; border-color: #3B8A28; }
+.mc-check { display: none; color: #fff; font-size: 14px; font-weight: 700; }
+.mc-box.checked .mc-check { display: block; }
+.mc-label { font-size: 13px; color: #333; line-height: 1.4; }
+.mc-item.checked .mc-label { color: #bbb; text-decoration: line-through; }
+.all-done { background: #EAF3DE; border-radius: 10px; padding: 6px 10px; font-size: 12px; color: #3B6D11; font-weight: 600; text-align: center; margin-top: 8px; display: none; }
+.all-done.show { display: block; }
+
+/* エアコン */
+.ac-wrap { padding: 7px 0; cursor: default; }
+.ac-wrap + .mc-item { border-top: 1px solid #ececea; }
+.mc-item + .ac-wrap { border-top: 1px solid #ececea; }
+.ac-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.ac-name { font-size: 13px; font-weight: 600; color: #444; }
+.ac-temp-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #ccc; background: #f5f5f5; font-size: 14px; cursor: pointer; line-height: 1; }
+.ac-temp-val { font-size: 15px; font-weight: 700; min-width: 36px; text-align: center; }
+.ac-speeds { display: flex; flex-wrap: wrap; gap: 10px; }
+.ac-speed { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.ac-speed .mc-box { width: 20px; height: 20px; }
+.ac-speed .mc-label { font-size: 12px; }
+
+/* 液肥 */
+.liquid-current { font-size: 13px; color: #666; margin-bottom: 12px; }
+.liquid-current strong { font-size: 22px; font-weight: 700; color: #185FA5; margin: 0 2px; }
+.liquid-action { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0ee; }
+.liquid-action:last-child { border-bottom: none; }
+.liquid-input { width: 70px; font-size: 16px; font-weight: 600; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 10px; text-align: center; background: #fafafa; color: #1a1a1a; }
+.liquid-input:focus { outline: none; border-color: #185FA5; }
+.liquid-action-label { font-size: 14px; color: #444; flex: 1; }
+.liquid-btn { font-size: 13px; padding: 7px 16px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; flex-shrink: 0; }
+.liquid-btn-minus { background: #E6F1FB; color: #185FA5; }
+.liquid-btn-plus  { background: #EAF3DE; color: #3B6D11; }
+.liquid-btn:active { opacity: 0.75; }
+
+/* 刈り取り入力 */
+.hc-day-header { font-size: 12px; font-weight: 700; color: #fff; background: #993C1D; border-radius: 8px; padding: 4px 10px; margin: 8px 0 6px; display: inline-block; }
+.hc-sow-label { font-size: 11px; color: #999; margin-bottom: 8px; }
+.hc-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0ee; }
+.hc-row.sub { padding: 5px 0 5px 14px; border-bottom-color: #f8f8f6; }
+.hc-label { font-size: 13px; color: #555; flex: 1; }
+.hc-row.sub .hc-label { font-size: 12px; color: #999; }
+.hc-row.sub .hc-input { font-size: 14px; }
+.hc-input { width: 72px; font-size: 16px; font-weight: 600; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 10px; text-align: center; background: #fafafa; color: #1a1a1a; }
+.hc-input:focus { outline: none; border-color: #993C1D; }
+.hc-unit { font-size: 13px; color: #aaa; min-width: 20px; }
+.hc-auto { font-size: 12px; color: #185FA5; background: #E6F1FB; border-radius: 8px; padding: 5px 10px; margin: 6px 0; }
+.hc-total { font-size: 13px; font-weight: 600; border-radius: 8px; padding: 7px 12px; margin: 10px 0 2px; line-height: 1.6; }
+.hc-total.ok   { color: #3B6D11; background: #EAF3DE; }
+.hc-total.over { color: #993C1D; background: #FAECE7; }
+.hc-divider { border: none; border-top: 2px dashed #e0e0dc; margin: 14px 0; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← トップ</a>
+
+<div class="date-bar">
+  <div class="nav-row">
+    <button class="nav-btn" onclick="navigate(-1)">＜</button>
+    <div class="date-big" id="disp-date"></div>
+    <button class="nav-btn" onclick="navigate(1)">＞</button>
+  </div>
+  <div id="back-today-wrap"></div>
+</div>
+
+<div class="section" id="morning-check-wrap"></div>
+<div class="section" id="evening-check-wrap"></div>
+
+<div class="section">
+  <div class="section-label">⚖️ 液肥</div>
+  <div class="liquid-current">現在 貯液 <strong id="liquid-display">--</strong> ℓ</div>
+  <div class="liquid-action">
+    <input type="number" id="liquid-used" class="liquid-input" placeholder="0" min="0" step="0.1">
+    <span class="liquid-action-label">ℓ 使用</span>
+    <button class="liquid-btn liquid-btn-minus" onclick="adjustLiquid(-1)">送信 −</button>
+  </div>
+  <div class="liquid-action">
+    <input type="number" id="liquid-made" class="liquid-input" placeholder="0" min="0" step="0.1">
+    <span class="liquid-action-label">ℓ 追加</span>
+    <button class="liquid-btn liquid-btn-plus" onclick="adjustLiquid(1)">送信 ＋</button>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">✂️ 刈り取り</div>
+
+  <div class="hc-day-header" style="background:#8B6D11">30日目 前々借り</div>
+  <div class="hc-sow-label" id="hc-sow30"></div>
+  <div class="hc-row">
+    <div class="hc-label">前々借り</div>
+    <input type="number" id="hc-maemaegari" class="hc-input" placeholder="0" min="0" oninput="onHc30Input()">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-auto" id="hc-maemaegari-remain">残り -- 株</div>
+
+  <hr class="hc-divider">
+
+  <div class="hc-day-header">31日目 前借り</div>
+  <div class="hc-sow-label" id="hc-sow31"></div>
+  <div class="hc-row">
+    <div class="hc-label">前借り</div>
+    <input type="number" id="hc-maegari" class="hc-input" placeholder="0" min="0" oninput="onHcInput('maegari', true)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-auto" id="hc-yokujitsu">翌日刈取予定: -- 株</div>
+
+  <hr class="hc-divider">
+
+  <div class="hc-day-header" style="background:#3D7A50">32日目 刈取</div>
+  <div class="hc-sow-label" id="hc-sow32"></div>
+
+  <div class="hc-row">
+    <div class="hc-label">正規刈取数</div>
+    <input type="number" id="hc-seiki" class="hc-input" placeholder="0" min="0" oninput="onHcInput('seiki', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-row sub">
+    <div class="hc-label">最低</div>
+    <input type="number" id="hc-min_weight" class="hc-input" placeholder="0" min="0" oninput="onHcInput('min_weight', false)">
+    <span class="hc-unit">g</span>
+  </div>
+  <div class="hc-row sub">
+    <div class="hc-label">平均</div>
+    <input type="number" id="hc-avg_weight" class="hc-input" placeholder="0" min="0" oninput="onHcInput('avg_weight', false)">
+    <span class="hc-unit">g</span>
+  </div>
+
+  <div class="hc-row">
+    <div class="hc-label">予備<span style="font-size:11px;color:#aaa;margin-left:6px">基本1株</span></div>
+    <input type="number" id="hc-spare" class="hc-input" placeholder="1" min="0" oninput="onHcInput('spare', false)">
+    <span class="hc-unit">株</span>
+  </div>
+
+  <div class="hc-row">
+    <div class="hc-label">シェラトン<br><span style="font-size:11px;color:#aaa">重量不足</span></div>
+    <input type="number" id="hc-sheraton_count" class="hc-input" placeholder="0" min="0" oninput="onHcInput('sheraton_count', false)">
+    <span class="hc-unit">株</span>
+  </div>
+  <div class="hc-row sub">
+    <div class="hc-label">合計</div>
+    <input type="number" id="hc-sheraton_weight" class="hc-input" placeholder="0" min="0" oninput="onHcInput('sheraton_weight', false)">
+    <span class="hc-unit">g</span>
+  </div>
+  <div class="hc-auto" id="hc-sheraton-avg">1株平均 -- g</div>
+
+  <div class="hc-row">
+    <div class="hc-label">ダメ株<br><span style="font-size:11px;color:#aaa">出荷不可能</span></div>
+    <input type="number" id="hc-chipburn" class="hc-input" placeholder="0" min="0" oninput="onHcInput('chipburn', false)">
+    <span class="hc-unit">株</span>
+  </div>
+
+  <div class="hc-row">
+    <div class="hc-label">翌日用株</div>
+    <input type="number" id="hc-yoku_bukuro" class="hc-input" placeholder="0" min="0" oninput="onHcInput('yoku_bukuro', false)">
+    <span class="hc-unit">株</span>
+  </div>
+
+  <div class="hc-row" style="border-bottom:none">
+    <div class="hc-label">キープ</div>
+    <input type="number" id="hc-keep_harvest" class="hc-input" placeholder="0" min="0" oninput="onHcInput('keep_harvest', false)">
+    <span class="hc-unit">株</span>
+  </div>
+
+  <div class="hc-total ok" id="hc-lot-total">正規0 ＋ 予備0 ＋ シェラトン0 ＋ ダメ0 ＋ 翌日0 ＋ キープ0 ＝ 0 / 180株</div>
+</div>
+
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+// ===== 日付ユーティリティ =====
+const realToday = new Date();
+const _urlDate = new URLSearchParams(location.search).get('date');
+let viewDate = _urlDate ? new Date(_urlDate + 'T00:00:00') : new Date(realToday);
+
+function fmt(d) {
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+}
+function fmtMD(d) {
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+}
+function fmtShort(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
+
+function navigate(delta) {
+  viewDate = addDays(viewDate, delta);
+  renderAll();
+}
+function goToday() {
+  viewDate = new Date(realToday);
+  renderAll();
+}
+
+function renderHeader() {
+  document.getElementById('disp-date').textContent = fmt(viewDate);
+  const wrap = document.getElementById('back-today-wrap');
+  wrap.innerHTML = isSameDay(viewDate, realToday)
+    ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
+}
+
+// ===== 液肥 =====
+let liquidAmount = 0;
+
+async function loadLiquid() {
+  const { data } = await db.from('liquid_log').select('delta');
+  liquidAmount = (data || []).reduce((s, r) => s + (r.delta || 0), 0);
+  renderLiquid();
+}
+
+function renderLiquid() {
+  const v = Math.round(liquidAmount * 10) / 10;
+  document.getElementById('liquid-display').textContent = v % 1 === 0 ? v : v.toFixed(1);
+}
+
+async function adjustLiquid(sign) {
+  const inputId = sign < 0 ? 'liquid-used' : 'liquid-made';
+  const val = parseFloat(document.getElementById(inputId).value);
+  if (!val || val <= 0) return;
+  const { error } = await db.from('liquid_log').insert({ delta: sign * val });
+  if (error) { console.error(error); return; }
+  document.getElementById(inputId).value = '';
+  liquidAmount += sign * val;
+  renderLiquid();
+}
+
+db.channel('liquid_changes')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'liquid_log' }, p => {
+    liquidAmount += p.new.delta;
+    renderLiquid();
+  }).subscribe();
+
+// ===== エアコン共通レンダリング =====
+function renderAcRow(itemId, state, toggleFn, tempFn) {
+  const temp = state[itemId + '_temp'] || 21;
+  const speeds = [['_kyu','急'],['_tsu','強'],['_chu','中'],['_jaku','弱']];
+  const boxes = speeds.map(([sfx, lbl]) => {
+    const id = itemId + sfx, c = !!state[id];
+    return `<div class="ac-speed" onclick="${toggleFn}('${id}')">
+      <div class="mc-box${c?' checked':''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">風速${lbl} よし</div>
+    </div>`;
+  }).join('');
+  return `<div class="ac-wrap">
+    <div class="ac-header">
+      <span class="ac-name">エアコン</span>
+      <button class="ac-temp-btn" onclick="${tempFn}('${itemId}',-1)">－</button>
+      <span class="ac-temp-val">${temp}℃</span>
+      <button class="ac-temp-btn" onclick="${tempFn}('${itemId}',1)">＋</button>
+    </div>
+    <div class="ac-speeds">${boxes}</div>
+  </div>`;
+}
+
+function checkAllDone(items, state) {
+  return items.every(i => i.type === 'ac'
+    ? ['_kyu','_tsu','_chu','_jaku'].some(s => state[i.id + s])
+    : state[i.id]);
+}
+
+// ===== 朝のチェック =====
+// スマシャキは32日コース
+// LED自動: 今日刈取ロット (32日前播種)
+// LED入り: 3日後刈取ロット (29日前播種)
+const MC_ITEMS = [
+  { id: 'ac',       type: 'ac', label: 'エアコン' },
+  { id: 'fan',      label: '換気扇 よし' },
+  { id: 'temp',     label: '室温 確認（22.5〜23.5℃、棚1-A は24.5℃）' },
+  { id: 'led_auto', type: 'led_auto', label: '' },
+  { id: 'led_on',   type: 'led_on',   label: '' },
+  { id: 'cycle',    label: 'サイクルマーク よし' },
+  { id: 'mc_basil', label: 'バジルLED（OFF）よし' },
+  { id: 'mc_handover', label: '引継チェック' },
+];
+
+let mcState = {};
+let mcRowId = null;
+
+function renderMorningCheck() {
+  const autoSow = addDays(viewDate, -32); // 32日コース：今日刈取ロット
+  const onSow   = addDays(viewDate, -29); // 3日後刈取ロット（32-3=29日前播種）
+  function ledLabel(sow, suffix) {
+    return `LED ${fmtShort(sow)}播種 → ${suffix}`;
+  }
+  const itemsHtml = MC_ITEMS.map(item => {
+    if (item.type === 'ac') return renderAcRow('ac', mcState, 'toggleMC', 'setMcTemp');
+    const checked = !!mcState[item.id];
+    const label = item.type === 'led_auto' ? ledLabel(autoSow, '自動 に戻した')
+                : item.type === 'led_on'   ? ledLabel(onSow,   '入り にした')
+                : item.label;
+    return `<div class="mc-item${checked?' checked':''}" onclick="toggleMC('${item.id}')">
+      <div class="mc-box${checked?' checked':''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">${label}</div>
+    </div>`;
+  }).join('');
+  const allDone = checkAllDone(MC_ITEMS, mcState);
+  document.getElementById('morning-check-wrap').innerHTML =
+    `<div class="section-label">☀️ 朝のチェック</div>
+     <div id="mc-items">${itemsHtml}</div>
+     <div class="all-done${allDone?' show':''}" id="mc-all-done">✅ すべて完了！</div>`;
+}
+
+async function initMorningCheck() {
+  const targetDate = toDateStr(viewDate);
+  renderMorningCheck();
+  const { data } = await db.from('lot_notes')
+    .select('id,note').eq('crop','morning_check').eq('sow_date', targetDate).limit(1);
+  if (toDateStr(viewDate) !== targetDate) return;
+  if (data && data.length > 0) {
+    mcRowId = data[0].id;
+    try { mcState = JSON.parse(data[0].note); } catch(e) { mcState = {}; }
+  } else {
+    mcRowId = null;
+    mcState = {};
+  }
+  renderMorningCheck();
+}
+
+async function toggleMC(id) {
+  mcState[id] = !mcState[id];
+  if (['ac_kyu','ac_tsu','ac_chu','ac_jaku'].includes(id) && mcState['ac_temp'] == null)
+    mcState['ac_temp'] = 21;
+  renderMorningCheck();
+  const noteStr = JSON.stringify(mcState);
+  if (mcRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', mcRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'morning_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data?.[0]) mcRowId = data[0].id;
+  }
+}
+
+async function setMcTemp(id, delta) {
+  const cur = mcState[id + '_temp'] || 21;
+  mcState[id + '_temp'] = Math.min(25, Math.max(16, cur + delta));
+  renderMorningCheck();
+  const noteStr = JSON.stringify(mcState);
+  if (mcRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', mcRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'morning_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data?.[0]) mcRowId = data[0].id;
+  }
+}
+
+// ===== シート洗い期間判定 =====
+// 2026-11-08 起算、20日間、3ヶ月ごと
+const SHEET_BASE = new Date(2026, 9, 20); // 10/20開始、11/8最終日（20日間）
+
+function sheetWashPeriod(d) {
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const base   = new Date(SHEET_BASE.getFullYear(), SHEET_BASE.getMonth(), SHEET_BASE.getDate());
+  if (target < base) {
+    // base より前 → 次の起点は base 自身
+    return { active: false, next: base, nextEnd: addDays(base, 19) };
+  }
+  let start = new Date(base);
+  while (true) {
+    const end  = addDays(start, 19); // 20日間（start〜start+19）
+    if (target <= end) {
+      // この区間が最初の候補
+      if (target >= start) return { active: true, start, end };
+      // target < start → ここには来ないはずだが念のため
+      return { active: false, next: start, nextEnd: end };
+    }
+    // 3ヶ月進める
+    const next = new Date(start.getFullYear(), start.getMonth() + 3, start.getDate());
+    if (target < next) {
+      return { active: false, next, nextEnd: addDays(next, 19) };
+    }
+    start = next;
+  }
+}
+
+// ===== 帰りのチェック =====
+const EC_ITEMS = [
+  { id: 'ec_cycle', label: 'LEDサイクルマーク よし' },
+  { id: 'ec_ac',    type: 'ac', label: 'エアコン' },
+  { id: 'ec_fan',   label: '換気扇 よし' },
+  { id: 'ec_basil', label: 'バジルLED（ON）よし' },
+  { id: 'ec_sheet', type: 'sheet', label: '🧼 シート洗い（前半）' },
+];
+
+let ecState = {};
+let ecRowId = null;
+
+function renderEveningCheck() {
+  const sp = sheetWashPeriod(viewDate);
+  const activeItems = EC_ITEMS.filter(i => i.type !== 'sheet' || sp.active);
+  const itemsHtml = activeItems.map(item => {
+    if (item.type === 'ac') return renderAcRow('ec_ac', ecState, 'toggleEC', 'setEcTemp');
+    const checked = !!ecState[item.id];
+    const label = item.type === 'sheet'
+      ? `🧼 シート洗い（前半）〜${fmtShort(sp.end)}`
+      : item.label;
+    return `<div class="mc-item${checked?' checked':''}" onclick="toggleEC('${item.id}')">
+      <div class="mc-box${checked?' checked':''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">${label}</div>
+    </div>`;
+  }).join('');
+  const nextNote = !sp.active
+    ? `<div style="font-size:11px;color:#aaa;margin-top:6px">🧼 シート洗い 次回: ${fmtShort(sp.next)}〜${fmtShort(sp.nextEnd)}</div>`
+    : '';
+  const allDone = checkAllDone(activeItems, ecState);
+  document.getElementById('evening-check-wrap').innerHTML =
+    `<div class="section-label">🌙 帰りのチェック</div>
+     <div>${itemsHtml}</div>
+     ${nextNote}
+     <div class="all-done${allDone?' show':''}">✅ すべて完了！</div>`;
+}
+
+async function initEveningCheck() {
+  const targetDate = toDateStr(viewDate);
+  renderEveningCheck();
+  const { data } = await db.from('lot_notes')
+    .select('id,note').eq('crop','evening_check').eq('sow_date', targetDate).limit(1);
+  if (toDateStr(viewDate) !== targetDate) return;
+  if (data && data.length > 0) {
+    ecRowId = data[0].id;
+    try { ecState = JSON.parse(data[0].note); } catch(e) { ecState = {}; }
+  } else {
+    ecRowId = null;
+    ecState = {};
+  }
+  renderEveningCheck();
+}
+
+async function toggleEC(id) {
+  ecState[id] = !ecState[id];
+  if (['ec_ac_kyu','ec_ac_tsu','ec_ac_chu','ec_ac_jaku'].includes(id) && ecState['ec_ac_temp'] == null)
+    ecState['ec_ac_temp'] = 21;
+  renderEveningCheck();
+  const noteStr = JSON.stringify(ecState);
+  if (ecRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', ecRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'evening_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data?.[0]) ecRowId = data[0].id;
+  }
+}
+
+async function setEcTemp(id, delta) {
+  const cur = ecState[id + '_temp'] || 21;
+  ecState[id + '_temp'] = Math.min(25, Math.max(16, cur + delta));
+  renderEveningCheck();
+  const noteStr = JSON.stringify(ecState);
+  if (ecRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', ecRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'evening_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data?.[0]) ecRowId = data[0].id;
+  }
+}
+
+// ===== 刈り取り入力 =====
+// 31日目: 前借り  → lot_notes crop='harvest_count', sow_date=`${today}_31`
+// 32日目: 刈取   → lot_notes crop='harvest_count', sow_date=`${32日前播種}_harvest`
+const HC32_FIELDS = ['seiki','min_weight','avg_weight','spare','sheraton_count','sheraton_weight','chipburn','yoku_bukuro','keep_harvest'];
+
+let hc30 = {};
+let hc31 = {};
+let hc32 = {};
+let hcDebounce = {};
+
+function hc30Key() { return toDateStr(viewDate) + '_30'; }
+function hc31Key() { return toDateStr(viewDate) + '_31'; }
+function hc32Key() { return toDateStr(addDays(viewDate, -32)) + '_harvest'; }
+
+async function loadHarvestCounts() {
+  hc30 = {}; hc31 = {}; hc32 = {};
+
+  const s30El = document.getElementById('hc-sow30');
+  const s31El = document.getElementById('hc-sow31');
+  const s32El = document.getElementById('hc-sow32');
+  if (s30El) s30El.textContent = fmtShort(addDays(viewDate, -30)) + '播種ロット';
+  if (s31El) s31El.textContent = fmtShort(addDays(viewDate, -31)) + '播種ロット';
+  if (s32El) s32El.textContent = fmtShort(addDays(viewDate, -32)) + '播種ロット';
+
+  const keys = [hc30Key(), hc31Key(), hc32Key()];
+  const { data } = await db.from('lot_notes')
+    .select('id,sow_date,note').eq('crop','harvest_count').in('sow_date', keys);
+  (data || []).forEach(r => {
+    try {
+      const p = JSON.parse(r.note || '{}');
+      if (r.sow_date === hc30Key())      hc30 = { id: r.id, ...p };
+      else if (r.sow_date === hc31Key()) hc31 = { id: r.id, ...p };
+      else                               hc32 = { id: r.id, ...p };
+    } catch(e) {}
+  });
+  renderHarvestInputs();
+}
+
+function renderHarvestInputs() {
+  const f30 = document.getElementById('hc-maemaegari');
+  if (f30 && document.activeElement !== f30) f30.value = hc30.maemaegari != null ? hc30.maemaegari : '';
+  const f31 = document.getElementById('hc-maegari');
+  if (f31 && document.activeElement !== f31) f31.value = hc31.maegari != null ? hc31.maegari : '';
+  HC32_FIELDS.forEach(f => {
+    const el = document.getElementById('hc-' + f);
+    if (!el || document.activeElement === el) return;
+    // 予備は未設定なら1をデフォルト
+    el.value = (f === 'spare' && hc32[f] == null) ? 1 : (hc32[f] != null ? hc32[f] : '');
+  });
+  updateHcAutoCalc();
+}
+
+function updateHcAutoCalc() {
+  const maemaegari = parseInt(document.getElementById('hc-maemaegari')?.value) || 0;
+  const remEl = document.getElementById('hc-maemaegari-remain');
+  if (remEl) remEl.textContent = `残り ${180 - maemaegari}株（180−前々借り${maemaegari}）`;
+
+  const maegari = parseInt(document.getElementById('hc-maegari')?.value) || 0;
+  const yokEl = document.getElementById('hc-yokujitsu');
+  if (yokEl) yokEl.textContent = `翌日刈取予定: ${180 - maegari}株（180−前借り${maegari}）`;
+
+  const sc    = parseInt(document.getElementById('hc-sheraton_count')?.value) || 0;
+  const sw    = parseInt(document.getElementById('hc-sheraton_weight')?.value) || 0;
+  const avgEl = document.getElementById('hc-sheraton-avg');
+  if (avgEl) avgEl.textContent = sc > 0 ? `1株平均 ${(sw/sc).toFixed(1)} g` : '1株平均 -- g';
+
+  const seiki = parseInt(document.getElementById('hc-seiki')?.value) || 0;
+  const spare = parseInt(document.getElementById('hc-spare')?.value) ?? 1;
+  const dame  = parseInt(document.getElementById('hc-chipburn')?.value) || 0;
+  const yoko  = parseInt(document.getElementById('hc-yoku_bukuro')?.value) || 0;
+  const keep  = parseInt(document.getElementById('hc-keep_harvest')?.value) || 0;
+  const total = seiki + spare + sc + dame + yoko + keep;
+  const diff  = 180 - total;
+
+  const totEl = document.getElementById('hc-lot-total');
+  if (totEl) {
+    totEl.className = 'hc-total ' + (diff === 0 ? 'ok' : 'over');
+    totEl.innerHTML =
+      `正規${seiki} ＋ 予備${spare} ＋ シェラトン${sc} ＋ ダメ${dame} ＋ 翌日${yoko} ＋ キープ${keep}<br>` +
+      `＝ <strong>${total}株</strong> / 180株` +
+      (diff === 0 ? ' ✅' : diff > 0 ? ` <span style="color:#993C1D">（あと${diff}株）</span>` : ` <span style="color:#993C1D">（${Math.abs(diff)}株オーバー）</span>`);
+  }
+}
+
+async function onHc30Input() {
+  clearTimeout(hcDebounce['maemaegari']);
+  hcDebounce['maemaegari'] = setTimeout(async () => {
+    hc30.maemaegari = parseInt(document.getElementById('hc-maemaegari').value) || 0;
+    const note = JSON.stringify({ maemaegari: hc30.maemaegari });
+    if (hc30.id) {
+      await db.from('lot_notes').update({ note }).eq('id', hc30.id);
+    } else {
+      const { data } = await db.from('lot_notes')
+        .insert({ crop: 'harvest_count', sow_date: hc30Key(), note }).select('id');
+      if (data?.[0]) hc30.id = data[0].id;
+    }
+  }, 600);
+}
+
+function onHcInput(field, is31) {
+  updateHcAutoCalc();
+  clearTimeout(hcDebounce[field]);
+  hcDebounce[field] = setTimeout(async () => {
+    if (is31) {
+      hc31.maegari = parseInt(document.getElementById('hc-maegari').value) || 0;
+      const note = JSON.stringify({ maegari: hc31.maegari });
+      if (hc31.id) {
+        await db.from('lot_notes').update({ note }).eq('id', hc31.id);
+      } else {
+        const { data } = await db.from('lot_notes')
+          .insert({ crop: 'harvest_count', sow_date: hc31Key(), note }).select('id');
+        if (data?.[0]) hc31.id = data[0].id;
+      }
+    } else {
+      hc32[field] = parseFloat(document.getElementById('hc-' + field)?.value) || 0;
+      const note = JSON.stringify(Object.fromEntries(HC32_FIELDS.map(f => [f, hc32[f] || 0])));
+      if (hc32.id) {
+        await db.from('lot_notes').update({ note }).eq('id', hc32.id);
+      } else {
+        const { data } = await db.from('lot_notes')
+          .insert({ crop: 'harvest_count', sow_date: hc32Key(), note }).select('id');
+        if (data?.[0]) hc32.id = data[0].id;
+      }
+    }
+  }, 600);
+}
+
+// ===== メイン =====
+function renderAll() {
+  renderHeader();
+  mcState = {}; mcRowId = null;
+  ecState = {}; ecRowId = null;
+  renderMorningCheck();
+  renderEveningCheck();
+  initMorningCheck();
+  initEveningCheck();
+  loadHarvestCounts();
+}
+
+loadLiquid();
+renderAll();
+</script>
+</body>
+</html>

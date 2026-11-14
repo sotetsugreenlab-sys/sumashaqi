@@ -116,6 +116,14 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .sumashaqi-section { margin-bottom: 20px; }
 .harvest-row { display: flex; gap: 8px; margin-bottom: 10px; }
 .sm-lot-section { margin-bottom: 10px; }
+
+/* ヘッダー内 シフト・液肥 */
+.header-info { margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.staff-line { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+.ekihi-line { font-size: 13px; padding: 2px 12px; border-radius: 20px; display: inline-block; }
+.ekihi-line.tsuihi { color: #185FA5; background: rgba(255,255,255,0.65); }
+.ekihi-line.irekae { color: #993C1D; background: rgba(255,255,255,0.65); }
+.ekihi-line.normal  { color: #666; background: rgba(255,255,255,0.45); }
 </style>
 </head>
 <body>
@@ -129,8 +137,11 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
   </div>
   <div class="date-sub">の作業内容</div>
   <div id="back-today-wrap"></div>
+  <div class="header-info">
+    <div id="staff-line" class="staff-line"></div>
+    <div id="ekihi-line" class="ekihi-line normal"></div>
+  </div>
 </div>
-
 <div id="sumashaqi-section"></div>
 <div id="herb-section"></div>
 
@@ -279,6 +290,66 @@ function renderHeader() {
     ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
 }
 
+// ===== シフト & 液肥 =====
+let shiftsCache = {};
+
+async function loadShifts() {
+  const { data } = await db.from('shifts').select('shift_date,cultivation_staff,other_staff,delivery_staff');
+  (data || []).forEach(r => {
+    shiftsCache[r.shift_date] = {
+      cult: r.cultivation_staff || [],
+      other: r.other_staff || [],
+      delivery: r.delivery_staff || [],
+    };
+  });
+  renderInfoBar();
+}
+
+const EKIHI_BASE = new Date(2026, 10, 17); // 2026-11-17 追肥の基準日
+const EKIHI_EVENTS = [
+  { label: '追肥', offset: 0 },
+  { label: '入替', offset: 5 },
+];
+
+function getEkihiLabel(date) {
+  const ms = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const daysSinceBase = Math.round((ms - EKIHI_BASE.getTime()) / 86400000);
+  if (daysSinceBase < 0) return '通常';
+  const cycleNum = Math.floor(daysSinceBase / 10);
+  const hit = EKIHI_EVENTS.find(e => (cycleNum * 10 + e.offset) === daysSinceBase);
+  return hit ? hit.label : '通常';
+}
+
+function renderInfoBar() {
+  const dateStr = toDateStr(viewDate);
+  const shift = shiftsCache[dateStr];
+
+  // シフト（ヘッダー内）
+  const staffEl = document.getElementById('staff-line');
+  if (shift && (shift.cult.length > 0 || shift.other.length > 0 || shift.delivery.length > 0)) {
+    const parts = [
+      ...shift.other.map(n => `<span style="color:#3B8A28;font-weight:700">${n}</span>`),
+      ...shift.cult.map(n => `<strong>${n}</strong>`),
+      ...shift.delivery.map(n => `<span style="color:#E8830A;font-weight:700">${n}</span>`),
+    ];
+    staffEl.innerHTML = parts.join('・');
+  } else {
+    staffEl.innerHTML = '';
+  }
+
+  // 液肥管理（ヘッダー内、常時表示）
+  const ekihi = getEkihiLabel(viewDate);
+  const ekihiEl = document.getElementById('ekihi-line');
+  ekihiEl.textContent = `液肥管理：${ekihi}`;
+  ekihiEl.className = 'ekihi-line ' + (ekihi === '追肥' ? 'tsuihi' : ekihi === '入替' ? 'irekae' : 'normal');
+
+  // ヘッダー背景色（トレイカラーサイクル）
+  const ts = sowTrayStyle(viewDate);
+  const header = document.getElementById('main-header');
+  header.style.background = ts.bg;
+  header.style.border = ts.border || '';
+}
+
 // ===== スマシャキ データ =====
 let shelfLots = [];
 let smNotes = {};
@@ -421,7 +492,7 @@ function herbNotesHtml(herbName, sowDateStr) {
 const SM_STAGES = [
   { days: 32, label: '刈取',      cls: 'card-harvest' },
   { days: 31, label: '前借り',    cls: 'card-yellow'  },
-  { days: 17, label: '5穴へ移植', cls: 'card-5ana'    },
+  { days: 17, label: '4穴へ移植', cls: 'card-5ana'    },
   { days: 6,  label: '32穴へ移植',cls: 'card-30'      },
 ];
 
@@ -459,11 +530,9 @@ function renderSumashaqi() {
     ? overLots.map(l => smCard(l, `刈取遅れ(${l.days}日目)`, 'card-harvest-ov1')).join('')
     : '';
 
-  // 刈取（32日目）と前借り（31日目）を2カラム表示
+  // 刈取（32日目）と前借り（31日目）はshelf_lotsから
   const harvestStage  = stageLots[0]; // 32日目
   const maegariStage  = stageLots[1]; // 31日目
-  const fiveHoleStage = stageLots[2]; // 17日目
-  const thirtyStage   = stageLots[3]; // 6日目
 
   function stageCell(stage) {
     const inner = stage.lots.length
@@ -475,12 +544,23 @@ function renderSumashaqi() {
     </div>`;
   }
 
-  const otherCells = [fiveHoleStage, thirtyStage].map(stage => {
-    if (!stage.lots.length) return '';
-    return `<div class="stage-cell">
-      ${stage.lots.map(l => smCard(l, stage.label, stage.cls)).join('')}
+  // 32穴（6日目）・4穴（17日目）は今日から逆算した播種日で固定表示（v3と同じ方式）
+  function transplantCard(label, cls, days) {
+    const sowDate = toDateStr(addDays(viewDate, -days));
+    const st = sowTrayStyle(parseDate(sowDate));
+    const borderStyle = st.border ? `;border:${st.border}` : '';
+    const alertStyle = smAlerts[sowDate] ? ';outline:2px solid #E24B4A' : '';
+    return `<div class="harvest-col">
+      <div class="harvest-col-title">${days}日目 ${label}</div>
+      <div class="card ${cls}" style="background:${st.bg}${borderStyle}${alertStyle}">
+        ${smAlerts[sowDate] ? '<div class="card-alert-badge">⚠️ 注意ロット</div>' : ''}
+        <div class="card-task">${label}</div>
+        <div class="card-sow">${fmtShort(parseDate(sowDate))}播種</div>
+        <div class="card-sub">${days}日目</div>
+        ${smNotesHtml(sowDate)}
+      </div>
     </div>`;
-  }).filter(Boolean);
+  }
 
   document.getElementById('sumashaqi-section').innerHTML = `
     <div class="sumashaqi-section">
@@ -490,10 +570,13 @@ function renderSumashaqi() {
       </div>
       ${overHtml ? `<div style="margin-bottom:8px">${overHtml}</div>` : ''}
       <div class="harvest-row">
-        ${stageCell(harvestStage)}
         ${stageCell(maegariStage)}
+        ${stageCell(harvestStage)}
       </div>
-      ${otherCells.length ? `<div class="stage-row">${otherCells.join('')}</div>` : ''}
+      <div class="harvest-row">
+        ${transplantCard('32穴へ移植', 'card-30', 6)}
+        ${transplantCard('4穴へ移植',  'card-5ana', 17)}
+      </div>
     </div>`;
 }
 
@@ -581,7 +664,7 @@ function renderHerbs() {
         ${bagHtml}<span class="herb-arrow">›</span>
       </a>
       ${hasTask
-        ? `<div class="stage-row"><div class="stage-cell">${harvestCellHtml}</div>${otherCells.join('')}</div>`
+        ? `<div class="stage-row">${[...otherCells].reverse().join('')}<div class="stage-cell">${harvestCellHtml}</div></div>`
         : (sowToday ? '' : '<div class="no-task-inline">本日の作業なし</div>')
       }
     </div>`;
@@ -602,11 +685,13 @@ function renderHerbs() {
 // ===== メイン =====
 function renderAll() {
   renderHeader();
+  renderInfoBar();
   renderSumashaqi();
   renderHerbs();
 }
 
 renderAll();
+loadShifts();
 loadSumashaqi();
 loadHerbNotes();
 </script>

@@ -576,17 +576,18 @@ function updateHcAutoCalc() {
   const avgEl = document.getElementById('hc-sheraton-avg');
   if (avgEl) avgEl.textContent = sc > 0 ? `1株平均 ${(sw/sc).toFixed(1)} g` : '1株平均 -- g';
 
-  const bukuro  = parseInt(document.getElementById('hc-yoku_bukuro')?.value) || 0;
-  const dame    = parseInt(document.getElementById('hc-chipburn')?.value) || 0;
+  const bukuro   = parseInt(document.getElementById('hc-yoku_bukuro')?.value) || 0;
+  const dame     = parseInt(document.getElementById('hc-chipburn')?.value) || 0;
+  const shipment = parseInt(document.getElementById('hc-shipment')?.value) || 0;
+  const spare    = parseInt(document.getElementById('hc-spare')?.value) || 0;
+  const rosen    = shipment + spare;
   const batchEl = document.getElementById('hc-batch-total');
   if (batchEl) batchEl.innerHTML =
-    `翌日袋${bukuro} ＋ シェラトン${sc} ＋ ダメ株${dame} ＋ ローゼン161 ＝ <strong>${161 + bukuro + sc + dame}株</strong>（1バッチ分）`;
+    `翌日袋${bukuro} ＋ シェラトン${sc} ＋ ダメ株${dame} ＋ ローゼン${rosen}（本出荷${shipment}＋予備${spare}） ＝ <strong>${rosen + bukuro + sc + dame}株</strong>（1バッチ分）`;
 
-  const ship  = parseInt(document.getElementById('hc-shipment')?.value) || 0;
-  const spare = parseInt(document.getElementById('hc-spare')?.value) || 0;
   const moEl = document.getElementById('hc-mochi-total');
   if (moEl) moEl.innerHTML =
-    `持ち出し合計 <strong>${ship + spare}株</strong>（本出荷${ship}＋予備${spare}）`;
+    `持ち出し合計 <strong>${shipment + spare}株</strong>（本出荷${shipment}＋予備${spare}）`;
 }
 
 async function onHc30Input() {

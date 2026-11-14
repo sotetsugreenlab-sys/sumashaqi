@@ -296,31 +296,69 @@ async function setMcTemp(id, delta) {
   }
 }
 
+// ===== シート洗い期間判定 =====
+// 2026-11-08 起算、20日間、3ヶ月ごと
+const SHEET_BASE = new Date(2026, 10, 8);
+
+function sheetWashPeriod(d) {
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const base   = new Date(SHEET_BASE.getFullYear(), SHEET_BASE.getMonth(), SHEET_BASE.getDate());
+  if (target < base) {
+    // base より前 → 次の起点は base 自身
+    return { active: false, next: base, nextEnd: addDays(base, 19) };
+  }
+  let start = new Date(base);
+  while (true) {
+    const end  = addDays(start, 19); // 20日間（start〜start+19）
+    if (target <= end) {
+      // この区間が最初の候補
+      if (target >= start) return { active: true, start, end };
+      // target < start → ここには来ないはずだが念のため
+      return { active: false, next: start, nextEnd: end };
+    }
+    // 3ヶ月進める
+    const next = new Date(start.getFullYear(), start.getMonth() + 3, start.getDate());
+    if (target < next) {
+      return { active: false, next, nextEnd: addDays(next, 19) };
+    }
+    start = next;
+  }
+}
+
 // ===== 帰りのチェック =====
 const EC_ITEMS = [
   { id: 'ec_cycle', label: 'LEDサイクルマーク よし' },
   { id: 'ec_ac',    type: 'ac', label: 'エアコン' },
   { id: 'ec_fan',   label: '換気扇 よし' },
   { id: 'ec_basil', label: 'バジルLED（ON）よし' },
-  { id: 'ec_sheet', label: '🧼 シート洗い（前半）' },
+  { id: 'ec_sheet', type: 'sheet', label: '🧼 シート洗い（前半）' },
 ];
 
 let ecState = {};
 let ecRowId = null;
 
 function renderEveningCheck() {
-  const itemsHtml = EC_ITEMS.map(item => {
+  const sp = sheetWashPeriod(viewDate);
+  const activeItems = EC_ITEMS.filter(i => i.type !== 'sheet' || sp.active);
+  const itemsHtml = activeItems.map(item => {
     if (item.type === 'ac') return renderAcRow('ec_ac', ecState, 'toggleEC', 'setEcTemp');
     const checked = !!ecState[item.id];
+    const label = item.type === 'sheet'
+      ? `🧼 シート洗い（前半）〜${fmtShort(sp.end)}`
+      : item.label;
     return `<div class="mc-item${checked?' checked':''}" onclick="toggleEC('${item.id}')">
       <div class="mc-box${checked?' checked':''}"><span class="mc-check">✓</span></div>
-      <div class="mc-label">${item.label}</div>
+      <div class="mc-label">${label}</div>
     </div>`;
   }).join('');
-  const allDone = checkAllDone(EC_ITEMS, ecState);
+  const nextNote = !sp.active
+    ? `<div style="font-size:11px;color:#aaa;margin-top:6px">🧼 シート洗い 次回: ${fmtShort(sp.next)}〜${fmtShort(sp.nextEnd)}</div>`
+    : '';
+  const allDone = checkAllDone(activeItems, ecState);
   document.getElementById('evening-check-wrap').innerHTML =
     `<div class="section-label">🌙 帰りのチェック</div>
      <div>${itemsHtml}</div>
+     ${nextNote}
      <div class="all-done${allDone?' show':''}">✅ すべて完了！</div>`;
 }
 

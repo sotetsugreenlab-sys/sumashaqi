@@ -705,6 +705,11 @@ renderAll();
 loadShifts();
 loadSumashaqi();
 loadHerbNotes();
+
+// タブに戻った時に前借りデータを再取得
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') loadPreBorrowCounts();
+});
 </script>
 </body>
 </html>

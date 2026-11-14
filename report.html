@@ -111,6 +111,16 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 <div class="section">
   <div class="section-label">✂️ 刈り取り</div>
 
+  <div class="hc-day-header" style="background:#8B6D11">30日目 前々借り</div>
+  <div class="hc-sow-label" id="hc-sow30"></div>
+  <div class="hc-row" style="border-bottom:none">
+    <div class="hc-label">前々借り</div>
+    <input type="number" id="hc-maemaegari" class="hc-input" placeholder="0" min="0" oninput="onHc30Input()">
+    <span class="hc-unit">株</span>
+  </div>
+
+  <hr class="hc-divider">
+
   <div class="hc-day-header">31日目 前借り</div>
   <div class="hc-sow-label" id="hc-sow31"></div>
   <div class="hc-row">
@@ -506,35 +516,42 @@ async function setEcTemp(id, delta) {
 // 32日目: 刈取   → lot_notes crop='harvest_count', sow_date=`${32日前播種}_harvest`
 const HC32_FIELDS = ['min_weight','avg_weight','w65','yoku_bukuro','sheraton_count','sheraton_weight','chipburn','seiki','keep_harvest','shipment','spare','spare_used','haiki_keep'];
 
+let hc30 = {};
 let hc31 = {};
 let hc32 = {};
 let hcDebounce = {};
 
+function hc30Key() { return toDateStr(viewDate) + '_30'; }
 function hc31Key() { return toDateStr(viewDate) + '_31'; }
 function hc32Key() { return toDateStr(addDays(viewDate, -32)) + '_harvest'; }
 
 async function loadHarvestCounts() {
-  hc31 = {}; hc32 = {};
+  hc30 = {}; hc31 = {}; hc32 = {};
 
+  const s30El = document.getElementById('hc-sow30');
   const s31El = document.getElementById('hc-sow31');
   const s32El = document.getElementById('hc-sow32');
-  if (s31El) s31El.textContent = fmtShort(viewDate) + '刈取予定ロット';
+  if (s30El) s30El.textContent = fmtShort(addDays(viewDate, -30)) + '播種ロット';
+  if (s31El) s31El.textContent = fmtShort(addDays(viewDate, -31)) + '播種ロット';
   if (s32El) s32El.textContent = fmtShort(addDays(viewDate, -32)) + '播種ロット';
 
-  const keys = [hc31Key(), hc32Key()];
+  const keys = [hc30Key(), hc31Key(), hc32Key()];
   const { data } = await db.from('lot_notes')
     .select('id,sow_date,note').eq('crop','harvest_count').in('sow_date', keys);
   (data || []).forEach(r => {
     try {
       const p = JSON.parse(r.note || '{}');
-      if (r.sow_date === hc31Key()) hc31 = { id: r.id, ...p };
-      else                          hc32 = { id: r.id, ...p };
+      if (r.sow_date === hc30Key())      hc30 = { id: r.id, ...p };
+      else if (r.sow_date === hc31Key()) hc31 = { id: r.id, ...p };
+      else                               hc32 = { id: r.id, ...p };
     } catch(e) {}
   });
   renderHarvestInputs();
 }
 
 function renderHarvestInputs() {
+  const f30 = document.getElementById('hc-maemaegari');
+  if (f30 && document.activeElement !== f30) f30.value = hc30.maemaegari != null ? hc30.maemaegari : '';
   const f31 = document.getElementById('hc-maegari');
   if (f31 && document.activeElement !== f31) f31.value = hc31.maegari != null ? hc31.maegari : '';
   HC32_FIELDS.forEach(f => {
@@ -565,6 +582,21 @@ function updateHcAutoCalc() {
   const moEl = document.getElementById('hc-mochi-total');
   if (moEl) moEl.innerHTML =
     `持ち出し合計 <strong>${ship + spare}株</strong>（本出荷${ship}＋予備${spare}）`;
+}
+
+async function onHc30Input() {
+  clearTimeout(hcDebounce['maemaegari']);
+  hcDebounce['maemaegari'] = setTimeout(async () => {
+    hc30.maemaegari = parseInt(document.getElementById('hc-maemaegari').value) || 0;
+    const note = JSON.stringify({ maemaegari: hc30.maemaegari });
+    if (hc30.id) {
+      await db.from('lot_notes').update({ note }).eq('id', hc30.id);
+    } else {
+      const { data } = await db.from('lot_notes')
+        .insert({ crop: 'harvest_count', sow_date: hc30Key(), note }).select('id');
+      if (data?.[0]) hc30.id = data[0].id;
+    }
+  }, 600);
 }
 
 function onHcInput(field, is31) {

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>報告入力</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="報告入力">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem; }
+
+.back-link { display: inline-block; font-size: 13px; color: #534AB7; background: #EEEDFE; border-radius: 20px; padding: 4px 14px; text-decoration: none; margin-bottom: 10px; }
+
+.date-bar { background: #fff; border-radius: 14px; padding: 0.75rem 1rem; margin-bottom: 10px; text-align: center; }
+.nav-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.nav-btn { font-size: 20px; color: #aaa; background: none; border: none; cursor: pointer; padding: 0 4px; line-height: 1; }
+.nav-btn:active { color: #1a1a1a; }
+.date-big { font-size: 20px; font-weight: 500; color: #1a1a1a; }
+.back-today { display: inline-block; margin-top: 6px; font-size: 12px; color: #534AB7; background: #EEEDFE; border: none; border-radius: 20px; padding: 3px 12px; cursor: pointer; }
+
+.section { background: #fff; border-radius: 14px; padding: 1rem; margin-bottom: 10px; }
+.section-label { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 0.06em; margin-bottom: 8px; }
+
+/* チェックリスト */
+.mc-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.mc-item + .mc-item { border-top: 1px solid #ececea; }
+.mc-box { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; background: #fff; }
+.mc-box.checked { background: #3B8A28; border-color: #3B8A28; }
+.mc-check { display: none; color: #fff; font-size: 14px; font-weight: 700; }
+.mc-box.checked .mc-check { display: block; }
+.mc-label { font-size: 13px; color: #333; line-height: 1.4; }
+.mc-item.checked .mc-label { color: #bbb; text-decoration: line-through; }
+.all-done { background: #EAF3DE; border-radius: 10px; padding: 6px 10px; font-size: 12px; color: #3B6D11; font-weight: 600; text-align: center; margin-top: 8px; display: none; }
+.all-done.show { display: block; }
+
+/* エアコン */
+.ac-wrap { padding: 7px 0; cursor: default; }
+.ac-wrap + .mc-item { border-top: 1px solid #ececea; }
+.mc-item + .ac-wrap { border-top: 1px solid #ececea; }
+.ac-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.ac-name { font-size: 13px; font-weight: 600; color: #444; }
+.ac-temp-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #ccc; background: #f5f5f5; font-size: 14px; cursor: pointer; line-height: 1; }
+.ac-temp-val { font-size: 15px; font-weight: 700; min-width: 36px; text-align: center; }
+.ac-speeds { display: flex; flex-wrap: wrap; gap: 10px; }
+.ac-speed { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.ac-speed .mc-box { width: 20px; height: 20px; }
+.ac-speed .mc-label { font-size: 12px; }
+
+/* 液肥 */
+.liquid-current { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px; }
+.liquid-num { font-size: 28px; font-weight: 700; color: #185FA5; }
+.liquid-unit { font-size: 14px; color: #666; }
+.liquid-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.liquid-input { width: 60px; font-size: 14px; padding: 5px 7px; border: 1px solid #ddd; border-radius: 8px; text-align: center; background: #fafafa; color: #1a1a1a; }
+.liquid-input:focus { outline: none; border-color: #185FA5; }
+.liquid-btn { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+.liquid-btn-minus { background: #E6F1FB; color: #185FA5; }
+.liquid-btn-plus  { background: #EAF3DE; color: #3B6D11; }
+.liquid-btn:active { opacity: 0.75; }
+.liquid-label { font-size: 13px; color: #666; }
+
+/* 刈り取り */
+.harvest-day-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0ee; }
+.harvest-day-row:last-child { border-bottom: none; }
+.harvest-day-sow { font-size: 13px; color: #666; }
+.harvest-day-count { font-size: 20px; font-weight: 700; color: #993C1D; }
+.harvest-day-unit { font-size: 12px; color: #aaa; }
+.harvest-empty { font-size: 13px; color: #bbb; text-align: center; padding: 8px 0; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← トップ</a>
+
+<div class="date-bar">
+  <div class="nav-row">
+    <button class="nav-btn" onclick="navigate(-1)">＜</button>
+    <div class="date-big" id="disp-date"></div>
+    <button class="nav-btn" onclick="navigate(1)">＞</button>
+  </div>
+  <div id="back-today-wrap"></div>
+</div>
+
+<div class="section" id="morning-check-wrap"></div>
+<div class="section" id="evening-check-wrap"></div>
+
+<div class="section">
+  <div class="section-label">💧 液肥</div>
+  <div class="liquid-current">
+    <span class="liquid-label">貯液</span>
+    <span class="liquid-num" id="liquid-display">--</span>
+    <span class="liquid-unit">L</span>
+  </div>
+  <div class="liquid-row">
+    <input type="number" id="liquid-used" class="liquid-input" placeholder="0" min="0" step="0.1">
+    <span class="liquid-unit">L</span>
+    <button class="liquid-btn liquid-btn-minus" onclick="adjustLiquid(-1)">使用 −</button>
+    <input type="number" id="liquid-made" class="liquid-input" placeholder="0" min="0" step="0.1">
+    <span class="liquid-unit">L</span>
+    <button class="liquid-btn liquid-btn-plus" onclick="adjustLiquid(1)">追加 ＋</button>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">✂️ 刈り取り日次</div>
+  <div id="harvest-days"></div>
+</div>
+
+<script>
+const db = supabase.createClient(
+  'https://pqoexlikdviqqgdnzuud.supabase.co',
+  'sb_publishable_9KR8h4be2Q5-4ux6g55hSg_Jkv9UYBM'
+);
+
+// ===== 日付ユーティリティ =====
+const realToday = new Date();
+const _urlDate = new URLSearchParams(location.search).get('date');
+let viewDate = _urlDate ? new Date(_urlDate + 'T00:00:00') : new Date(realToday);
+
+function fmt(d) {
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+}
+function fmtMD(d) {
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getMonth()+1}月${d.getDate()}日（${w}）`;
+}
+function fmtShort(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function isSameDay(a, b) { return toDateStr(a) === toDateStr(b); }
+
+function navigate(delta) {
+  viewDate = addDays(viewDate, delta);
+  renderAll();
+}
+function goToday() {
+  viewDate = new Date(realToday);
+  renderAll();
+}
+
+function renderHeader() {
+  document.getElementById('disp-date').textContent = fmt(viewDate);
+  const wrap = document.getElementById('back-today-wrap');
+  wrap.innerHTML = isSameDay(viewDate, realToday)
+    ? '' : `<button class="back-today" onclick="goToday()">今日に戻る</button>`;
+}
+
+// ===== 液肥 =====
+let liquidAmount = 0;
+
+async function loadLiquid() {
+  const { data } = await db.from('liquid_log').select('delta');
+  liquidAmount = (data || []).reduce((s, r) => s + (r.delta || 0), 0);
+  renderLiquid();
+}
+
+function renderLiquid() {
+  const v = Math.round(liquidAmount * 10) / 10;
+  document.getElementById('liquid-display').textContent = v % 1 === 0 ? v : v.toFixed(1);
+}
+
+async function adjustLiquid(sign) {
+  const inputId = sign < 0 ? 'liquid-used' : 'liquid-made';
+  const val = parseFloat(document.getElementById(inputId).value);
+  if (!val || val <= 0) return;
+  const { error } = await db.from('liquid_log').insert({ delta: sign * val });
+  if (error) { console.error(error); return; }
+  document.getElementById(inputId).value = '';
+  liquidAmount += sign * val;
+  renderLiquid();
+}
+
+db.channel('liquid_changes')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'liquid_log' }, p => {
+    liquidAmount += p.new.delta;
+    renderLiquid();
+  }).subscribe();
+
+// ===== エアコン共通レンダリング =====
+function renderAcRow(itemId, state, toggleFn, tempFn) {
+  const temp = state[itemId + '_temp'] || 21;
+  const speeds = [['_kyu','急'],['_tsu','強'],['_chu','中'],['_jaku','弱']];
+  const boxes = speeds.map(([sfx, lbl]) => {
+    const id = itemId + sfx, c = !!state[id];
+    return `<div class="ac-speed" onclick="${toggleFn}('${id}')">
+      <div class="mc-box${c?' checked':''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">風速${lbl} よし</div>
+    </div>`;
+  }).join('');
+  return `<div class="ac-wrap">
+    <div class="ac-header">
+      <span class="ac-name">エアコン</span>
+      <button class="ac-temp-btn" onclick="${tempFn}('${itemId}',-1)">－</button>
+      <span class="ac-temp-val">${temp}℃</span>
+      <button class="ac-temp-btn" onclick="${tempFn}('${itemId}',1)">＋</button>
+    </div>
+    <div class="ac-speeds">${boxes}</div>
+  </div>`;
+}
+
+function checkAllDone(items, state) {
+  return items.every(i => i.type === 'ac'
+    ? ['_kyu','_tsu','_chu','_jaku'].some(s => state[i.id + s])
+    : state[i.id]);
+}
+
+// ===== 朝のチェック =====
+// スマシャキは32日コース
+// LED自動: 今日刈取ロット (32日前播種)
+// LED入り: 3日後刈取ロット (29日前播種)
+const MC_ITEMS = [
+  { id: 'ac',       type: 'ac', label: 'エアコン' },
+  { id: 'fan',      label: '換気扇 よし' },
+  { id: 'temp',     label: '室温 確認（22.5〜23.5℃、棚1-A は24.5℃）' },
+  { id: 'led_auto', type: 'led_auto', label: '' },
+  { id: 'led_on',   type: 'led_on',   label: '' },
+  { id: 'cycle',    label: 'サイクルマーク よし' },
+  { id: 'mc_basil', label: 'バジルLED（OFF）よし' },
+  { id: 'mc_handover', label: '引継チェック' },
+];
+
+let mcState = {};
+let mcRowId = null;
+
+function renderMorningCheck() {
+  const autoSow = addDays(viewDate, -32); // 32日コース：今日刈取ロット
+  const onSow   = addDays(viewDate, -29); // 3日後刈取ロット（32-3=29日前播種）
+  function ledLabel(sow, suffix) {
+    return `LED ${fmtShort(sow)}播種 → ${suffix}`;
+  }
+  const itemsHtml = MC_ITEMS.map(item => {
+    if (item.type === 'ac') return renderAcRow('ac', mcState, 'toggleMC', 'setMcTemp');
+    const checked = !!mcState[item.id];
+    const label = item.type === 'led_auto' ? ledLabel(autoSow, '自動 に戻した')
+                : item.type === 'led_on'   ? ledLabel(onSow,   '入り にした')
+                : item.label;
+    return `<div class="mc-item${checked?' checked':''}" onclick="toggleMC('${item.id}')">
+      <div class="mc-box${checked?' checked':''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">${label}</div>
+    </div>`;
+  }).join('');
+  const allDone = checkAllDone(MC_ITEMS, mcState);
+  document.getElementById('morning-check-wrap').innerHTML =
+    `<div class="section-label">☀️ 朝のチェック</div>
+     <div id="mc-items">${itemsHtml}</div>
+     <div class="all-done${allDone?' show':''}" id="mc-all-done">✅ すべて完了！</div>`;
+}
+
+async function initMorningCheck() {
+  const targetDate = toDateStr(viewDate);
+  renderMorningCheck();
+  const { data } = await db.from('lot_notes')
+    .select('id,note').eq('crop','morning_check').eq('sow_date', targetDate).limit(1);
+  if (toDateStr(viewDate) !== targetDate) return;
+  if (data && data.length > 0) {
+    mcRowId = data[0].id;
+    try { mcState = JSON.parse(data[0].note); } catch(e) { mcState = {}; }
+  } else {
+    mcRowId = null;
+    mcState = {};
+  }
+  renderMorningCheck();
+}
+
+async function toggleMC(id) {
+  mcState[id] = !mcState[id];
+  if (['ac_kyu','ac_tsu','ac_chu','ac_jaku'].includes(id) && mcState['ac_temp'] == null)
+    mcState['ac_temp'] = 21;
+  renderMorningCheck();
+  const noteStr = JSON.stringify(mcState);
+  if (mcRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', mcRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'morning_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data?.[0]) mcRowId = data[0].id;
+  }
+}
+
+async function setMcTemp(id, delta) {
+  const cur = mcState[id + '_temp'] || 21;
+  mcState[id + '_temp'] = Math.min(25, Math.max(16, cur + delta));
+  renderMorningCheck();
+  const noteStr = JSON.stringify(mcState);
+  if (mcRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', mcRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'morning_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data?.[0]) mcRowId = data[0].id;
+  }
+}
+
+// ===== 帰りのチェック =====
+const EC_ITEMS = [
+  { id: 'ec_cycle', label: 'LEDサイクルマーク よし' },
+  { id: 'ec_ac',    type: 'ac', label: 'エアコン' },
+  { id: 'ec_fan',   label: '換気扇 よし' },
+  { id: 'ec_basil', label: 'バジルLED（ON）よし' },
+  { id: 'ec_sheet', label: '🧼 シート洗い（前半）' },
+];
+
+let ecState = {};
+let ecRowId = null;
+
+function renderEveningCheck() {
+  const itemsHtml = EC_ITEMS.map(item => {
+    if (item.type === 'ac') return renderAcRow('ec_ac', ecState, 'toggleEC', 'setEcTemp');
+    const checked = !!ecState[item.id];
+    return `<div class="mc-item${checked?' checked':''}" onclick="toggleEC('${item.id}')">
+      <div class="mc-box${checked?' checked':''}"><span class="mc-check">✓</span></div>
+      <div class="mc-label">${item.label}</div>
+    </div>`;
+  }).join('');
+  const allDone = checkAllDone(EC_ITEMS, ecState);
+  document.getElementById('evening-check-wrap').innerHTML =
+    `<div class="section-label">🌙 帰りのチェック</div>
+     <div>${itemsHtml}</div>
+     <div class="all-done${allDone?' show':''}">✅ すべて完了！</div>`;
+}
+
+async function initEveningCheck() {
+  const targetDate = toDateStr(viewDate);
+  renderEveningCheck();
+  const { data } = await db.from('lot_notes')
+    .select('id,note').eq('crop','evening_check').eq('sow_date', targetDate).limit(1);
+  if (toDateStr(viewDate) !== targetDate) return;
+  if (data && data.length > 0) {
+    ecRowId = data[0].id;
+    try { ecState = JSON.parse(data[0].note); } catch(e) { ecState = {}; }
+  } else {
+    ecRowId = null;
+    ecState = {};
+  }
+  renderEveningCheck();
+}
+
+async function toggleEC(id) {
+  ecState[id] = !ecState[id];
+  if (['ec_ac_kyu','ec_ac_tsu','ec_ac_chu','ec_ac_jaku'].includes(id) && ecState['ec_ac_temp'] == null)
+    ecState['ec_ac_temp'] = 21;
+  renderEveningCheck();
+  const noteStr = JSON.stringify(ecState);
+  if (ecRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', ecRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'evening_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data?.[0]) ecRowId = data[0].id;
+  }
+}
+
+async function setEcTemp(id, delta) {
+  const cur = ecState[id + '_temp'] || 21;
+  ecState[id + '_temp'] = Math.min(25, Math.max(16, cur + delta));
+  renderEveningCheck();
+  const noteStr = JSON.stringify(ecState);
+  if (ecRowId) {
+    await db.from('lot_notes').update({ note: noteStr }).eq('id', ecRowId);
+  } else {
+    const { data } = await db.from('lot_notes')
+      .insert({ crop: 'evening_check', sow_date: toDateStr(viewDate), note: noteStr }).select('id');
+    if (data?.[0]) ecRowId = data[0].id;
+  }
+}
+
+// ===== 刈り取り日次（今日の刈り取り日数） =====
+// スマシャキ: 32日コース
+// 表示: 今日から逆算して各ロットが何日目か
+const SM_STAGES = [
+  { days: 32, label: '刈取',      color: '#993C1D' },
+  { days: 31, label: '前借り',    color: '#8B6D11' },
+  { days: 17, label: '4穴移植',   color: '#3B6D11' },
+  { days: 6,  label: '32穴移植',  color: '#185FA5' },
+];
+
+function renderHarvestDays() {
+  const wrap = document.getElementById('harvest-days');
+  if (!SM_STAGES.length) {
+    wrap.innerHTML = '<div class="harvest-empty">データなし</div>';
+    return;
+  }
+  wrap.innerHTML = SM_STAGES.map(s => {
+    const sow = addDays(viewDate, -s.days);
+    return `<div class="harvest-day-row">
+      <div>
+        <div class="harvest-day-sow">${fmtShort(sow)}播種</div>
+        <div style="font-size:11px;color:#aaa">${s.label}</div>
+      </div>
+      <div>
+        <span class="harvest-day-count" style="color:${s.color}">${s.days}</span>
+        <span class="harvest-day-unit">日目</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== メイン =====
+function renderAll() {
+  renderHeader();
+  renderHarvestDays();
+  mcState = {}; mcRowId = null;
+  ecState = {}; ecRowId = null;
+  renderMorningCheck();
+  renderEveningCheck();
+  initMorningCheck();
+  initEveningCheck();
+}
+
+loadLiquid();
+renderAll();
+</script>
+</body>
+</html>

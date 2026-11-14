@@ -298,7 +298,7 @@ async function setMcTemp(id, delta) {
 
 // ===== シート洗い期間判定 =====
 // 2026-11-08 起算、20日間、3ヶ月ごと
-const SHEET_BASE = new Date(2026, 10, 8);
+const SHEET_BASE = new Date(2026, 9, 20); // 10/20開始、11/8最終日（20日間）
 
 function sheetWashPeriod(d) {
   const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());

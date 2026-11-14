@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>報告入力 使い方</title>
+<link rel="apple-touch-icon" href="Saibai%20Cat.png">
+<link rel="icon" href="Saibai%20Cat.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGL">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding: 1rem; }
+
+.header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 0 1rem;
+  border-bottom: 1px solid #e5e5e3;
+  margin-bottom: 1.5rem;
+}
+.back-btn { text-decoration: none; color: #534AB7; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+
+.section-title {
+  font-size: 12px; font-weight: 700; color: #aaa;
+  letter-spacing: 0.08em;
+  margin: 1.5rem 0 0.75rem; padding-left: 2px;
+}
+
+.card {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 1rem 1.1rem; margin-bottom: 10px;
+}
+
+.item-list { display: flex; flex-direction: column; gap: 7px; }
+.item { display: flex; gap: 8px; font-size: 14px; color: #444; line-height: 1.6; }
+.item-dot { width: 6px; height: 6px; border-radius: 50%; background: #3D7A50; margin-top: 7px; flex-shrink: 0; }
+.item-dot.red  { background: #993C1D; }
+.item-dot.blue { background: #534AB7; }
+.item-dot.gray { background: #ccc; }
+
+.note-box {
+  background: #f7f7f5; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #555; line-height: 1.7;
+}
+.info-box {
+  background: #EEEDFE; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #534AB7; line-height: 1.7;
+}
+.ok-box {
+  background: #EAF3DE; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin-top: 8px;
+  font-size: 13px; color: #3B6D11; line-height: 1.7;
+}
+
+/* セクションヘッダー */
+.sec-banner {
+  display: flex; align-items: center; gap: 8px;
+  border-radius: 10px; padding: 8px 12px; margin-bottom: 10px;
+  font-size: 14px; font-weight: 700;
+}
+.sec-banner.liquid   { background: #E6F1FB; color: #185FA5; }
+.sec-banner.sumashaqi{ background: #FAECE7; color: #993C1D; }
+.sec-banner.herb     { background: #EAF3DE; color: #3B6D11; }
+
+/* フィールド一覧 */
+.field-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+.field-table th {
+  text-align: left; padding: 5px 6px;
+  font-size: 11px; font-weight: 700; color: #aaa;
+  border-bottom: 1px solid #eee;
+}
+.field-table td { padding: 7px 6px; border-bottom: 1px solid #f5f5f3; color: #444; vertical-align: top; }
+.field-table tr:last-child td { border-bottom: none; }
+.field-name { font-weight: 600; color: #1a1a1a; }
+.auto-tag {
+  display: inline-block; background: #EAF3DE; color: #3B6D11;
+  border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+  vertical-align: middle; margin-left: 4px;
+}
+
+/* 日付バナー */
+.day-tag {
+  display: inline-block; border-radius: 6px; padding: 2px 10px;
+  font-size: 11px; font-weight: 700; color: #fff;
+  margin-bottom: 8px;
+}
+.day-tag.d30 { background: #8B6D11; }
+.day-tag.d31 { background: #993C1D; }
+.day-tag.d32 { background: #3D7A50; }
+
+/* 合計チェックのイメージ */
+.check-preview {
+  border-radius: 8px; padding: 8px 12px; margin-top: 8px;
+  font-size: 13px; line-height: 1.8; font-weight: 600;
+}
+.check-preview.ok   { background: #EAF3DE; color: #3B6D11; }
+.check-preview.over { background: #FAECE7; color: #993C1D; }
+</style>
+</head>
+<body>
+<script>try { localStorage.setItem('manual_visit_input', new Date().toISOString()); } catch(e) {}</script>
+
+<div class="header">
+  <a class="back-btn" href="manual.html">← 戻る</a>
+  <div class="header-title">✏️ 報告入力 使い方</div>
+</div>
+
+<!-- 液肥 -->
+<div class="section-title">① 液肥</div>
+<div class="card">
+  <div class="sec-banner liquid">⚖️ 液肥セクション</div>
+  <div class="item-list">
+    <div class="item"><div class="item-dot blue"></div><div>現在の貯液量が画面上部に表示されます</div></div>
+    <div class="item"><div class="item-dot blue"></div><div><strong>使用したとき</strong>：使用量（ℓ）を入力 → <strong>「送信 −」</strong>をタップ</div></div>
+    <div class="item"><div class="item-dot blue"></div><div><strong>追加したとき</strong>：追加量（ℓ）を入力 → <strong>「送信 ＋」</strong>をタップ</div></div>
+  </div>
+  <div class="note-box">
+    リアルタイムで他のスタッフとも同期されます
+  </div>
+</div>
+
+<!-- スマシャキ刈取 -->
+<div class="section-title">② スマシャキ 刈り取り入力</div>
+
+<div class="card">
+  <div class="day-tag d30">30日目 前々借り</div>
+  <table class="field-table">
+    <tr><th>項目</th><th>内容</th></tr>
+    <tr><td class="field-name">前々借り</td><td>今日30日目のロットから先行して刈取した株数</td></tr>
+  </table>
+  <div class="ok-box">入力すると → 残り株数（180 − 前々借り）を自動表示</div>
+</div>
+
+<div class="card">
+  <div class="day-tag d31">31日目 前借り</div>
+  <table class="field-table">
+    <tr><th>項目</th><th>内容</th></tr>
+    <tr><td class="field-name">前借り</td><td>今日31日目のロットから先行して刈取した株数</td></tr>
+  </table>
+  <div class="ok-box">入力すると → 翌日刈取予定株数（180 − 前借り）を自動表示<br>「今日の作業」画面に反映されます</div>
+</div>
+
+<div class="card">
+  <div class="day-tag d32">32日目 刈取</div>
+  <table class="field-table">
+    <tr><th>項目</th><th>内容</th></tr>
+    <tr>
+      <td class="field-name">正規刈取数</td>
+      <td>ローゼン出荷分の株数<br><span style="color:#aaa;font-size:12px">↳ 最低g・平均gも入力</span></td>
+    </tr>
+    <tr>
+      <td class="field-name">予備</td>
+      <td>予備の株数（基本 <strong>1株</strong>）</td>
+    </tr>
+    <tr>
+      <td class="field-name">シェラトン</td>
+      <td>重量不足でシェラトン回しにした株数<br><span style="color:#aaa;font-size:12px">↳ 合計gを入力すると1株平均を自動表示</span></td>
+    </tr>
+    <tr>
+      <td class="field-name">ダメ株</td>
+      <td>チップバーン等・出荷できない株数</td>
+    </tr>
+    <tr>
+      <td class="field-name">翌日用株</td>
+      <td>翌日の出荷用に回す株数</td>
+    </tr>
+    <tr>
+      <td class="field-name">キープ</td>
+      <td>次回以降に使うキープ株数</td>
+    </tr>
+  </table>
+  <div class="check-preview ok">
+    正規 ＋ 予備 ＋ シェラトン ＋ ダメ ＋ 翌日 ＋ キープ ＝ 180株 ✅
+  </div>
+  <div class="check-preview over" style="margin-top:6px">
+    合計が180株に足りない → <strong>「あとX株」</strong>と赤表示<br>
+    合計が180株を超える → <strong>「X株オーバー」</strong>と赤表示
+  </div>
+  <div class="info-box">
+    💡 全項目の合計が <strong>180株</strong> になると緑色の ✅ に変わります
+  </div>
+</div>
+
+<!-- ハーブ刈取 -->
+<div class="section-title">③ ハーブ 刈取入力</div>
+<div class="card">
+  <div class="sec-banner herb">🌿 バジル・ワイルドルッコラ 共通</div>
+  <table class="field-table">
+    <tr><th>項目</th><th>内容</th></tr>
+    <tr>
+      <td class="field-name">刈取株数</td>
+      <td>今日刈り取った株数（ダメ株含む）</td>
+    </tr>
+    <tr>
+      <td class="field-name">最低重量</td>
+      <td>出荷した袋の中で一番軽かった重量（g〜）</td>
+    </tr>
+    <tr>
+      <td class="field-name">1株/1袋</td>
+      <td>1株で1袋にした袋の数</td>
+    </tr>
+    <tr>
+      <td class="field-name">2株/1袋 <span class="auto-tag">自動</span></td>
+      <td>40 − 1株袋数 で自動計算</td>
+    </tr>
+    <tr>
+      <td class="field-name">ダメ株</td>
+      <td>変色・黒い点など出荷できなかった株数</td>
+    </tr>
+  </table>
+  <div class="ok-box">
+    1株袋 ＋ 2株袋（自動）＝ <strong>40袋</strong> になると ✅ 表示
+  </div>
+  <div class="note-box" style="margin-top:8px">
+    重量が足りない株は2株まとめて1袋に。<br>
+    1株袋数を入力するだけで2株袋数は自動計算されます。
+  </div>
+</div>
+
+<!-- 保存について -->
+<div class="section-title">④ 保存・自動同期</div>
+<div class="card">
+  <div class="item-list">
+    <div class="item"><div class="item-dot blue"></div><div>入力してから約<strong>0.6秒後</strong>に自動保存されます（送信ボタン不要）</div></div>
+    <div class="item"><div class="item-dot blue"></div><div>日付の ＜ ＞ ボタンで<strong>別の日付の記録</strong>を確認・修正できます</div></div>
+    <div class="item"><div class="item-dot"></div><div>別のタブから戻ったとき、前借りデータは<strong>自動で最新に更新</strong>されます</div></div>
+  </div>
+</div>
+
+<div style="height: 2rem;"></div>
+
+</body>
+</html>

@@ -82,12 +82,15 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 /* ハーブ刈取 */
 .herb-header { font-size: 12px; font-weight: 700; color: #fff; background: #3B6D11; border-radius: 8px; padding: 4px 10px; margin: 8px 0 6px; display: inline-block; }
 .herb-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0ee; }
-.herb-row.sub { padding: 5px 0 5px 14px; border-bottom-color: #f8f8f6; }
 .herb-label { font-size: 13px; color: #555; flex: 1; }
-.herb-row.sub .herb-label { font-size: 12px; color: #999; }
 .herb-input { width: 72px; font-size: 16px; font-weight: 600; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 10px; text-align: center; background: #fafafa; color: #1a1a1a; }
 .herb-input:focus { outline: none; border-color: #3B6D11; }
 .herb-unit { font-size: 13px; color: #aaa; min-width: 20px; }
+.herb-bag-row { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; padding: 8px 0; border-bottom: 1px solid #f0f0ee; font-size: 13px; color: #555; }
+.herb-bag-auto { font-size: 16px; font-weight: 700; min-width: 36px; text-align: center; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 4px 6px; }
+.herb-bag-eq { font-size: 13px; font-weight: 700; }
+.herb-bag-eq.ok   { color: #3B6D11; }
+.herb-bag-eq.over { color: #993C1D; }
 .herb-saved { font-size: 12px; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 5px 10px; margin: 6px 0; display: none; }
 .herb-saved.show { display: block; }
 </style>
@@ -216,17 +219,24 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
     <input type="number" id="herb-basil-count" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('basil')">
     <span class="herb-unit">株</span>
   </div>
-  <div class="herb-row sub">
+  <div class="herb-row">
     <div class="herb-label">最低重量</div>
-    <input type="number" id="herb-basil-min_g" class="herb-input" placeholder="25" min="0" oninput="onHerbInput('basil')">
+    <input type="number" id="herb-basil-min_g" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('basil')">
     <span class="herb-unit">g〜</span>
   </div>
-  <div class="herb-row sub" style="border-bottom:none">
+  <div class="herb-bag-row">
+    <span>1株/1袋</span>
+    <input type="number" id="herb-basil-bag1" class="herb-input" style="width:60px" placeholder="0" min="0" oninput="onHerbInput('basil')">
+    <span>袋 ＋ 2株/1袋</span>
+    <span class="herb-bag-auto" id="herb-basil-bag2">0</span>
+    <span>袋 ＝</span>
+    <span class="herb-bag-eq" id="herb-basil-bags-eq">0袋</span>
+  </div>
+  <div class="herb-row" style="border-bottom:none">
     <div class="herb-label">ダメ株</div>
     <input type="number" id="herb-basil-error" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('basil')">
     <span class="herb-unit">株</span>
   </div>
-  <div class="hc-total ok" id="herb-basil-total"></div>
 
   <hr class="hc-divider">
 
@@ -236,17 +246,24 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
     <input type="number" id="herb-wild-count" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('wild')">
     <span class="herb-unit">株</span>
   </div>
-  <div class="herb-row sub">
+  <div class="herb-row">
     <div class="herb-label">最低重量</div>
-    <input type="number" id="herb-wild-min_g" class="herb-input" placeholder="25" min="0" oninput="onHerbInput('wild')">
+    <input type="number" id="herb-wild-min_g" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('wild')">
     <span class="herb-unit">g〜</span>
   </div>
-  <div class="herb-row sub" style="border-bottom:none">
+  <div class="herb-bag-row">
+    <span>1株/1袋</span>
+    <input type="number" id="herb-wild-bag1" class="herb-input" style="width:60px" placeholder="0" min="0" oninput="onHerbInput('wild')">
+    <span>袋 ＋ 2株/1袋</span>
+    <span class="herb-bag-auto" id="herb-wild-bag2">0</span>
+    <span>袋 ＝</span>
+    <span class="herb-bag-eq" id="herb-wild-bags-eq">0袋</span>
+  </div>
+  <div class="herb-row" style="border-bottom:none">
     <div class="herb-label">ダメ株</div>
     <input type="number" id="herb-wild-error" class="herb-input" placeholder="0" min="0" oninput="onHerbInput('wild')">
     <span class="herb-unit">株</span>
   </div>
-  <div class="hc-total ok" id="herb-wild-total"></div>
 
   <div class="herb-saved" id="herb-saved">保存しました ✓</div>
 </div>
@@ -678,7 +695,7 @@ function onHcInput(field, is31) {
 }
 
 // ===== ハーブ刈取 =====
-const HERB_FIELDS = ['basil-count','basil-min_g','basil-error','wild-count','wild-min_g','wild-error'];
+const HERB_FIELDS = ['basil-count','basil-min_g','basil-bag1','basil-error','wild-count','wild-min_g','wild-bag1','wild-error'];
 let herbData = {};
 let herbDebounce = null;
 
@@ -708,36 +725,6 @@ function renderHerbInputs() {
   updateHerbTotal('wild');
 }
 
-function updateHerbTotal(herb) {
-  const kari  = parseInt(document.getElementById(`herb-${herb}-count`)?.value) || 0;
-  const min_g = parseInt(document.getElementById(`herb-${herb}-min_g`)?.value) || 0;
-  const dame  = parseInt(document.getElementById(`herb-${herb}-error`)?.value) || 0;
-
-  // 出荷可能株数から袋数を自動計算
-  const shippable = kari - dame;
-  const bag2 = Math.max(0, shippable - 40);  // 2株袋は余剰分
-  const bag1 = Math.max(0, shippable - bag2 * 2);  // 残りが1株袋
-  const bags = bag1 + bag2;
-  const diff = 40 - bags;
-
-  const totEl = document.getElementById(`herb-${herb}-total`);
-  if (!totEl) return;
-  if (kari === 0 && dame === 0) { totEl.className = 'hc-total ok'; totEl.innerHTML = ''; return; }
-
-  totEl.className = 'hc-total ' + (diff === 0 ? 'ok' : 'over');
-  const bagLine = diff === 0
-    ? `1株/1袋 ${bag1}袋 ＋ 2株/1袋 ${bag2}袋 ＝ <strong>40袋</strong> ✅`
-    : diff > 0
-      ? `1株/1袋 ${bag1}袋 ＋ 2株/1袋 ${bag2}袋 ＝ <strong>${bags}袋</strong> <span style="color:#993C1D">（あと${diff}袋）</span>`
-      : `1株/1袋 ${bag1}袋 ＋ 2株/1袋 ${bag2}袋 ＝ <strong>${bags}袋</strong> <span style="color:#993C1D">（${Math.abs(diff)}袋オーバー）</span>`;
-
-  totEl.innerHTML =
-    `刈取株数 ${kari}株<br>` +
-    (min_g > 0 ? `最低重量 ${min_g}g〜<br>` : '') +
-    bagLine +
-    (dame > 0 ? `<br>ダメ株 ${dame}株` : '');
-}
-
 function onHerbInput(herb) {
   updateHerbTotal(herb);
   clearTimeout(herbDebounce);
@@ -761,6 +748,23 @@ function onHerbInput(herb) {
       setTimeout(() => savedEl.classList.remove('show'), 1500);
     }
   }, 600);
+}
+
+function updateHerbTotal(herb) {
+  const bag1 = parseInt(document.getElementById(`herb-${herb}-bag1`)?.value) || 0;
+  const bag2 = Math.max(0, 40 - bag1);
+  const bags = bag1 + bag2;
+  const diff = 40 - bags;
+
+  const bag2El = document.getElementById(`herb-${herb}-bag2`);
+  const eqEl   = document.getElementById(`herb-${herb}-bags-eq`);
+  if (bag2El) bag2El.textContent = bag2;
+  if (eqEl) {
+    eqEl.className = 'herb-bag-eq ' + (diff === 0 ? 'ok' : 'over');
+    eqEl.textContent = diff === 0 ? '40袋 ✅'
+      : diff > 0 ? `${bags}袋（あと${diff}袋）`
+      : `${bags}袋（${Math.abs(diff)}袋オーバー）`;
+  }
 }
 
 // ===== メイン =====

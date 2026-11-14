@@ -31,7 +31,10 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 /* Stage row - horizontal card layout */
 .stage-row { display: flex; gap: 6px; }
 .stage-cell { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.stage-cell > .card, .stage-cell > .card-empty, .stage-cell > .harvest-stack { flex: 1; }
+.stage-cell > .card,
+.stage-cell > .card-empty,
+.stage-cell > .harvest-stack { flex: 1; }
+.stage-cell > .harvest-stack > .card { flex: 1; }
 
 /* 5穴ロット horizontal scroll */
 .lot-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; }

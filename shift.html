@@ -62,7 +62,9 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 0 0 3rem; }
 .staff-name.cultivation { color: #1a1a1a; }
 .staff-name.delivery { color: #ED7D31; font-weight: 600; }
 .staff-name.other { color: #3B8A28; }
-.cell-sheet { font-size: 9px; color: #0E7490; font-weight: 700; margin-top: 2px; }
+.cell-date-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+.cell-date-row .cell-date { margin-bottom: 0; }
+.cell-sheet { font-size: 10px; }
 .staff-name.s-mark { color: #D62B7A; font-weight: 700; }
 
 /* Legend */
@@ -493,11 +495,9 @@ function render() {
     if (isToday) cellClass += ' today';
 
     html += `<div class="${cellClass}" onclick="openEdit('${ds}')">`;
-    html += `<div class="cell-date ${dateClass}">${d}</div>`;
+    const sheetMark = isSheetWashDay(ds) ? ' <span class="cell-sheet">🧼</span>' : '';
+    html += `<div class="cell-date-row"><span class="cell-date ${dateClass}">${d}</span>${sheetMark}</div>`;
     if (holiday) html += `<div class="cell-holiday">${holiday}</div>`;
-    if (isSheetWashDay(ds)) {
-      html += '<div class="cell-sheet">🧼 シート洗い</div>';
-    }
     if (data) {
       html += '<div class="staff-list">';
       const wasabiSet = new Set(data.other || []);

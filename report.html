@@ -113,11 +113,12 @@ body { font-family: sans-serif; background: #f7f7f5; padding: 1rem 0.75rem 2rem;
 
   <div class="hc-day-header" style="background:#8B6D11">30日目 前々借り</div>
   <div class="hc-sow-label" id="hc-sow30"></div>
-  <div class="hc-row" style="border-bottom:none">
+  <div class="hc-row">
     <div class="hc-label">前々借り</div>
     <input type="number" id="hc-maemaegari" class="hc-input" placeholder="0" min="0" oninput="onHc30Input()">
     <span class="hc-unit">株</span>
   </div>
+  <div class="hc-auto" id="hc-maemaegari-remain">残り -- 株</div>
 
   <hr class="hc-divider">
 
@@ -562,6 +563,10 @@ function renderHarvestInputs() {
 }
 
 function updateHcAutoCalc() {
+  const maemaegari = parseInt(document.getElementById('hc-maemaegari')?.value) || 0;
+  const remEl = document.getElementById('hc-maemaegari-remain');
+  if (remEl) remEl.textContent = `残り ${180 - maemaegari}株（180−前々借り${maemaegari}）`;
+
   const maegari = parseInt(document.getElementById('hc-maegari')?.value) || 0;
   const yokEl = document.getElementById('hc-yokujitsu');
   if (yokEl) yokEl.textContent = `翌日刈取予定: ${180 - maegari}株（180−前借り${maegari}）`;

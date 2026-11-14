@@ -129,6 +129,7 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .ekihi-line.irekae { color: #993C1D; background: rgba(255,255,255,0.65); }
 .ekihi-line.normal  { color: #666; background: rgba(255,255,255,0.45); }
 .sheet-line { font-size: 12px; padding: 2px 10px; border-radius: 20px; display: inline-block; color: #0E7490; background: rgba(255,255,255,0.65); margin-top: 3px; }
+.remain-badge { font-size: 11px; font-weight: 700; color: #3D7A50; background: #EAF3DE; border-radius: 6px; padding: 2px 7px; margin-top: 4px; display: inline-block; }
 </style>
 </head>
 <body>
@@ -385,6 +386,25 @@ function renderInfoBar() {
   header.style.border = ts.border || '';
 }
 
+// ===== 前借り・前々借り データ =====
+let preBorrowData = {}; // { '30': maemaegari, '31': maegari }
+
+async function loadPreBorrowCounts() {
+  preBorrowData = {};
+  const dateStr = toDateStr(viewDate);
+  const keys = [dateStr + '_30', dateStr + '_31'];
+  const { data } = await db.from('lot_notes')
+    .select('sow_date,note').eq('crop','harvest_count').in('sow_date', keys);
+  (data || []).forEach(r => {
+    try {
+      const p = JSON.parse(r.note || '{}');
+      if (r.sow_date.endsWith('_30')) preBorrowData['30'] = p.maemaegari || 0;
+      if (r.sow_date.endsWith('_31')) preBorrowData['31'] = p.maegari || 0;
+    } catch(e) {}
+  });
+  renderSumashaqi();
+}
+
 // ===== スマシャキ データ =====
 let shelfLots = [];
 let smNotes = {};
@@ -544,6 +564,13 @@ function renderSumashaqi() {
     const st = sowTrayStyle(parseDate(sowDate));
     const borderStyle = st.border ? `;border:${st.border}` : '';
     const alertStyle = smAlerts[sowDate] ? ';outline:2px solid #E24B4A' : '';
+    // 残り株数バッジ（前借り・前々借りがある場合のみ）
+    let remainBadge = '';
+    if (days === 31 && preBorrowData['31'] > 0) {
+      remainBadge = `<div class="remain-badge">残り ${180 - preBorrowData['31']}株（前借り${preBorrowData['31']}株済）</div>`;
+    } else if (days === 30 && preBorrowData['30'] > 0) {
+      remainBadge = `<div class="remain-badge">残り ${180 - preBorrowData['30']}株（前々借り${preBorrowData['30']}株済）</div>`;
+    }
     return `<div class="harvest-col">
       <div class="harvest-col-title">${days}日目 ${label}</div>
       <div class="card ${cls}" style="background:${st.bg}${borderStyle}${alertStyle}">
@@ -551,6 +578,7 @@ function renderSumashaqi() {
         <div class="card-task">${label}</div>
         <div class="card-sow">${fmtShort(parseDate(sowDate))}播種</div>
         <div class="card-sub">${days}日目</div>
+        ${remainBadge}
         ${smNotesHtml(sowDate)}
       </div>
     </div>`;
@@ -560,11 +588,12 @@ function renderSumashaqi() {
     <div class="sumashaqi-section">
       <div class="section-header">
         <span class="section-title sumashaqi">🌱 スマシャキ</span>
-        <a class="section-link" href="sumashaqi_daily_schedule_v3.html">数値報告 →</a>
+        <a class="section-link" href="report.html">数値報告 →</a>
       </div>
       <div class="harvest-row">
-        ${smCard('前借り',    'card-yellow',  31)}
-        ${smCard('刈取',      'card-harvest', 32)}
+        ${smCard('前々借り', 'card-30',      30)}
+        ${smCard('前借り',   'card-yellow',  31)}
+        ${smCard('刈取',     'card-harvest', 32)}
       </div>
       <div class="harvest-row">
         ${smCard('32穴へ移植','card-30',       6)}
@@ -669,6 +698,7 @@ function renderAll() {
   renderInfoBar();
   renderSumashaqi();
   renderHerbs();
+  loadPreBorrowCounts();
 }
 
 renderAll();

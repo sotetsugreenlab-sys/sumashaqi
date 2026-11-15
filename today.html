@@ -824,31 +824,17 @@ function todayCalcFromSow() {
   if (!val) return;
   const sow = parseDate(val);
   const herb = CALC_HERBS[todayCalcHerbIdx];
-  let html = '';
-  if (herb.stages2) {
-    html += todayScheduleGroup('従来スケジュール', false, herb.stages, sow);
-    html += todayScheduleGroup('新スケジュール', true, herb.stages2, sow);
-  } else {
-    html = todayScheduleGroup('栽培スケジュール', false, herb.stages, sow);
-  }
-  document.getElementById('today-sow-result').innerHTML = html;
+  const stages = herb.stages2 || herb.stages;
+  document.getElementById('today-sow-result').innerHTML = todayScheduleGroup('栽培スケジュール', false, stages, sow);
 }
 
 function todayCalcFromHarvest() {
   const val = document.getElementById('today-harvest-input').value;
   if (!val) return;
   const herb = CALC_HERBS[todayCalcHerbIdx];
-  let html = '';
-  if (herb.stages2) {
-    const sow1 = addDays(parseDate(val), -herb.stages[0].days);
-    const sow2 = addDays(parseDate(val), -herb.stages2[0].days);
-    html += todayScheduleGroup('従来スケジュール', false, herb.stages, sow1);
-    html += todayScheduleGroup('新スケジュール', true, herb.stages2, sow2);
-  } else {
-    const sow = addDays(parseDate(val), -herb.stages[0].days);
-    html = todayScheduleGroup('栽培スケジュール', false, herb.stages, sow);
-  }
-  document.getElementById('today-harvest-result').innerHTML = html;
+  const stages = herb.stages2 || herb.stages;
+  const sow = addDays(parseDate(val), -stages[0].days);
+  document.getElementById('today-harvest-result').innerHTML = todayScheduleGroup('栽培スケジュール', false, stages, sow);
 }
 
 document.getElementById('today-sow-input').value = toDateStr(realToday);

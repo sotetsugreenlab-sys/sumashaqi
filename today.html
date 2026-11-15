@@ -102,6 +102,29 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 .note-delete-confirm { display: none; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
 .note-delete-label { font-size: 11px; color: #E24B4A; }
 
+/* 計算機 */
+.calc-box { background: #f5f5f2; border-radius: 12px; padding: 1rem 1.25rem; margin: 16px 0 8px; }
+.calc-box-title { font-size: 13px; font-weight: 700; color: #666; margin-bottom: 10px; }
+.calc-herb-tabs { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 2px; }
+.calc-herb-tab { font-size: 12px; padding: 4px 12px; border: 0.5px solid #ccc; border-radius: 20px; background: #fff; color: #666; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.calc-herb-tab.active { font-weight: 600; border-width: 1.5px; }
+.calc-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.calc-tab { font-size: 13px; padding: 4px 14px; border: 0.5px solid #ccc; border-radius: 20px; background: #fff; color: #666; cursor: pointer; }
+.calc-tab.active { background: #EEEDFE; border-color: #AFA9EC; color: #534AB7; font-weight: 500; }
+.calc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.calc-row label { font-size: 12px; color: #666; min-width: 48px; }
+.calc-row input[type=date] { font-size: 13px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 8px; }
+.btn-calc { font-size: 13px; padding: 5px 16px; border: 0.5px solid #AFA9EC; border-radius: 8px; background: #EEEDFE; color: #534AB7; cursor: pointer; font-weight: 500; }
+.calc-result { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.calc-chip { background: #fff; border: 0.5px solid #ccc; border-radius: 8px; padding: 6px 12px; }
+.chip-label { font-size: 11px; color: #888; }
+.chip-day { font-size: 10px; color: #bbb; }
+.chip-val { font-size: 15px; font-weight: 700; color: #1a1a1a; margin-top: 1px; }
+.calc-group { margin-bottom: 12px; }
+.calc-group-label { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 0.05em; margin-bottom: 6px; }
+.calc-group-label.new { color: #534AB7; }
+.calc-group-note { font-size: 10px; font-weight: 500; color: #999; margin-left: 6px; letter-spacing: 0; }
+
 /* Herb section */
 .herb-section { margin-bottom: 16px; }
 .herb-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; padding: 5px 2px 7px; text-decoration: none; border-bottom: 1.5px solid #f0f0ed; margin-bottom: 7px; }
@@ -152,6 +175,31 @@ body { font-family: sans-serif; background: #fff; padding: 1rem 0.5rem; }
 <div id="sumashaqi-section"></div>
 <div id="herb-section"></div>
 
+<div class="calc-box">
+  <div class="calc-box-title">🌿 ハーブ栽培日程を計算</div>
+  <div class="calc-herb-tabs" id="today-herb-tabs"></div>
+  <div class="calc-tabs">
+    <button class="calc-tab active" id="today-tab-sow" onclick="todaySwitchTab('sow')">播種日 → 各日程</button>
+    <button class="calc-tab" id="today-tab-harvest" onclick="todaySwitchTab('harvest')">刈取日 → 播種日</button>
+  </div>
+  <div id="today-panel-sow">
+    <div class="calc-row">
+      <label>播種日</label>
+      <input type="date" id="today-sow-input">
+      <button class="btn-calc" onclick="todayCalcFromSow()">計算</button>
+    </div>
+    <div id="today-sow-result"></div>
+  </div>
+  <div id="today-panel-harvest" style="display:none">
+    <div class="calc-row">
+      <label>刈取日</label>
+      <input type="date" id="today-harvest-input">
+      <button class="btn-calc" onclick="todayCalcFromHarvest()">計算</button>
+    </div>
+    <div id="today-harvest-result"></div>
+  </div>
+</div>
+
 <script>
 const db = supabase.createClient(
   'https://pqoexlikdviqqgdnzuud.supabase.co',
@@ -162,7 +210,6 @@ const db = supabase.createClient(
 const HERBS = [
   {
     name: 'バジル', href: 'basil.html', color: '#3B6D11', seeds: 10, cubes: 90, bagBase: { date: '2026-08-19', count: 16 },
-    nameOnly: true,
     sowDays: [0,1,2,3,4,5,6], sowCutoff: '2026-07-16',
     sowDates: ['2026-06-09','2026-06-10','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-21','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16'],
     stages: [
@@ -190,7 +237,6 @@ const HERBS = [
   },
   {
     name: 'ワイルドロケット', href: 'rocket.html', color: '#8B6D11', seeds: 8, cubes: 90, bagBase: { date: '2026-08-19', count: 24 },
-    nameOnly: true,
     sowDays: [0,1,2,3,4,5,6], sowCutoff: '2026-07-16',
     sowDates: ['2026-06-09','2026-06-10','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-21','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-04','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16'],
     stages: [
@@ -712,6 +758,102 @@ loadHerbNotes();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') loadPreBorrowCounts();
 });
+
+// ===== ハーブ計算機 =====
+const CALC_HERBS = HERBS.filter(h => h.stages);
+let todayCalcHerbIdx = 0;
+
+function fmtMD(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+
+function initTodayHerbTabs() {
+  document.getElementById('today-herb-tabs').innerHTML = CALC_HERBS.map((h, i) =>
+    `<button class="calc-herb-tab${i===0?' active':''}" id="today-herb-tab-${i}"
+      onclick="todaySelectHerb(${i})"
+      style="${i===0?`background:${h.color};color:#fff;border-color:${h.color}`:''}">
+      ${h.name}
+    </button>`
+  ).join('');
+}
+
+function todaySelectHerb(idx) {
+  todayCalcHerbIdx = idx;
+  CALC_HERBS.forEach((h, i) => {
+    const el = document.getElementById(`today-herb-tab-${i}`);
+    if (i === idx) {
+      el.classList.add('active');
+      el.style.background = h.color;
+      el.style.color = '#fff';
+      el.style.borderColor = h.color;
+    } else {
+      el.classList.remove('active');
+      el.style.background = '#fff';
+      el.style.color = '#666';
+      el.style.borderColor = '#ccc';
+    }
+  });
+  document.getElementById('today-sow-result').innerHTML = '';
+  document.getElementById('today-harvest-result').innerHTML = '';
+}
+
+function todaySwitchTab(tab) {
+  document.getElementById('today-tab-sow').classList.toggle('active', tab==='sow');
+  document.getElementById('today-tab-harvest').classList.toggle('active', tab==='harvest');
+  document.getElementById('today-panel-sow').style.display = tab==='sow' ? '' : 'none';
+  document.getElementById('today-panel-harvest').style.display = tab==='harvest' ? '' : 'none';
+}
+
+function todayChip(label, days, date) {
+  const dayStr = days === 0 ? '播種日' : `播種から${days}日目`;
+  return `<div class="calc-chip"><div class="chip-label">${label} <span class="chip-day">${dayStr}</span></div><div class="chip-val">${fmtMD(date)}</div></div>`;
+}
+
+function todayScheduleGroup(labelText, isNew, stages, sow) {
+  const chips = [todayChip('播種', 0, sow)]
+    .concat([...stages].reverse().map(s => todayChip(s.label, s.days, addDays(sow, s.days))))
+    .join('');
+  return `<div class="calc-group">
+    <div class="calc-group-label${isNew?' new':''}">
+      ${labelText}${isNew?'<span class="calc-group-note">※2026年8月12日から</span>':''}
+    </div>
+    <div class="calc-result">${chips}</div>
+  </div>`;
+}
+
+function todayCalcFromSow() {
+  const val = document.getElementById('today-sow-input').value;
+  if (!val) return;
+  const sow = parseDate(val);
+  const herb = CALC_HERBS[todayCalcHerbIdx];
+  let html = '';
+  if (herb.stages2) {
+    html += todayScheduleGroup('従来スケジュール', false, herb.stages, sow);
+    html += todayScheduleGroup('新スケジュール', true, herb.stages2, sow);
+  } else {
+    html = todayScheduleGroup('栽培スケジュール', false, herb.stages, sow);
+  }
+  document.getElementById('today-sow-result').innerHTML = html;
+}
+
+function todayCalcFromHarvest() {
+  const val = document.getElementById('today-harvest-input').value;
+  if (!val) return;
+  const herb = CALC_HERBS[todayCalcHerbIdx];
+  let html = '';
+  if (herb.stages2) {
+    const sow1 = addDays(parseDate(val), -herb.stages[0].days);
+    const sow2 = addDays(parseDate(val), -herb.stages2[0].days);
+    html += todayScheduleGroup('従来スケジュール', false, herb.stages, sow1);
+    html += todayScheduleGroup('新スケジュール', true, herb.stages2, sow2);
+  } else {
+    const sow = addDays(parseDate(val), -herb.stages[0].days);
+    html = todayScheduleGroup('栽培スケジュール', false, herb.stages, sow);
+  }
+  document.getElementById('today-harvest-result').innerHTML = html;
+}
+
+document.getElementById('today-sow-input').value = toDateStr(realToday);
+document.getElementById('today-harvest-input').value = toDateStr(realToday);
+initTodayHerbTabs();
 </script>
 </body>
 </html>

@@ -14,13 +14,13 @@ const SPREADSHEET_ID = '1ToRWfLfyspV8xLaWUCkjXIAw3-dt6023_-UL7WOoQng';
 // メイン（毎日18時に実行）
 // ────────────────────────────────────────────────────────────
 function dailyReport() {
-  const today       = getJSTDateStr(new Date());
-  const sow34date   = offsetDate(today, -34);
+  const today      = getJSTDateStr(new Date());
+  const sow32date  = offsetDate(today, -32);
 
   const mc  = parseNote(fetchOne('morning_check', today));
   const ec  = parseNote(fetchOne('evening_check', today));
-  const hc33 = parseNote(fetchOne('harvest_count', today + '_33'));
-  const hc34 = parseNote(fetchOne('harvest_count', sow34date + '_harvest'));
+  const hc31 = parseNote(fetchOne('harvest_count', today + '_31'));
+  const hc32 = parseNote(fetchOne('harvest_count', sow32date + '_harvest'));
   const liquidTotal = fetchLiquidAmount();
 
   const ekihiLabel = getEkihiLabel(today);
@@ -29,8 +29,8 @@ function dailyReport() {
   const sheetUrl   = SpreadsheetApp.openById(SPREADSHEET_ID).getUrl();
   const tana1Url   = 'https://raw.githubusercontent.com/sotetsugreenlab-sys/sumashaqi/main/screenshots/tana-1.png';
   const tana2Url   = 'https://raw.githubusercontent.com/sotetsugreenlab-sys/sumashaqi/main/screenshots/tana-2.png';
-  appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel);
-  sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, memos, alerts, sheetUrl, tana1Url, tana2Url);
+  appendToSheet(today, mc, ec, hc31, hc32, liquidTotal, ekihiLabel);
+  sendReportEmail(today, mc, ec, hc31, hc32, liquidTotal, ekihiLabel, memos, alerts, sheetUrl, tana1Url, tana2Url);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -43,10 +43,10 @@ function fixSheetHeader() {
     '日付',
     '朝:AC温度', '朝:AC風速',
     '帰:AC温度', '帰:AC風速',
-    '前借播種日', '前借数(33日)',
-    'メイン播種日', '最小重量(g)', '平均重量(g)', '65g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
+    '前借播種日', '前借数(31日)',
+    'メイン播種日', '最小重量(g)', '平均重量(g)', '翌日用株', 'シェラトン数', 'シェラトン重量(g)', 'ダメ株',
     '貯液残量(L)', '液肥',
-    '正規刈り取り', 'キープ刈り取り', '出荷数', '本出荷', '予備', '予備使用', 'キープ廃棄', '廃棄合計', '翌日刈取予定'
+    '正規刈り取り', '予備', 'キープ', '廃棄合計', '翌日刈取予定'
   ];
   const lastCol = sheet.getLastColumn();
   if (lastCol > headers.length) {
@@ -59,7 +59,7 @@ function fixSheetHeader() {
   Logger.log('ヘッダーを正しい列構成に書き直しました（' + headers.length + '列）');
 }
 
-function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
+function appendToSheet(today, mc, ec, hc31, hc32, liquidTotal, ekihiLabel) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
@@ -68,10 +68,10 @@ function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
       '日付',
       '朝:AC温度', '朝:AC風速',
       '帰:AC温度', '帰:AC風速',
-      '前借播種日', '前借数(33日)',
-      'メイン播種日', '最小重量(g)', '平均重量(g)', '65g以上', '翌袋', 'シェラトン数', 'シェラトン重量(g)', 'チップバーン',
+      '前借播種日', '前借数(31日)',
+      'メイン播種日', '最小重量(g)', '平均重量(g)', '翌日用株', 'シェラトン数', 'シェラトン重量(g)', 'ダメ株',
       '貯液残量(L)', '液肥',
-      '正規刈り取り', 'キープ刈り取り', '出荷数', '本出荷', '予備', '予備使用', 'キープ廃棄', '廃棄合計', '翌日刈取予定'
+      '正規刈り取り', '予備', 'キープ', '廃棄合計', '翌日刈取予定'
     ];
     sheet.appendRow(headers);
     const headerRange = sheet.getRange(1, 1, 1, headers.length);
@@ -79,32 +79,27 @@ function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
     sheet.setFrozenRows(1);
   }
 
-  const sow33 = offsetDate(today, -33);
-  const sow34 = offsetDate(today, -34);
-  const maegari   = hc33.maegari     || 0;
-  const shipMain  = hc34.shipment    || 160;
-  const spare     = hc34.spare       || 1;
-  const haikiKeep = hc34.haiki_keep  || 0;
-  const chipburn  = hc34.chipburn    || 0;
+  const sow31 = offsetDate(today, -31);
+  const sow32 = offsetDate(today, -32);
+  const maegari  = hc31.maegari  || 0;
+  const chipburn = hc32.chipburn || 0;
+  const spare    = hc32.spare    || 0;
+  const keep     = hc32.keep_harvest || 0;
   sheet.appendRow([
     today,
     c(mc.ac_temp) + '℃', acMode(mc, 'ac'),
     c(ec.ec_ac_temp) + '℃', acMode(ec, 'ec_ac'),
-    sow33, maegari,
-    sow34,
-    c(hc34.min_weight), c(hc34.avg_weight),
-    c(hc34.w70), c(hc34.yoku_bukuro),
-    c(hc34.sheraton_count), c(hc34.sheraton_weight), chipburn,
+    sow31, maegari,
+    sow32,
+    c(hc32.min_weight), c(hc32.avg_weight),
+    c(hc32.yoku_bukuro),
+    c(hc32.sheraton_count), c(hc32.sheraton_weight), chipburn,
     liquidTotal,
     ekihiLabel || '-',
-    hc34.seiki        || 0,
-    hc34.keep_harvest || 0,
-    shipMain + spare,
-    shipMain,
+    hc32.seiki || 0,
     spare,
-    hc34.spare_used   || 0,
-    haikiKeep,
-    chipburn + haikiKeep,
+    keep,
+    chipburn + keep,
     180 - maegari
   ]);
 }
@@ -112,9 +107,9 @@ function appendToSheet(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel) {
 // ────────────────────────────────────────────────────────────
 // メール送信
 // ────────────────────────────────────────────────────────────
-function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, memos, alerts, sheetUrl, tana1Url, tana2Url) {
-  const sow33 = offsetDate(today, -33);
-  const sow34 = offsetDate(today, -34);
+function sendReportEmail(today, mc, ec, hc31, hc32, liquidTotal, ekihiLabel, memos, alerts, sheetUrl, tana1Url, tana2Url) {
+  const sow31 = offsetDate(today, -31);
+  const sow32 = offsetDate(today, -32);
   const row = (label, val) =>
     `<tr>
       <td style="padding:7px 14px;color:#555;border-bottom:1px solid #f0f0f0;white-space:nowrap;">${label}</td>
@@ -148,27 +143,21 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
       row('エアコン風速', acMode(ec, 'ec_ac'))
     ].join(''))}
 
-    ${section('#8B5A00', '&#9986;', `前借数（33日目刈取 / 播種 ${sow33}）`, [
-      row('前借数', c(hc33.maegari))
+    ${section('#8B5A00', '&#9986;', `前借数（31日目刈取 / 播種 ${sow31}）`, [
+      row('前借数', c(hc31.maegari))
     ].join(''))}
 
-    ${section('#8B5A00', '&#128230;', `メイン刈取（34日目刈取 / 播種 ${sow34}）`, [
-      row('最小重量', c(hc34.min_weight) + ' g'),
-      row('平均重量', c(hc34.avg_weight) + ' g'),
-      row('65g 以上', c(hc34.w70)),
-      row('翌袋', c(hc34.yoku_bukuro)),
-      row('シェラトン 数', c(hc34.sheraton_count)),
-      row('シェラトン 重量', c(hc34.sheraton_weight) + ' g'),
-      row('チップバーン', c(hc34.chipburn)),
-      row('正規刈り取り', c(hc34.seiki)),
-      row('キープ刈り取り', c(hc34.keep_harvest)),
-      row('出荷数（本出荷+予備）', ((hc34.shipment||160) + (hc34.spare||1)) + ' 株'),
-      row('　本出荷', (hc34.shipment||160) + ' 株'),
-      row('　予備', (hc34.spare||1) + ' 株'),
-      row('　予備使用', c(hc34.spare_used)),
-      row('キープ廃棄', c(hc34.haiki_keep)),
-      row('廃棄合計', ((hc34.chipburn||0) + (hc34.haiki_keep||0)) + ' 株'),
-      row('翌日刈取予定', (180 - (hc33.maegari||0)) + ' 株')
+    ${section('#8B5A00', '&#128230;', `メイン刈取（32日目刈取 / 播種 ${sow32}）`, [
+      row('最小重量', c(hc32.min_weight) + ' g'),
+      row('平均重量', c(hc32.avg_weight) + ' g'),
+      row('正規刈り取り', c(hc32.seiki) + ' 株'),
+      row('予備', c(hc32.spare) + ' 株'),
+      row('翌日用株', c(hc32.yoku_bukuro) + ' 株'),
+      row('シェラトン 数', c(hc32.sheraton_count) + ' 株'),
+      row('シェラトン 重量', c(hc32.sheraton_weight) + ' g'),
+      row('ダメ株', c(hc32.chipburn) + ' 株'),
+      row('キープ', c(hc32.keep_harvest) + ' 株'),
+      row('翌日刈取予定', (180 - (hc31.maegari||0)) + ' 株')
     ].join(''))}
 
     ${section('#185FA5', '&#128167;', '貯液', [
@@ -197,8 +186,8 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
     `【SGL日報】${today}\n\n` +
     `朝 AC: ${c(mc.ac_temp)}℃ ${acMode(mc,'ac')}\n` +
     `帰 AC: ${c(ec.ec_ac_temp)}℃ ${acMode(ec,'ec_ac')}\n` +
-    `前借り: ${c(hc33.maegari)}\n` +
-    `平均重量: ${c(hc34.avg_weight)}g\n` +
+    `前借り: ${c(hc31.maegari)}\n` +
+    `平均重量: ${c(hc32.avg_weight)}g\n` +
     `貯液: ${liquidTotal}L\n`;
   if (ekihiLabel) {
     const next = getNextEkihiEvent(today);
@@ -208,13 +197,13 @@ function sendReportEmail(today, mc, ec, hc33, hc34, liquidTotal, ekihiLabel, mem
   }
   const alertDatesSet = new Set(alerts.map(a => a.sow_date));
   const activeDates = [...new Set([...memos.map(m => m.sow_date), ...alerts.map(a => a.sow_date)])]
-    .sort().filter(d => offsetDate(d, 34) >= today);
+    .sort().filter(d => offsetDate(d, 32) >= today);
   if (activeDates.length) {
     plainText += `\n--- メモ・アラート一覧 ---\n`;
     activeDates.forEach(date => {
       const isAlert = alertDatesSet.has(date);
       const memo = memos.find(m => m.sow_date === date);
-      plainText += `${isAlert ? '⚠️' : '📝'} 播種:${date} 刈取:${offsetDate(date,34)}${memo ? '  '+memo.note : ''}\n`;
+      plainText += `${isAlert ? '⚠️' : '📝'} 播種:${date} 刈取:${offsetDate(date,32)}${memo ? '  '+memo.note : ''}\n`;
     });
   }
 
@@ -345,19 +334,16 @@ function getNextEkihiEvent(today) {
 }
 
 function buildNotesSection(ekihiLabel, memos, alerts, today) {
-  // 液肥: today is event day only
   const hasEkihi = !!ekihiLabel;
 
-  // メモ・アラート: filter out lots whose harvest date (sow+34) has already passed
   const alertDates = new Set(alerts.map(a => a.sow_date));
   const allDates = [...new Set([...memos.map(m => m.sow_date), ...alerts.map(a => a.sow_date)])].sort();
-  const activeDates = allDates.filter(d => offsetDate(d, 34) >= today);
+  const activeDates = allDates.filter(d => offsetDate(d, 32) >= today);
 
   if (!hasEkihi && activeDates.length === 0) return '';
 
   let inner = '';
 
-  // 液肥カード（当日イベントの日のみ）
   if (hasEkihi) {
     const next = getNextEkihiEvent(today);
     inner += `<div style="background:#EEF6FF;border-radius:8px;padding:10px 14px;border:1px solid #c5d8f0;margin-bottom:${activeDates.length > 0 ? '10px' : '0'};">
@@ -366,13 +352,12 @@ function buildNotesSection(ekihiLabel, memos, alerts, today) {
     </div>`;
   }
 
-  // メモ・アラートテーブル（播種日・刈取日・内容）
   if (activeDates.length > 0) {
     let rows = '';
     activeDates.forEach(date => {
       const isAlert = alertDates.has(date);
       const memo    = memos.find(m => m.sow_date === date);
-      const harvestDate = offsetDate(date, 34);
+      const harvestDate = offsetDate(date, 32);
       const label   = isAlert ? '&#9888;' : '&#128221;';
       rows += `<tr>
         <td style="padding:7px 10px;white-space:nowrap;color:#555;border-bottom:1px solid #f0f0f0;">${label}&nbsp;${date}</td>

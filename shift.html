@@ -352,6 +352,44 @@ const INITIAL_SHIFTS = {
   '2026-11-28': {cultivation:["布川"],  delivery:["前島"],     other:["星野"]},
   '2026-11-29': {cultivation:["下田"],  delivery:["宮本"],     other:["星野"]},
   '2026-11-30': {cultivation:["布川"],  delivery:["宮本"],     other:["かりまた"]},
+  '2026-12-01': {cultivation:["下田"],           delivery:["前島"],    other:["れみ"]},
+  '2026-12-02': {cultivation:["布川"],           delivery:["かりまた"],other:["星野"]},
+  '2026-12-03': {cultivation:["下田","布川"],    delivery:["前島"],    other:["かりまた"]},
+  '2026-12-04': {cultivation:["布川"],           delivery:["星野"],    other:["かりまた"]},
+  '2026-12-05': {cultivation:["下田","北島"],    delivery:["前島"],    other:["星野"]},
+  '2026-12-06': {cultivation:["下田","北島"],    delivery:["宮本"],    other:["かりまた"]},
+  '2026-12-07': {cultivation:["星野","下田"],    delivery:["宮本"],    other:["かりまた"]},
+  '2026-12-08': {cultivation:["布川","鷲山"],    delivery:["前島"],    other:["星野"]},
+  '2026-12-09': {cultivation:["布川"],           delivery:["かりまた"],other:["星野"]},
+  '2026-12-10': {cultivation:["下田","布川"],    delivery:["前島"],    other:["かりまた"]},
+  '2026-12-11': {cultivation:["下田"],           delivery:["星野"],    other:["かりまた"]},
+  '2026-12-12': {cultivation:["下田","北島"],    delivery:["前島"],    other:["星野"]},
+  '2026-12-13': {cultivation:["布川","北島"],    delivery:["宮本"],    other:["星野"]},
+  '2026-12-14': {cultivation:["れみ","下田"],    delivery:["宮本"],    other:["かりまた"]},
+  '2026-12-15': {cultivation:["下田","北島"],    delivery:["前島"],    other:["星野"]},
+  '2026-12-16': {cultivation:["下田","布川"],    delivery:["星野"],    other:[]},
+  '2026-12-17': {cultivation:["下田","布川"],    delivery:["前島"],    other:["星野"]},
+  '2026-12-18': {cultivation:["布川"],           delivery:["星野"],    other:["かりまた"]},
+  '2026-12-19': {cultivation:["星野","北島"],    delivery:["前島"],    other:["かりまた"]},
+  '2026-12-20': {cultivation:["下田","北島"],    delivery:["宮本"],    other:["かりまた"]},
+  '2026-12-21': {cultivation:["布川","鷲山"],    delivery:["宮本"],    other:["星野"]},
+  '2026-12-22': {cultivation:["下田","北島"],    delivery:["前島"],    other:["かりまた"]},
+  '2026-12-23': {cultivation:["下田"],           delivery:["かりまた"],other:["星野"]},
+  '2026-12-24': {cultivation:["星野","布川"],    delivery:["前島"],    other:["かりまた"]},
+  '2026-12-25': {cultivation:["下田"],           delivery:["星野"],    other:["かりまた"]},
+  '2026-12-26': {cultivation:["下田","布川"],    delivery:["前島"],    other:["星野"]},
+  '2026-12-27': {cultivation:["下田","北島"],    delivery:["宮本"],    other:["かりまた"]},
+  '2026-12-28': {cultivation:["布川","鷲山"],    delivery:["宮本"],    other:["星野"]},
+  '2026-12-29': {cultivation:["下田","北島"],    delivery:["前島"],    other:["かりまた"]},
+  '2026-12-30': {cultivation:["下田"],           delivery:["かりまた"],other:["星野"]},
+  '2026-12-31': {cultivation:["下田","布川"],    delivery:["前島"],    other:["かりまた"]},
+  '2027-01-01': {cultivation:["下田"],           delivery:[],          other:[]},
+  '2027-01-02': {cultivation:[],                 delivery:[],          other:["星野"]},
+  '2027-01-03': {cultivation:[],                 delivery:[],          other:["かりまた"]},
+  '2027-01-04': {cultivation:["下田","布川"],    delivery:["宮本"],    other:["かりまた"]},
+  '2027-01-05': {cultivation:["下田","北島"],    delivery:["前島"],    other:["星野"]},
+  '2027-01-06': {cultivation:["布川"],           delivery:["かりまた"],other:["星野"]},
+  '2027-01-07': {cultivation:["下田","鷲山"],    delivery:["前島"],    other:["星野"]},
 };
 
 let shifts = {};
@@ -418,6 +456,12 @@ async function loadShifts() {
       const novDates = Object.entries(INITIAL_SHIFTS)
         .filter(([d]) => d.startsWith('2026-11-'));
       await patchShiftDates(novDates);
+    }
+    // 12月・1月分がSupabaseにない場合は投入
+    if (!shifts['2026-12-01']) {
+      const decJanDates = Object.entries(INITIAL_SHIFTS)
+        .filter(([d]) => d.startsWith('2026-12-') || d.startsWith('2027-01-'));
+      await patchShiftDates(decJanDates);
     }
   }
   render();

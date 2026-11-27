@@ -101,7 +101,7 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
   </div>
 </div>
 
-<div id="main-content" hidden>
+<div id="main-content" style="display:none">
 <div class="header">
   <a class="back-btn" href="index.html">← 戻る</a>
   <div class="header-title">📖 業務マニュアル</div>
@@ -161,25 +161,25 @@ body { font-family: sans-serif; background: #f7f7f5; min-height: 100vh; padding:
 const MANUAL_PW = '510ab';
 const PW_KEY = 'manual_unlocked';
 function unlock() {
-  document.getElementById('pw-overlay').hidden = true;
-  document.getElementById('main-content').hidden = false;
+  document.getElementById('pw-overlay').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
   try { localStorage.setItem(PW_KEY, '1'); } catch(e) {}
 }
 try {
   if (localStorage.getItem(PW_KEY) === '1') { unlock(); }
 } catch(e) {}
-document.getElementById('pw-btn').addEventListener('click', () => {
-  if (document.getElementById('pw-input').value === MANUAL_PW) {
+document.getElementById('pw-btn').onclick = function() {
+  var val = document.getElementById('pw-input').value;
+  if (val === MANUAL_PW) {
     unlock();
   } else {
     document.getElementById('pw-error').style.display = 'block';
     document.getElementById('pw-input').value = '';
-    document.getElementById('pw-input').focus();
   }
-});
-document.getElementById('pw-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('pw-btn').click();
-});
+};
+document.getElementById('pw-input').onkeydown = function(e) {
+  if (e.key === 'Enter') document.getElementById('pw-btn').onclick();
+};
 
 // 各マニュアルの最終更新日時（更新のたびにここを変える）
 const MANUAL_UPDATED = {

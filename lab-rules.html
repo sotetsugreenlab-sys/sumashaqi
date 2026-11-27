@@ -1,0 +1,267 @@
+<title>栽培室 入室・衛生管理規則</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root {
+  --bg: #f5f7f4;
+  --card: #ffffff;
+  --fg: #1a1a1a;
+  --sub: #555;
+  --green: #3D7A50;
+  --green-light: #e8f0eb;
+  --green-mid: #c5dac9;
+  --amber: #92610a;
+  --amber-light: #fef7e8;
+  --amber-mid: #f0d8a0;
+  --border: #dde5dd;
+  --tag-bg: #3D7A50;
+  --tag-fg: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161c17;
+    --card: #1f2820;
+    --fg: #e8ede9;
+    --sub: #9aaa9d;
+    --green: #5fa870;
+    --green-light: #1e2f21;
+    --green-mid: #2d4030;
+    --amber: #d49c40;
+    --amber-light: #2a2010;
+    --amber-mid: #4a3414;
+    --border: #2d3d2f;
+    --tag-bg: #3a6648;
+    --tag-fg: #e8f3ea;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161c17; --card: #1f2820; --fg: #e8ede9; --sub: #9aaa9d;
+  --green: #5fa870; --green-light: #1e2f21; --green-mid: #2d4030;
+  --amber: #d49c40; --amber-light: #2a2010; --amber-mid: #4a3414;
+  --border: #2d3d2f; --tag-bg: #3a6648; --tag-fg: #e8f3ea;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: 'Noto Sans JP', sans-serif;
+  margin: 0;
+  padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  font-size: 15px; line-height: 1.7;
+}
+.page { max-width: 640px; margin: 0 auto; }
+
+.page-header {
+  background: var(--green);
+  color: #fff;
+  border-radius: 12px;
+  padding: 24px 24px 20px;
+  margin-bottom: 28px;
+}
+.page-header .eyebrow {
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  opacity: .75; margin-bottom: 6px;
+}
+.page-header h1 {
+  font-size: 20px; font-weight: 700; margin: 0;
+  text-wrap: balance; line-height: 1.4;
+}
+.page-header .en {
+  font-size: 12px; opacity: .7; margin-top: 4px;
+}
+
+.section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.section-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  background: var(--green-light);
+  border-bottom: 1px solid var(--green-mid);
+}
+.section-head .icon { font-size: 18px; flex-shrink: 0; }
+.section-head .title { font-size: 14px; font-weight: 700; color: var(--green); }
+.section-head .title-en { font-size: 11px; color: var(--sub); margin-top: 1px; }
+
+.section-body { padding: 14px 18px; }
+
+.rule-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.rule-list li {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 14px; color: var(--fg); line-height: 1.6;
+}
+.rule-list li::before {
+  content: "・";
+  color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+
+.warning-section .section-head {
+  background: var(--amber-light);
+  border-bottom-color: var(--amber-mid);
+}
+.warning-section .section-head .title { color: var(--amber); }
+.warning-section .rule-list li::before { color: var(--amber); }
+
+.note {
+  font-size: 12px; color: var(--sub); margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--green-light); border-radius: 6px;
+  border-left: 3px solid var(--green-mid);
+}
+</style>
+
+<div class="page">
+
+  <div class="page-header">
+    <div class="eyebrow">SGL 栽培室</div>
+    <h1>入室・栽培室クリーン化<br>管理規則</h1>
+    <div class="en">Rules for entering the cultivation room and maintaining cleanliness</div>
+  </div>
+
+  <!-- 入室時ルール -->
+  <div class="section">
+    <div class="section-head">
+      <div class="icon">🚪</div>
+      <div>
+        <div class="title">入室時ルール</div>
+        <div class="title-en">Entry Rules</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <ul class="rule-list">
+        <li>玄関前にて靴を脱ぎ、スリッパ等に履き替える。前室には靴を履いたまま上がらない。</li>
+        <li>前室に入室前、全身にエアシャワーを使用する。</li>
+        <li>入室後、ロッカーを使用して帽子を着用、白衣および長靴に着替える。</li>
+        <li>私物はロッカーに入れ、ラボに持ち込まない。</li>
+        <li>帽子および白衣は適時洗濯し、常に清潔を保つ。</li>
+        <li>全身を撫でるように2度目のエアシャワーを浴びて表面に付着したホコリを落とす。</li>
+        <li>ラボ入室前、靴底消毒用マットで長靴の底を擦り、汚れを除去してから入室する。</li>
+        <li>入室後、必ず石鹸で手を洗い、その後アルコール消毒する。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 更衣・入退室時の衛生管理 -->
+  <div class="section">
+    <div class="section-head">
+      <div class="icon">👗</div>
+      <div>
+        <div class="title">更衣・入退室時の衛生管理ルール</div>
+        <div class="title-en">Hygiene rules for changing clothes and entering/exiting</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <ul class="rule-list">
+        <li>虫の侵入を防ぐため、入退室時はラボ側のドアと玄関側のドアを絶対に同時に開けない。</li>
+        <li>ドアの開閉は手動にてできるだけ最小限に行い、完全に閉まったことを毎回確認する。</li>
+        <li>虫や付着物の持ち込みを防ぐため、前室を出る前に白衣と帽子・長靴を脱ぐ。</li>
+        <li>ほんの少し外に出た場合でも、前室内に戻る際は入室時ルールに従う。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- エアシャワー使用ルール -->
+  <div class="section">
+    <div class="section-head">
+      <div class="icon">💨</div>
+      <div>
+        <div class="title">エアシャワー使用ルール</div>
+        <div class="title-en">Air shower usage rules</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px;">玄関前</div>
+      <ul class="rule-list" style="margin-bottom:16px;">
+        <li>衣服や身体に付着した埃や虫などを十分に除去する。</li>
+        <li>全身に風が当たるように向きを変える。</li>
+        <li>髪・肩・背中・足元・衣類が折り重なっている部分を重点的に当てる。</li>
+        <li><strong>フルパワーで最低10秒以上</strong>使用する。</li>
+      </ul>
+      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px;">前室（2回目）</div>
+      <ul class="rule-list">
+        <li>全身を撫でるように2度目のエアシャワーを浴びて表面のホコリを落とす。</li>
+        <li>白衣・帽子・長靴など玄関前で当てられなかった箇所を重点的に狙う。</li>
+        <li><strong>弱パワーでも最低10秒以上</strong>使用する。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 作業開始前ルール -->
+  <div class="section">
+    <div class="section-head">
+      <div class="icon">🧴</div>
+      <div>
+        <div class="title">作業開始前ルール</div>
+        <div class="title-en">Rules before starting work</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <ul class="rule-list">
+        <li>机および机上の器具をアルコール消毒する。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 脚立使用時ルール -->
+  <div class="section">
+    <div class="section-head">
+      <div class="icon">🪜</div>
+      <div>
+        <div class="title">脚立使用時ルール</div>
+        <div class="title-en">Rules for using step ladders</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <ul class="rule-list">
+        <li>転倒・落下の危険があるため、天板に足を置かない。（天板は清潔なため手で触れてよい）</li>
+        <li>踏み桟は靴底が触れるため手で触れない。</li>
+        <li>脚立を移動させる際は、支柱（縦の脚）または天板を持つ。</li>
+        <li>踏み桟に手が触れた場合は、その都度石鹸で手洗いとアルコール消毒を行う。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 落下物の処理ルール -->
+  <div class="section warning-section">
+    <div class="section-head">
+      <div class="icon">⚠️</div>
+      <div>
+        <div class="title">落下物の処理ルール</div>
+        <div class="title-en">Rules for handling fallen objects</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <ul class="rule-list">
+        <li>床は消毒を行っているが病気感染の可能性があるため、<strong>床に落ちた株は使用せず廃棄する。</strong></li>
+        <li>床に落ちた物を拾った場合は必ず手を洗いアルコール消毒する。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 異常時・共有事項の対応ルール -->
+  <div class="section">
+    <div class="section-head">
+      <div class="icon">📲</div>
+      <div>
+        <div class="title">異常時・共有事項の対応ルール</div>
+        <div class="title-en">Rules for handling emergencies and shared information</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <ul class="rule-list">
+        <li>異常株を確認した場合は報告し、必要に応じてLINEグループにて共有する。</li>
+        <li>新たに行う作業や、翌日への引き継ぎ事項・注意点がある場合もLINEグループにて共有する。</li>
+        <li>液肥管理について判断できない場合も、LINEグループで確認する。</li>
+        <li>対処方法が分からない場合は自己判断せず、LINEグループで確認する。</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
